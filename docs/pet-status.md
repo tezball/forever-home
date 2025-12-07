@@ -79,9 +79,15 @@ Special statuses (can occur at any stage):
 |-----------|-------|
 | Visible to public | No |
 | Editable by foster | No |
-| Triggered by | Rescue organization accepts pet and assigns vet |
+| Triggered by | Rescue organization accepts pet |
 | Next status | Available (if approved) or Pending Rescue (if declined) |
-| Notifications | Assigned vet receives sign-off request |
+| Notifications | Foster notified to take pet to any verified vet with microchip number |
+
+**How it works:**
+1. Rescue accepts the pet → status becomes Pending Vet
+2. Foster takes pet to any verified veterinarian
+3. Vet looks up the pet by microchip number (see US-4.2)
+4. Vet completes verification and signs off
 
 **Vet verification requirements:**
 - [ ] Neutered/spayed (with date)
@@ -89,9 +95,8 @@ Special statuses (can occur at any stage):
 - [ ] Health status confirmed (good or known conditions documented)
 
 **Actions available:**
-- Vet can **sign off** → moves to Available
+- Vet can **sign off** (after microchip lookup) → moves to Available
 - Vet can **decline** → moves back to Pending Rescue with notes
-- Rescue can **reassign vet** → remains Pending Vet
 - Foster can **withdraw** → moves to Withdrawn
 
 ---
@@ -193,7 +198,7 @@ Special statuses (can occur at any stage):
 | From | To | Triggered By | Condition |
 |------|----|--------------|-----------|
 | Draft | Pending Rescue | Foster | Submits complete profile |
-| Pending Rescue | Pending Vet | Rescue | Accepts pet, assigns vet |
+| Pending Rescue | Pending Vet | Rescue | Accepts pet |
 | Pending Rescue | Draft | Rescue | Declines pet |
 | Pending Vet | Available | Vet | Signs off on all requirements |
 | Pending Vet | Pending Rescue | Vet | Declines with notes |

@@ -61,6 +61,14 @@ Standard Spring Boot layered architecture:
 - **JWT Auth**: Stateless authentication with short-lived access tokens (15min) and refresh tokens in httpOnly cookies
 - **Microchip-based vet lookup**: Vets find pets by microchip number rather than being assigned by rescues
 - **Pet status state machine**: Pets flow through Draft → PendingRescue → PendingVet → Available → InProgress → Adopted
+- **Microchip required**: All pets must have a microchip ID (used for vet lookup and ownership tracking)
+- **Profile completion**: Users complete role-specific profile after initial registration
+
+## Infrastructure
+
+- **Image Storage**: AWS S3 for pet images and organization logos
+- **Email Service**: AWS SES for transactional emails (notifications, password reset)
+- **Admin Bootstrap**: First admin created via environment variable `ADMIN_EMAIL` on startup
 
 ## Documentation
 

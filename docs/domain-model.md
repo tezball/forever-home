@@ -32,7 +32,10 @@ Forever Home operates on a trust-based adoption model where pets must pass throu
 | passwordHash | String | Encrypted password |
 | role | UserRole | Discriminator for user type |
 | createdAt | Timestamp | Account creation date |
+| lastLoginAt | Timestamp | Most recent login |
 | status | AccountStatus | Active, Suspended, Pending |
+| profileComplete | Boolean | Has completed role-specific profile |
+| notificationPrefs | NotificationPreferences | Email/in-app notification settings |
 
 **Why it exists:** Provides authentication and authorization foundation. All specific user types extend from this base, enabling a unified login system while supporting role-specific functionality.
 
@@ -190,9 +193,10 @@ Forever Home operates on a trust-based adoption model where pets must pass throu
 | breed | String | Breed or mix |
 | age | Integer | Age in years |
 | ageUnit | AgeUnit | Years or Months |
+| sex | PetSex | Male or Female |
 | size | PetSize | Small, Medium, Large |
-| description | Text | Personality, history, needs |
-| microchipId | String | Microchip number (immutable) |
+| description | Text | Personality, history, needs (max 500 chars) |
+| microchipId | String | Microchip number (required, immutable) |
 | status | PetStatus | Current lifecycle stage |
 | fosterId | UUID | Who registered this pet |
 | rescueOrgId | UUID | Managing organization |
@@ -368,6 +372,34 @@ Forever Home operates on a trust-based adoption model where pets must pass throu
 
 ---
 
+### Favorite
+**Purpose:** Tracks pets that adopters have saved for later.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| id | UUID | Unique identifier |
+| adopterId | UUID | Who favorited |
+| petId | UUID | Which pet |
+| createdAt | Timestamp | When favorited |
+
+**Why it exists:** Allows adopters to build a shortlist of pets they're interested in. Separated as join table to support efficient queries and notifications when favorited pets' status changes.
+
+---
+
+### NotificationPreferences
+**Purpose:** User settings for notification delivery (embedded in User).
+
+| Field | Type | Description |
+|-------|------|-------------|
+| emailStatusChanges | Boolean | Email on pet/application status changes |
+| emailNewApplications | Boolean | Email on new applications (rescue orgs) |
+| emailFavoriteUpdates | Boolean | Email when favorited pet status changes |
+| inAppEnabled | Boolean | Show in-app notifications |
+
+**Why it exists:** Allows users to control notification volume. Embedded in User rather than separate table for simplicity.
+
+---
+
 ## Enumerations
 
 ### UserRole
@@ -388,6 +420,11 @@ Dog | Cat | Rabbit | Bird | Other
 ### PetSize
 ```
 Small | Medium | Large
+```
+
+### PetSex
+```
+Male | Female
 ```
 
 ### AgeUnit
@@ -431,10 +468,12 @@ Foster (1) ──────── (0..*) Pet
 Pet (1) ──────── (0..*) PetImage
 Pet (1) ──────── (0..1) VetSignOff
 Pet (1) ──────── (0..*) AdoptionApplication
+Pet (1) ──────── (0..*) Favorite
 Pet (0..1) ──────── (1) Adoption
 
 RescueOrg (1) ──────── (0..*) Pet
 Vet (1) ──────── (0..*) VetSignOff
+Adopter (1) ──────── (0..*) Favorite
 
 Adopter (1) ──────── (0..*) AdoptionApplication
 Adopter (1) ──────── (0..*) Adoption

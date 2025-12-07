@@ -89,10 +89,66 @@
 
 ---
 
+### US-1.4: Complete Profile
+**As a** newly registered user
+**I want to** complete my role-specific profile
+**So that** I can use the platform's features
+
+**Acceptance Criteria:**
+- After first login, user is prompted to complete their profile
+- User can select/confirm their role (Foster, Adopter, Vet, Rescue Org)
+- Role-specific fields are displayed based on selection:
+  - **Foster/Adopter:** firstName, lastName, phone, location (city/state)
+  - **Adopter additional:** livingSituation, petExperience
+  - **Vet:** clinicName, licenseNumber, location, phone, website, description
+  - **Rescue Org:** name, location, phone, website, description, contactName, contactEmail
+- Profile is saved and `User.profileComplete` set to `true`
+- User cannot access role features until profile is complete
+
+**Domain Notes:**
+- Creates role-specific entity (Foster, Adopter, Vet, or RescueOrganization)
+- Updates `User.profileComplete = true`
+- For Vet/Rescue Org: Sets `verified = false`, adds to admin approval queue
+
+**UI Components:**
+- Multi-step wizard based on role
+- Progress indicator showing completion steps
+- Form inputs: 48px height, 16px font
+- Skip not allowed - must complete to proceed
+- Primary CTA: "Complete Profile"
+
+---
+
 ## Epic 2: Foster - Pet Registration
 
-**Related Entities:** `Foster`, `Pet`, `PetImage`
+**Related Entities:** `Foster`, `Pet`, `PetImage`, `RescueOrganization`
 **Status Transitions:** `Draft` → `PendingRescue`
+
+### US-2.0: Browse Rescue Organizations
+**As a** foster
+**I want to** browse available rescue organizations
+**So that** I can choose one to work with for my pet's adoption
+
+**Acceptance Criteria:**
+- List shows all verified rescue organizations (`verified = true`)
+- Each org shows: logo, name, location, description preview
+- Can filter by location (city/state)
+- Can view full organization profile before selecting
+- Can select organization directly from list or from profile page
+
+**Domain Notes:**
+- Query: `RescueOrganization WHERE verified = true`
+- No authentication required to browse (public)
+- Selection stored temporarily until pet registration submitted
+
+**UI Components:**
+- Organization card: Logo (60px), name, location, description truncated
+- Filter: Location dropdown or search
+- Grid layout: 1 column mobile, 2 columns tablet+
+- Card click: Expands to full profile or navigates to org page
+- "Select This Organization" button on profile
+
+---
 
 ### US-2.1: Register Pet for Adoption
 **As a** foster
@@ -100,8 +156,10 @@
 **So that** I can find a loving forever home for them
 
 **Acceptance Criteria:**
-- Foster can enter: name, age (with unit: months/years), breed, description, size, microchip number
+- Foster can enter: name, age (with unit: months/years), breed, description (max 500 chars), size, sex, microchip number
+- Microchip number is required (used for vet lookup and ownership tracking)
 - Foster can select species: Dog, Cat, Rabbit, Bird, Other
+- Foster can select sex: Male, Female
 - Foster can upload multiple images (max 5 at a time)
 - Foster must designate one image as primary (shown in listings)
 - Pet status is set to `Draft` during creation, `PendingRescue` on submit
@@ -118,7 +176,9 @@
 - Image upload: Drag-drop zone or camera icon button
 - Image gallery: 64px thumbnails, drag to reorder
 - Size selector: Radio buttons (Small, Medium, Large)
+- Sex selector: Radio buttons (Male, Female)
 - Age input: Number field + dropdown (Months/Years)
+- Microchip input: Text field (required, validated format)
 - Primary CTA: "Submit for Review" button
 - Card preview showing how pet will appear in listings
 
@@ -539,16 +599,19 @@ PendingVet ──[Vet declines]──► PendingRescue
 **Related Entities:** `Adopter`, `Pet`, `AdoptionApplication`
 
 ### US-5.1: Browse Available Pets
-**As an** adopter
+**As a** visitor or adopter
 **I want to** browse pets available for adoption
 **So that** I can find a pet that matches my preferences
 
+**Access:** Public (no authentication required)
+
 **Acceptance Criteria:**
 - Only pets with `status = Available` are visible
-- List shows: primary pet photo, name, breed, age, size
+- List shows: primary pet photo, name, breed, age, size, sex
 - Grid layout: 2 columns mobile, 3-4 columns desktop
 - Pagination or infinite scroll for large lists (20 per page)
 - Can toggle between grid and list view
+- Favorite button shown but requires login to use
 
 **Domain Notes:**
 - Query: `Pet WHERE status = 'Available' ORDER BY createdAt DESC`
@@ -594,9 +657,11 @@ PendingVet ──[Vet declines]──► PendingRescue
 ---
 
 ### US-5.3: View Pet Profile
-**As an** adopter
+**As a** visitor or adopter
 **I want to** view detailed information about a pet
 **So that** I can decide if they're right for me
+
+**Access:** Public (no authentication required)
 
 **Acceptance Criteria:**
 - Shows all pet details: name, age, breed, species, description, size
@@ -631,6 +696,8 @@ PendingVet ──[Vet declines]──► PendingRescue
 **As an** adopter
 **I want to** submit an adoption application
 **So that** I can express interest in a specific pet
+
+**Access:** Authenticated (Adopter role with complete profile)
 
 **Acceptance Criteria:**
 - Application form captures:
@@ -667,6 +734,8 @@ PendingVet ──[Vet declines]──► PendingRescue
 **I want to** see the status of my adoption applications
 **So that** I know where I am in the process
 
+**Access:** Authenticated (Adopter only - sees own applications)
+
 **Acceptance Criteria:**
 - Dashboard shows all submitted applications
 - Each shows: pet photo, pet name, status, submitted date
@@ -697,6 +766,8 @@ PendingVet ──[Vet declines]──► PendingRescue
 **As an** adopter
 **I want to** save pets to a favorites list
 **So that** I can compare and decide later
+
+**Access:** Authenticated (Adopter role required)
 
 **Acceptance Criteria:**
 - Can add/remove pets from favorites with one click (heart icon)
@@ -950,12 +1021,14 @@ PendingVet ──[Vet declines]──► PendingRescue
 
 | Priority | User Stories | Focus |
 |----------|-------------|-------|
-| **P0 - MVP** | US-1.1, US-1.2, US-2.1, US-3.1, US-3.3, US-4.2, US-4.3, US-5.1, US-5.3, US-6.1 | Core registration, verification, and browsing flow |
+| **P0 - MVP** | US-1.1, US-1.2, US-1.4, US-2.0, US-2.1, US-3.1, US-3.3, US-4.2, US-4.3, US-5.1, US-5.3, US-6.1 | Core registration, profile, verification, and browsing flow |
 | **P1 - Core** | US-2.2, US-2.3, US-3.5, US-3.6, US-5.2, US-5.4 | Complete adoption workflow |
 | **P2 - Enhanced** | US-1.3, US-2.4, US-4.4, US-4.5, US-5.5, US-5.6, US-6.2, US-8.1, US-8.2 | User experience improvements |
 | **P3 - Polish** | US-3.2, US-4.1, US-6.3, US-6.4, US-7.1, US-7.2, US-7.3 | Public pages and analytics |
 
 **MVP Changes:**
+- Added US-1.4 (Complete Profile) - required to complete role-specific profile after registration
+- Added US-2.0 (Browse Rescue Organizations) - fosters need to discover rescue orgs
 - Added US-6.1 (Admin Approvals) - required for Vet/Rescue verification
 - Added US-4.2 (Microchip Lookup) - vets find pets by microchip
 - Removed US-3.4 (Vet Assignment) - replaced by microchip lookup flow
