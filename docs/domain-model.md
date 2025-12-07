@@ -100,7 +100,7 @@ Forever Home operates on a trust-based adoption model where pets must pass throu
 
 **Relationships:**
 - Creates many Vet Sign-offs
-- Assigned by Rescue Organizations
+- Looks up Pets by microchip number (no pre-assignment required)
 
 ---
 
@@ -131,7 +131,6 @@ Forever Home operates on a trust-based adoption model where pets must pass throu
 **Relationships:**
 - Manages many Pets
 - Works with many Fosters
-- Partners with many Vets
 - Processes many Adoption Applications
 
 ---
@@ -145,6 +144,36 @@ Forever Home operates on a trust-based adoption model where pets must pass throu
 | userId | UUID | Link to User |
 
 **Why it exists:** Admins ensure platform integrity by verifying rescue organizations and vets, moderating content, and handling disputes. Kept minimal as most admin context comes from the User role.
+
+---
+
+## Authentication
+
+### JWT Token Strategy
+
+| Token | Storage | Expiry | Purpose |
+|-------|---------|--------|---------|
+| Access Token | Memory (client) | 15 minutes | API authorization |
+| Refresh Token | httpOnly cookie | 7 days (30 with "Remember me") | Obtain new access tokens |
+
+**Endpoints:**
+- `POST /auth/register` - Create account, returns tokens
+- `POST /auth/login` - Authenticate, returns tokens
+- `POST /auth/refresh` - Exchange refresh cookie for new access token
+- `POST /auth/logout` - Invalidate refresh token
+
+**Token Payload:**
+```json
+{
+  "sub": "user-uuid",
+  "role": "Foster|Adopter|Vet|RescueOrg|Admin",
+  "verified": true,
+  "iat": 1234567890,
+  "exp": 1234568790
+}
+```
+
+**Why JWT:** Stateless authentication scales horizontally. Short-lived access tokens limit exposure if compromised. Refresh tokens in httpOnly cookies prevent XSS theft.
 
 ---
 
@@ -174,8 +203,10 @@ Forever Home operates on a trust-based adoption model where pets must pass throu
 
 **Key design decisions:**
 - **Microchip is immutable:** Prevents fraud and ensures traceability
+- **Microchip enables vet lookup:** Vets find pets by microchip number rather than being assigned (see US-4.2)
 - **Status is denormalized:** Avoids complex joins for the most common query (listing available pets)
 - **Age as integer + unit:** Handles puppies/kittens (months) and adults (years) cleanly
+- **No vet assignment:** Any verified vet can sign off on any `PendingVet` pet via microchip lookup
 
 **Relationships:**
 - Belongs to one Foster (registrant)

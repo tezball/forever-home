@@ -1,0 +1,1570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Forever Home - Style Guide</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Lora:wght@500;600&display=swap" rel="stylesheet">
+  <style>
+    /* ================================
+       CSS Variables / Design Tokens
+       ================================ */
+    :root {
+      /* Colors - Primary */
+      --color-primary: #2D5A47;
+      --color-primary-light: #3D7A5F;
+      --color-primary-dark: #1D3A2F;
+
+      /* Colors - Background */
+      --color-bg: #F5F0E8;
+      --color-surface: #FFFDF8;
+      --color-border: #E8E4DC;
+
+      /* Colors - Accent */
+      --color-accent: #C4705A;
+      --color-gold: #D4A853;
+
+      /* Colors - Semantic */
+      --color-success: #3A8A5C;
+      --color-warning: #D4A853;
+      --color-error: #C45A5A;
+      --color-info: #5A8AC4;
+
+      /* Colors - Text */
+      --color-text: #1A1A1A;
+      --color-text-secondary: #5C5C5C;
+      --color-text-muted: #8C8C8C;
+
+      /* Typography */
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --font-serif: 'Lora', Georgia, serif;
+
+      /* Spacing */
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 24px;
+      --space-6: 32px;
+      --space-8: 48px;
+      --space-10: 64px;
+
+      /* Border Radius */
+      --radius-sm: 4px;
+      --radius-md: 8px;
+      --radius-lg: 16px;
+      --radius-full: 9999px;
+
+      /* Shadows */
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+      --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+      --shadow-inner: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+
+      /* Motion */
+      --duration-fast: 150ms;
+      --duration-normal: 250ms;
+      --duration-slow: 400ms;
+      --ease-out: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      --ease-in: cubic-bezier(0.55, 0.06, 0.68, 0.19);
+    }
+
+    /* ================================
+       Reset & Base Styles
+       ================================ */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      font-size: 16px;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background-color: var(--color-bg);
+      color: var(--color-text);
+      line-height: 1.5;
+    }
+
+    /* ================================
+       Typography
+       ================================ */
+    .display {
+      font-family: var(--font-serif);
+      font-size: 32px;
+      font-weight: 600;
+      line-height: 1.2;
+    }
+
+    h1, .h1 {
+      font-family: var(--font-serif);
+      font-size: 28px;
+      font-weight: 600;
+      line-height: 1.25;
+    }
+
+    h2, .h2 {
+      font-family: var(--font-serif);
+      font-size: 24px;
+      font-weight: 600;
+      line-height: 1.3;
+    }
+
+    h3, .h3 {
+      font-family: var(--font-serif);
+      font-size: 20px;
+      font-weight: 600;
+      line-height: 1.35;
+    }
+
+    h4, .h4 {
+      font-family: var(--font-sans);
+      font-size: 18px;
+      font-weight: 500;
+      line-height: 1.4;
+    }
+
+    .body {
+      font-size: 16px;
+      line-height: 1.5;
+    }
+
+    .body-small {
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .caption {
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .overline {
+      font-size: 11px;
+      font-weight: 600;
+      line-height: 1.3;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .text-secondary {
+      color: var(--color-text-secondary);
+    }
+
+    .text-muted {
+      color: var(--color-text-muted);
+    }
+
+    @media (min-width: 768px) {
+      .display { font-size: 40px; }
+      h1, .h1 { font-size: 32px; }
+      h2, .h2 { font-size: 28px; }
+    }
+
+    /* ================================
+       Layout
+       ================================ */
+    .container {
+      padding: var(--space-4);
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    @media (min-width: 768px) {
+      .container {
+        padding: var(--space-6);
+      }
+    }
+
+    .section {
+      margin-bottom: var(--space-8);
+    }
+
+    .section-title {
+      margin-bottom: var(--space-5);
+      padding-bottom: var(--space-3);
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .grid {
+      display: grid;
+      gap: var(--space-4);
+    }
+
+    .grid-2 {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .grid-3 {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .grid-4 {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    @media (min-width: 768px) {
+      .grid-3 { grid-template-columns: repeat(3, 1fr); }
+      .grid-4 { grid-template-columns: repeat(4, 1fr); }
+    }
+
+    .flex {
+      display: flex;
+      gap: var(--space-3);
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    /* ================================
+       Color Swatches
+       ================================ */
+    .swatch {
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .swatch-color {
+      height: 80px;
+    }
+
+    .swatch-info {
+      background: var(--color-surface);
+      padding: var(--space-3);
+    }
+
+    .swatch-name {
+      font-weight: 500;
+      font-size: 14px;
+    }
+
+    .swatch-hex {
+      font-size: 12px;
+      color: var(--color-text-secondary);
+      font-family: monospace;
+    }
+
+    /* ================================
+       Buttons
+       ================================ */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-2);
+      padding: 12px 24px;
+      font-family: var(--font-sans);
+      font-size: 16px;
+      font-weight: 500;
+      line-height: 1;
+      text-decoration: none;
+      border: none;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all var(--duration-fast) var(--ease-out);
+      min-height: 44px;
+    }
+
+    .btn:focus-visible {
+      outline: 2px solid var(--color-primary);
+      outline-offset: 2px;
+    }
+
+    .btn-primary {
+      background-color: var(--color-primary);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background-color: var(--color-primary-light);
+    }
+
+    .btn-primary:active {
+      background-color: var(--color-primary-dark);
+    }
+
+    .btn-secondary {
+      background-color: transparent;
+      color: var(--color-primary);
+      border: 1.5px solid var(--color-primary);
+    }
+
+    .btn-secondary:hover {
+      background-color: var(--color-primary);
+      color: white;
+    }
+
+    .btn-tertiary {
+      background-color: transparent;
+      color: var(--color-primary);
+      padding: 8px 12px;
+    }
+
+    .btn-tertiary:hover {
+      text-decoration: underline;
+    }
+
+    .btn-destructive {
+      background-color: var(--color-error);
+      color: white;
+    }
+
+    .btn-destructive:hover {
+      background-color: #B04A4A;
+    }
+
+    .btn-sm {
+      padding: 8px 16px;
+      font-size: 14px;
+      min-height: 36px;
+    }
+
+    .btn-lg {
+      padding: 16px 32px;
+      font-size: 18px;
+      min-height: 52px;
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* ================================
+       Form Elements
+       ================================ */
+    .form-group {
+      margin-bottom: var(--space-4);
+    }
+
+    .form-label {
+      display: block;
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 6px;
+    }
+
+    .form-input {
+      width: 100%;
+      height: 48px;
+      padding: 12px 16px;
+      font-family: var(--font-sans);
+      font-size: 16px;
+      color: var(--color-text);
+      background-color: var(--color-surface);
+      border: 1.5px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      transition: border-color var(--duration-fast), box-shadow var(--duration-fast);
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px rgba(45, 90, 71, 0.15);
+    }
+
+    .form-input::placeholder {
+      color: var(--color-text-muted);
+    }
+
+    .form-input.error {
+      border-color: var(--color-error);
+    }
+
+    .form-input:disabled {
+      background-color: var(--color-bg);
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+
+    .form-textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+
+    .form-select {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%235C5C5C' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 44px;
+    }
+
+    .form-error {
+      font-size: 12px;
+      color: var(--color-error);
+      margin-top: 4px;
+    }
+
+    .form-hint {
+      font-size: 12px;
+      color: var(--color-text-secondary);
+      margin-top: 4px;
+    }
+
+    /* Checkbox */
+    .checkbox-wrapper {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      cursor: pointer;
+    }
+
+    .checkbox {
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border: 1.5px solid var(--color-border);
+      border-radius: 4px;
+      cursor: pointer;
+      position: relative;
+      transition: all var(--duration-fast);
+    }
+
+    .checkbox:checked {
+      background-color: var(--color-primary);
+      border-color: var(--color-primary);
+    }
+
+    .checkbox:checked::after {
+      content: '';
+      position: absolute;
+      left: 6px;
+      top: 2px;
+      width: 5px;
+      height: 10px;
+      border: solid white;
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+    }
+
+    .checkbox:focus-visible {
+      outline: 2px solid var(--color-primary);
+      outline-offset: 2px;
+    }
+
+    /* Radio */
+    .radio {
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border: 1.5px solid var(--color-border);
+      border-radius: 50%;
+      cursor: pointer;
+      position: relative;
+      transition: all var(--duration-fast);
+    }
+
+    .radio:checked {
+      border-color: var(--color-primary);
+    }
+
+    .radio:checked::after {
+      content: '';
+      position: absolute;
+      left: 4px;
+      top: 4px;
+      width: 10px;
+      height: 10px;
+      background-color: var(--color-primary);
+      border-radius: 50%;
+    }
+
+    .radio:focus-visible {
+      outline: 2px solid var(--color-primary);
+      outline-offset: 2px;
+    }
+
+    /* ================================
+       Cards
+       ================================ */
+    .card {
+      background-color: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
+      transition: box-shadow var(--duration-normal), transform var(--duration-normal);
+    }
+
+    .card:hover {
+      box-shadow: var(--shadow-md);
+      transform: translateY(-2px);
+    }
+
+    .card-image {
+      width: 100%;
+      aspect-ratio: 3 / 2;
+      object-fit: cover;
+      background-color: var(--color-border);
+    }
+
+    .card-body {
+      padding: var(--space-4);
+    }
+
+    .card-title {
+      font-family: var(--font-serif);
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: var(--space-1);
+    }
+
+    .card-subtitle {
+      font-size: 14px;
+      color: var(--color-text-secondary);
+      margin-bottom: var(--space-3);
+    }
+
+    .card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Pet Card - List View */
+    .pet-card-list {
+      display: flex;
+      gap: var(--space-3);
+      padding: var(--space-3);
+    }
+
+    .pet-card-list .pet-image {
+      width: 80px;
+      height: 80px;
+      border-radius: var(--radius-md);
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+
+    .pet-card-list .pet-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .pet-card-list .pet-name {
+      font-family: var(--font-serif);
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .pet-card-list .pet-meta {
+      font-size: 14px;
+      color: var(--color-text-secondary);
+    }
+
+    .pet-card-list .pet-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: var(--space-2);
+    }
+
+    /* ================================
+       Status Badges
+       ================================ */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      border-radius: var(--radius-full);
+    }
+
+    .badge-available {
+      background-color: #E8F5EC;
+      color: #2D5A47;
+    }
+
+    .badge-pending {
+      background-color: #FFF5E6;
+      color: #996B00;
+    }
+
+    .badge-adopted {
+      background-color: #F0E8F5;
+      color: #5A4570;
+    }
+
+    .badge-on-hold {
+      background-color: #E8E4DC;
+      color: #5C5C5C;
+    }
+
+    .badge-withdrawn {
+      background-color: #F5E8E8;
+      color: #8C5C5C;
+    }
+
+    .badge-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background-color: currentColor;
+    }
+
+    /* ================================
+       Icons (using inline SVG)
+       ================================ */
+    .icon {
+      width: 20px;
+      height: 20px;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      fill: none;
+    }
+
+    .icon-sm {
+      width: 16px;
+      height: 16px;
+    }
+
+    .icon-lg {
+      width: 24px;
+      height: 24px;
+    }
+
+    .icon-xl {
+      width: 48px;
+      height: 48px;
+    }
+
+    /* Favorite Button */
+    .btn-favorite {
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: none;
+      border-radius: var(--radius-full);
+      cursor: pointer;
+      color: var(--color-text-muted);
+      transition: all var(--duration-fast);
+    }
+
+    .btn-favorite:hover {
+      color: var(--color-accent);
+      background-color: rgba(196, 112, 90, 0.1);
+    }
+
+    .btn-favorite.active {
+      color: var(--color-accent);
+    }
+
+    .btn-favorite.active .icon {
+      fill: var(--color-accent);
+    }
+
+    /* ================================
+       Navigation
+       ================================ */
+    .nav-bottom {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 64px;
+      background-color: var(--color-surface);
+      border-top: 1px solid var(--color-border);
+      box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding-bottom: env(safe-area-inset-bottom);
+      z-index: 100;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      padding: var(--space-2);
+      color: var(--color-text-muted);
+      text-decoration: none;
+      font-size: 11px;
+      transition: color var(--duration-fast);
+    }
+
+    .nav-item:hover,
+    .nav-item.active {
+      color: var(--color-primary);
+    }
+
+    .nav-top {
+      height: 64px;
+      background-color: var(--color-surface);
+      border-bottom: 1px solid var(--color-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 var(--space-6);
+    }
+
+    .nav-logo {
+      font-family: var(--font-serif);
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--color-primary);
+      text-decoration: none;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: var(--space-6);
+    }
+
+    .nav-link {
+      color: var(--color-text-secondary);
+      text-decoration: none;
+      font-weight: 500;
+      transition: color var(--duration-fast);
+    }
+
+    .nav-link:hover,
+    .nav-link.active {
+      color: var(--color-primary);
+    }
+
+    /* ================================
+       Modals & Bottom Sheets
+       ================================ */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background-color: rgba(0, 0, 0, 0.4);
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      z-index: 200;
+    }
+
+    @media (min-width: 768px) {
+      .modal-backdrop {
+        align-items: center;
+      }
+    }
+
+    .bottom-sheet {
+      background-color: var(--color-surface);
+      border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+      padding: var(--space-5) var(--space-4);
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .bottom-sheet-handle {
+      width: 40px;
+      height: 4px;
+      background-color: var(--color-border);
+      border-radius: var(--radius-full);
+      margin: 0 auto var(--space-4);
+    }
+
+    @media (min-width: 768px) {
+      .bottom-sheet {
+        border-radius: var(--radius-md);
+        max-width: 480px;
+        padding: var(--space-5);
+      }
+
+      .bottom-sheet-handle {
+        display: none;
+      }
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--space-4);
+    }
+
+    .modal-title {
+      font-family: var(--font-serif);
+      font-size: 24px;
+      font-weight: 600;
+    }
+
+    .modal-close {
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: none;
+      border-radius: var(--radius-full);
+      cursor: pointer;
+      color: var(--color-text-secondary);
+    }
+
+    .modal-close:hover {
+      background-color: var(--color-bg);
+    }
+
+    /* ================================
+       Verified Badge
+       ================================ */
+    .verified-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 14px;
+      color: var(--color-success);
+    }
+
+    .verified-badge .icon {
+      width: 18px;
+      height: 18px;
+    }
+
+    /* ================================
+       Pet Profile Stats
+       ================================ */
+    .pet-stats {
+      display: flex;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+
+    .pet-stat {
+      flex: 1;
+      text-align: center;
+      padding: var(--space-3);
+      border-right: 1px solid var(--color-border);
+    }
+
+    .pet-stat:last-child {
+      border-right: none;
+    }
+
+    .pet-stat-value {
+      font-weight: 600;
+      font-size: 16px;
+    }
+
+    .pet-stat-label {
+      font-size: 12px;
+      color: var(--color-text-secondary);
+    }
+
+    /* ================================
+       Image Placeholder
+       ================================ */
+    .image-placeholder {
+      background: linear-gradient(135deg, var(--color-border) 0%, #D5D0C8 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--color-text-muted);
+    }
+
+    /* ================================
+       Style Guide Specific
+       ================================ */
+    .style-guide-header {
+      background-color: var(--color-primary);
+      color: white;
+      padding: var(--space-8) var(--space-4);
+      text-align: center;
+      margin-bottom: var(--space-6);
+    }
+
+    .style-guide-header h1 {
+      color: white;
+      margin-bottom: var(--space-2);
+    }
+
+    .style-guide-header p {
+      opacity: 0.9;
+    }
+
+    .subsection {
+      margin-bottom: var(--space-5);
+    }
+
+    .subsection-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--color-text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: var(--space-3);
+    }
+
+    .demo-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-3);
+      align-items: center;
+      margin-bottom: var(--space-4);
+    }
+
+    .type-sample {
+      padding: var(--space-3);
+      background: var(--color-surface);
+      border-radius: var(--radius-md);
+      margin-bottom: var(--space-3);
+    }
+
+    .type-label {
+      font-size: 11px;
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: var(--space-1);
+    }
+
+    .spacing-demo {
+      display: flex;
+      align-items: flex-end;
+      gap: var(--space-2);
+    }
+
+    .spacing-box {
+      background: var(--color-primary);
+      border-radius: var(--radius-sm);
+    }
+
+    .spacing-label {
+      font-size: 10px;
+      color: var(--color-text-secondary);
+      text-align: center;
+      margin-top: var(--space-1);
+    }
+
+    /* Sample Screen */
+    .phone-frame {
+      width: 100%;
+      max-width: 375px;
+      margin: 0 auto;
+      background: var(--color-bg);
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: var(--shadow-lg);
+      border: 8px solid #1A1A1A;
+    }
+
+    .phone-screen {
+      height: 667px;
+      overflow-y: auto;
+      position: relative;
+    }
+
+    .phone-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--space-4);
+      background: var(--color-surface);
+      border-bottom: 1px solid var(--color-border);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .phone-content {
+      padding: var(--space-4);
+      padding-bottom: 80px;
+    }
+
+    .phone-nav {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+    }
+
+    /* Reduce motion */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="style-guide-header">
+    <h1>Forever Home</h1>
+    <p>UI Style Guide &amp; Component Library</p>
+  </header>
+
+  <div class="container">
+    <!-- Colors -->
+    <section class="section">
+      <h2 class="section-title">Colors</h2>
+
+      <div class="subsection">
+        <h4 class="subsection-title">Primary</h4>
+        <div class="grid grid-3">
+          <div class="swatch">
+            <div class="swatch-color" style="background-color: #2D5A47;"></div>
+            <div class="swatch-info">
+              <div class="swatch-name">Forest</div>
+              <div class="swatch-hex">#2D5A47</div>
+            </div>
+          </div>
+          <div class="swatch">
+            <div class="swatch-color" style="background-color: #3D7A5F;"></div>
+            <div class="swatch-info">
+              <div class="swatch-name">Forest Light</div>
+              <div class="swatch-hex">#3D7A5F</div>
+            </div>
+          </div>
+          <div class="swatch">
+            <div class="swatch-color" style="background-color: #1D3A2F;"></div>
+            <div class="swatch-info">
+              <div class="swatch-name">Forest Dark</div>
+              <div class="swatch-hex">#1D3A2F</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subsection">
+        <h4 class="subsection-title">Background</h4>
+        <div class="grid grid-3">
+          <div class="swatch">
+            <div class="swatch-color" style="background-color: #F5F0E8; border: 1px solid #E8E4DC;"></div>
+            <div class="swatch-info">
+              <div class="swatch-name">Warm Sand</div>
+              <div class="swatch-hex">#F5F0E8</div>
+            </div>
+          </div>
+          <div class="swatch">
+            <div class="swatch-color" style="background-color: #FFFDF8; border: 1px solid #E8E4DC;"></div>
+            <div class="swatch-info">
+              <div class="swatch-name">Cream</div>
+              <div class="swatch-hex">#FFFDF8</div>
+            </div>
+          </div>
+          <div class="swatch">
+            <div class="swatch-color" style="background-color: #E8E4DC;"></div>
+            <div class="swatch-info">
+              <div class="swatch-name">Stone</div>
+              <div class="swatch-hex">#E8E4DC</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subsection">
+        <h4 class="subsection-title">Accent</h4>
+        <div class="grid grid-3">
+          <div class="swatch">
+            <div class="swatch-color" style="background-color: #C4705A;"></div>
+            <div class="swatch-info">
+              <div class="swatch-name">Terracotta</div>
+              <div class="swatch-hex">#C4705A</div>
+            </div>
+          </div>
+          <div class="swatch">
+            <div class="swatch-color" style="background-color: #D4A853;"></div>
+            <div class="swatch-info">
+              <div class="swatch-name">Soft Gold</div>
+              <div class="swatch-hex">#D4A853</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subsection">
+        <h4 class="subsection-title">Semantic</h4>
+        <div class="grid grid-4">
+          <div class="swatch">
+            <div class="swatch-color" style="background-color: #3A8A5C;"></div>
+            <div class="swatch-info">
+              <div class="swatch-name">Success</div>
+              <div class="swatch-hex">#3A8A5C</div>
+            </div>
+          </div>
+          <div class="swatch">
+            <div class="swatch-color" style="background-color: #D4A853;"></div>
+            <div class="swatch-info">
+              <div class="swatch-name">Warning</div>
+              <div class="swatch-hex">#D4A853</div>
+            </div>
+          </div>
+          <div class="swatch">
+            <div class="swatch-color" style="background-color: #C45A5A;"></div>
+            <div class="swatch-info">
+              <div class="swatch-name">Error</div>
+              <div class="swatch-hex">#C45A5A</div>
+            </div>
+          </div>
+          <div class="swatch">
+            <div class="swatch-color" style="background-color: #5A8AC4;"></div>
+            <div class="swatch-info">
+              <div class="swatch-name">Info</div>
+              <div class="swatch-hex">#5A8AC4</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Typography -->
+    <section class="section">
+      <h2 class="section-title">Typography</h2>
+
+      <div class="type-sample">
+        <div class="type-label">Display (Lora 32px)</div>
+        <p class="display">Find Their Forever Home</p>
+      </div>
+
+      <div class="type-sample">
+        <div class="type-label">H1 (Lora 28px)</div>
+        <h1>Browse Available Pets</h1>
+      </div>
+
+      <div class="type-sample">
+        <div class="type-label">H2 (Lora 24px)</div>
+        <h2>About This Pet</h2>
+      </div>
+
+      <div class="type-sample">
+        <div class="type-label">H3 / Pet Name (Lora 20px)</div>
+        <h3>Luna</h3>
+      </div>
+
+      <div class="type-sample">
+        <div class="type-label">H4 (Inter 18px)</div>
+        <h4>Contact Information</h4>
+      </div>
+
+      <div class="type-sample">
+        <div class="type-label">Body (Inter 16px)</div>
+        <p class="body">Luna is a friendly, energetic husky who loves long walks and playing in the snow. She's great with children and other dogs.</p>
+      </div>
+
+      <div class="type-sample">
+        <div class="type-label">Body Small (Inter 14px)</div>
+        <p class="body-small text-secondary">Siberian Husky · 2 years old · Medium</p>
+      </div>
+
+      <div class="type-sample">
+        <div class="type-label">Caption (Inter 12px)</div>
+        <p class="caption text-muted">Last updated 3 days ago</p>
+      </div>
+
+      <div class="type-sample">
+        <div class="type-label">Overline (Inter 11px Uppercase)</div>
+        <p class="overline">Featured Pet</p>
+      </div>
+    </section>
+
+    <!-- Spacing -->
+    <section class="section">
+      <h2 class="section-title">Spacing</h2>
+      <div class="spacing-demo">
+        <div>
+          <div class="spacing-box" style="width: 4px; height: 4px;"></div>
+          <div class="spacing-label">4px</div>
+        </div>
+        <div>
+          <div class="spacing-box" style="width: 8px; height: 8px;"></div>
+          <div class="spacing-label">8px</div>
+        </div>
+        <div>
+          <div class="spacing-box" style="width: 12px; height: 12px;"></div>
+          <div class="spacing-label">12px</div>
+        </div>
+        <div>
+          <div class="spacing-box" style="width: 16px; height: 16px;"></div>
+          <div class="spacing-label">16px</div>
+        </div>
+        <div>
+          <div class="spacing-box" style="width: 24px; height: 24px;"></div>
+          <div class="spacing-label">24px</div>
+        </div>
+        <div>
+          <div class="spacing-box" style="width: 32px; height: 32px;"></div>
+          <div class="spacing-label">32px</div>
+        </div>
+        <div>
+          <div class="spacing-box" style="width: 48px; height: 48px;"></div>
+          <div class="spacing-label">48px</div>
+        </div>
+        <div>
+          <div class="spacing-box" style="width: 64px; height: 64px;"></div>
+          <div class="spacing-label">64px</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Buttons -->
+    <section class="section">
+      <h2 class="section-title">Buttons</h2>
+
+      <div class="subsection">
+        <h4 class="subsection-title">Variants</h4>
+        <div class="demo-row">
+          <button class="btn btn-primary">Primary</button>
+          <button class="btn btn-secondary">Secondary</button>
+          <button class="btn btn-tertiary">Tertiary</button>
+          <button class="btn btn-destructive">Destructive</button>
+        </div>
+      </div>
+
+      <div class="subsection">
+        <h4 class="subsection-title">Sizes</h4>
+        <div class="demo-row">
+          <button class="btn btn-primary btn-sm">Small</button>
+          <button class="btn btn-primary">Default</button>
+          <button class="btn btn-primary btn-lg">Large</button>
+        </div>
+      </div>
+
+      <div class="subsection">
+        <h4 class="subsection-title">States</h4>
+        <div class="demo-row">
+          <button class="btn btn-primary">Default</button>
+          <button class="btn btn-primary" disabled>Disabled</button>
+        </div>
+      </div>
+
+      <div class="subsection">
+        <h4 class="subsection-title">With Icon</h4>
+        <div class="demo-row">
+          <button class="btn btn-primary">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+            Add Pet
+          </button>
+          <button class="btn btn-secondary">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            Search
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Form Elements -->
+    <section class="section">
+      <h2 class="section-title">Form Elements</h2>
+
+      <div style="max-width: 400px;">
+        <div class="form-group">
+          <label class="form-label">Pet Name</label>
+          <input type="text" class="form-input" placeholder="Enter pet name">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" class="form-input error" value="invalid-email">
+          <p class="form-error">Please enter a valid email address</p>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Breed</label>
+          <select class="form-input form-select">
+            <option value="">Select a breed</option>
+            <option value="husky">Siberian Husky</option>
+            <option value="lab">Labrador Retriever</option>
+            <option value="golden">Golden Retriever</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <textarea class="form-input form-textarea" placeholder="Describe your pet's personality..."></textarea>
+          <p class="form-hint">Maximum 500 characters</p>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Disabled Input</label>
+          <input type="text" class="form-input" value="Cannot edit" disabled>
+        </div>
+
+        <div class="form-group">
+          <label class="checkbox-wrapper">
+            <input type="checkbox" class="checkbox" checked>
+            <span>Pet is neutered/spayed</span>
+          </label>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Size</label>
+          <div class="flex">
+            <label class="checkbox-wrapper">
+              <input type="radio" class="radio" name="size" checked>
+              <span>Small</span>
+            </label>
+            <label class="checkbox-wrapper">
+              <input type="radio" class="radio" name="size">
+              <span>Medium</span>
+            </label>
+            <label class="checkbox-wrapper">
+              <input type="radio" class="radio" name="size">
+              <span>Large</span>
+            </label>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Status Badges -->
+    <section class="section">
+      <h2 class="section-title">Status Badges</h2>
+      <div class="demo-row">
+        <span class="badge badge-available"><span class="badge-dot"></span> Available</span>
+        <span class="badge badge-pending"><span class="badge-dot"></span> Pending</span>
+        <span class="badge badge-adopted"><span class="badge-dot"></span> Adopted</span>
+        <span class="badge badge-on-hold"><span class="badge-dot"></span> On Hold</span>
+        <span class="badge badge-withdrawn"><span class="badge-dot"></span> Withdrawn</span>
+      </div>
+    </section>
+
+    <!-- Cards -->
+    <section class="section">
+      <h2 class="section-title">Cards</h2>
+
+      <div class="subsection">
+        <h4 class="subsection-title">Pet Card - Grid View</h4>
+        <div class="grid grid-3" style="max-width: 700px;">
+          <div class="card">
+            <div class="card-image image-placeholder" style="aspect-ratio: 3/2;">
+              <svg class="icon icon-xl" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/></svg>
+            </div>
+            <div class="card-body">
+              <h3 class="card-title">Luna</h3>
+              <p class="card-subtitle">Husky · Medium</p>
+              <div class="card-footer">
+                <span class="badge badge-available"><span class="badge-dot"></span> Available</span>
+                <button class="btn-favorite">
+                  <svg class="icon" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-image image-placeholder" style="aspect-ratio: 3/2;">
+              <svg class="icon icon-xl" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/></svg>
+            </div>
+            <div class="card-body">
+              <h3 class="card-title">Max</h3>
+              <p class="card-subtitle">Labrador · Large</p>
+              <div class="card-footer">
+                <span class="badge badge-pending"><span class="badge-dot"></span> Pending</span>
+                <button class="btn-favorite active">
+                  <svg class="icon" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subsection">
+        <h4 class="subsection-title">Pet Card - List View</h4>
+        <div style="max-width: 400px;">
+          <div class="card pet-card-list">
+            <div class="pet-image image-placeholder" style="width: 80px; height: 80px; border-radius: 8px;">
+              <svg class="icon icon-lg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/></svg>
+            </div>
+            <div class="pet-info">
+              <h3 class="pet-name">Luna</h3>
+              <p class="pet-meta">Siberian Husky · 2 years</p>
+              <div class="pet-footer">
+                <span class="badge badge-available"><span class="badge-dot"></span> Available</span>
+                <button class="btn-favorite">
+                  <svg class="icon" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Verified Badge -->
+    <section class="section">
+      <h2 class="section-title">Verified Badge</h2>
+      <div class="verified-badge">
+        <svg class="icon" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        Verified by Dr. Sarah Smith, DVM
+      </div>
+    </section>
+
+    <!-- Pet Stats -->
+    <section class="section">
+      <h2 class="section-title">Pet Stats</h2>
+      <div class="pet-stats" style="max-width: 320px;">
+        <div class="pet-stat">
+          <div class="pet-stat-value">2 yrs</div>
+          <div class="pet-stat-label">Age</div>
+        </div>
+        <div class="pet-stat">
+          <div class="pet-stat-value">Medium</div>
+          <div class="pet-stat-label">Size</div>
+        </div>
+        <div class="pet-stat">
+          <div class="pet-stat-value">Female</div>
+          <div class="pet-stat-label">Sex</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Navigation -->
+    <section class="section">
+      <h2 class="section-title">Navigation</h2>
+
+      <div class="subsection">
+        <h4 class="subsection-title">Top Navigation (Desktop)</h4>
+        <nav class="nav-top" style="border-radius: 8px;">
+          <a href="#" class="nav-logo">Forever Home</a>
+          <div class="nav-links">
+            <a href="#" class="nav-link active">Browse</a>
+            <a href="#" class="nav-link">How It Works</a>
+            <a href="#" class="nav-link">About</a>
+          </div>
+          <button class="btn btn-primary btn-sm">Sign In</button>
+        </nav>
+      </div>
+
+      <div class="subsection">
+        <h4 class="subsection-title">Bottom Navigation (Mobile)</h4>
+        <div style="position: relative; height: 64px; max-width: 375px; border-radius: 8px; overflow: hidden;">
+          <nav class="nav-bottom" style="position: absolute;">
+            <a href="#" class="nav-item">
+              <svg class="icon icon-lg" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+              Home
+            </a>
+            <a href="#" class="nav-item active">
+              <svg class="icon icon-lg" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              Browse
+            </a>
+            <a href="#" class="nav-item">
+              <svg class="icon icon-lg" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+              Saved
+            </a>
+            <a href="#" class="nav-item">
+              <svg class="icon icon-lg" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              Profile
+            </a>
+          </nav>
+        </div>
+      </div>
+    </section>
+
+    <!-- Sample Screen -->
+    <section class="section">
+      <h2 class="section-title">Sample Screen</h2>
+
+      <div class="phone-frame">
+        <div class="phone-screen">
+          <header class="phone-header">
+            <button class="btn-favorite" style="color: var(--color-text);">
+              <svg class="icon icon-lg" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            </button>
+            <h4 style="font-family: var(--font-serif);">Pet Profile</h4>
+            <button class="btn-favorite">
+              <svg class="icon icon-lg" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            </button>
+          </header>
+
+          <div class="image-placeholder" style="width: 100%; aspect-ratio: 4/3;">
+            <svg class="icon icon-xl" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/></svg>
+          </div>
+
+          <div class="phone-content">
+            <div style="text-align: center; margin-bottom: var(--space-4);">
+              <div class="flex" style="justify-content: center; gap: 6px; margin-bottom: var(--space-3);">
+                <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--color-border);"></span>
+                <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--color-border);"></span>
+                <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--color-primary);"></span>
+                <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--color-border);"></span>
+              </div>
+            </div>
+
+            <h2 style="margin-bottom: 4px;">Luna</h2>
+            <p class="text-secondary" style="margin-bottom: var(--space-4);">Siberian Husky</p>
+
+            <div class="pet-stats" style="margin-bottom: var(--space-4);">
+              <div class="pet-stat">
+                <div class="pet-stat-value">2 yrs</div>
+                <div class="pet-stat-label">Age</div>
+              </div>
+              <div class="pet-stat">
+                <div class="pet-stat-value">Medium</div>
+                <div class="pet-stat-label">Size</div>
+              </div>
+              <div class="pet-stat">
+                <div class="pet-stat-value">Female</div>
+                <div class="pet-stat-label">Sex</div>
+              </div>
+            </div>
+
+            <div style="margin-bottom: var(--space-4);">
+              <div class="verified-badge" style="margin-bottom: var(--space-2);">
+                <svg class="icon" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                Verified by Dr. Smith
+              </div>
+              <span class="badge badge-available"><span class="badge-dot"></span> Available</span>
+            </div>
+
+            <div style="margin-bottom: var(--space-5);">
+              <h4 style="margin-bottom: var(--space-2);">About Luna</h4>
+              <p class="body-small text-secondary">Luna is a friendly, energetic husky who loves long walks and playing in the snow. She's great with children and other dogs, and has been fully trained.</p>
+            </div>
+
+            <div style="margin-bottom: var(--space-5);">
+              <h4 style="margin-bottom: var(--space-2);">Rescue Organization</h4>
+              <p style="font-weight: 500; margin-bottom: var(--space-1);">Happy Tails Rescue</p>
+              <p class="body-small text-secondary" style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                Portland, OR
+              </p>
+              <p class="body-small text-secondary" style="display: flex; align-items: center; gap: 6px;">
+                <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                (503) 555-0123
+              </p>
+            </div>
+
+            <button class="btn btn-primary" style="width: 100%;">Apply to Adopt Luna</button>
+          </div>
+
+          <nav class="nav-bottom phone-nav">
+            <a href="#" class="nav-item">
+              <svg class="icon icon-lg" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+              Home
+            </a>
+            <a href="#" class="nav-item active">
+              <svg class="icon icon-lg" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              Browse
+            </a>
+            <a href="#" class="nav-item">
+              <svg class="icon icon-lg" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+              Saved
+            </a>
+            <a href="#" class="nav-item">
+              <svg class="icon icon-lg" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              Profile
+            </a>
+          </nav>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</body>
+</html>
