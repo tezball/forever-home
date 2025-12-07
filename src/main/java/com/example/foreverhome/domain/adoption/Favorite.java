@@ -1,0 +1,66 @@
+package com.example.foreverhome.domain.adoption;
+
+import org.springframework.data.annotation.Id;
+import org.springframework.data.relational.core.mapping.Column;
+import org.springframework.data.relational.core.mapping.Table;
+
+import java.time.Instant;
+import java.util.Objects;
+import java.util.UUID;
+
+/**
+ * Pets that adopters have saved for later.
+ */
+@Table("favorites")
+public class Favorite {
+
+    @Id
+    private UUID id;
+
+    @Column("adopter_id")
+    private UUID adopterId;
+
+    @Column("pet_id")
+    private UUID petId;
+
+    @Column("created_at")
+    private Instant createdAt;
+
+    protected Favorite() {
+    }
+
+    private Favorite(UUID id, UUID adopterId, UUID petId, Instant createdAt) {
+        this.id = id;
+        this.adopterId = adopterId;
+        this.petId = petId;
+        this.createdAt = createdAt;
+    }
+
+    public static Favorite create(UUID adopterId, UUID petId) {
+        if (adopterId == null) {
+            throw new IllegalArgumentException("adopterId cannot be null");
+        }
+        if (petId == null) {
+            throw new IllegalArgumentException("petId cannot be null");
+        }
+        return new Favorite(UUID.randomUUID(), adopterId, petId, Instant.now());
+    }
+
+    public UUID getId() { return id; }
+    public UUID getAdopterId() { return adopterId; }
+    public UUID getPetId() { return petId; }
+    public Instant getCreatedAt() { return createdAt; }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Favorite favorite = (Favorite) o;
+        return Objects.equals(id, favorite.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
+}
