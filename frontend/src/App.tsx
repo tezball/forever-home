@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Header } from './components';
-import { HomePage, LoginPage, RegisterPage, PetListPage, PetDetailPage } from './pages';
+import { HomePage, LoginPage, RegisterPage, PetListPage, PetDetailPage, RescuesPage, ForgotPasswordPage, HelpCenterPage, ContactPage, PrivacyPolicyPage } from './pages';
 import {
   FosterDashboard,
   AdopterDashboard,
@@ -50,6 +50,11 @@ function AppRoutes() {
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/pets" element={<PetListPage />} />
           <Route path="/pets/:id" element={<PetDetailPage />} />
+          <Route path="/rescues" element={<RescuesPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/help" element={<HelpCenterPage />} />
+          <Route path="/contact" element={<ContactPage />} />
+          <Route path="/privacy" element={<PrivacyPolicyPage />} />
 
           {/* Foster Routes */}
           <Route

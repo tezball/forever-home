@@ -5,7 +5,8 @@ import { useState } from 'react';
 export function Header() {
   const { user, isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
 
   const handleLogout = async () => {
     await logout();
@@ -49,7 +50,7 @@ export function Header() {
                 </Link>
                 <div className="relative">
                   <button
-                    onClick={() => setMenuOpen(!menuOpen)}
+                    onClick={() => setUserDropdownOpen(!userDropdownOpen)}
                     className="flex items-center gap-2 text-gray-600 hover:text-primary-500"
                   >
                     <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
@@ -58,7 +59,7 @@ export function Header() {
                       </span>
                     </div>
                   </button>
-                  {menuOpen && (
+                  {userDropdownOpen && (
                     <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-secondary-200">
                       <div className="px-4 py-3 border-b border-secondary-200">
                         <p className="text-sm font-medium text-gray-900">{user?.name}</p>
@@ -67,14 +68,14 @@ export function Header() {
                       <Link
                         to="/profile"
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-secondary-100"
-                        onClick={() => setMenuOpen(false)}
+                        onClick={() => setUserDropdownOpen(false)}
                       >
                         Profile
                       </Link>
                       <Link
                         to="/notifications"
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-secondary-100"
-                        onClick={() => setMenuOpen(false)}
+                        onClick={() => setUserDropdownOpen(false)}
                       >
                         Notifications
                       </Link>
@@ -106,11 +107,11 @@ export function Header() {
           {/* Mobile menu button */}
           <button
             className="md:hidden p-2"
-            onClick={() => setMenuOpen(!menuOpen)}
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             aria-label="Toggle menu"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              {menuOpen ? (
+              {mobileMenuOpen ? (
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               ) : (
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
@@ -120,20 +121,20 @@ export function Header() {
         </div>
 
         {/* Mobile Navigation */}
-        {menuOpen && (
+        {mobileMenuOpen && (
           <div className="md:hidden border-t border-secondary-200 py-4">
             <nav className="flex flex-col gap-2">
               <Link
                 to="/pets"
                 className="px-4 py-2 text-gray-600 hover:bg-secondary-100 rounded"
-                onClick={() => setMenuOpen(false)}
+                onClick={() => setMobileMenuOpen(false)}
               >
                 Browse Pets
               </Link>
               <Link
                 to="/rescues"
                 className="px-4 py-2 text-gray-600 hover:bg-secondary-100 rounded"
-                onClick={() => setMenuOpen(false)}
+                onClick={() => setMobileMenuOpen(false)}
               >
                 Rescues
               </Link>
@@ -142,19 +143,19 @@ export function Header() {
                   <Link
                     to={getDashboardLink()}
                     className="px-4 py-2 text-gray-600 hover:bg-secondary-100 rounded"
-                    onClick={() => setMenuOpen(false)}
+                    onClick={() => setMobileMenuOpen(false)}
                   >
                     Dashboard
                   </Link>
                   <Link
                     to="/profile"
                     className="px-4 py-2 text-gray-600 hover:bg-secondary-100 rounded"
-                    onClick={() => setMenuOpen(false)}
+                    onClick={() => setMobileMenuOpen(false)}
                   >
                     Profile
                   </Link>
                   <button
-                    onClick={() => { handleLogout(); setMenuOpen(false); }}
+                    onClick={() => { handleLogout(); setMobileMenuOpen(false); }}
                     className="px-4 py-2 text-left text-error-500 hover:bg-secondary-100 rounded"
                   >
                     Sign Out
@@ -165,14 +166,14 @@ export function Header() {
                   <Link
                     to="/login"
                     className="px-4 py-2 text-gray-600 hover:bg-secondary-100 rounded"
-                    onClick={() => setMenuOpen(false)}
+                    onClick={() => setMobileMenuOpen(false)}
                   >
                     Sign In
                   </Link>
                   <Link
                     to="/register"
                     className="mx-4 bg-primary-500 text-white px-4 py-2 rounded text-center"
-                    onClick={() => setMenuOpen(false)}
+                    onClick={() => setMobileMenuOpen(false)}
                   >
                     Get Started
                   </Link>

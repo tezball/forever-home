@@ -152,14 +152,14 @@ export function HomePage() {
             <div>
               <h5 className="font-semibold mb-4">Support</h5>
               <ul className="space-y-2 text-sm text-primary-100">
-                <li><a href="#" className="hover:text-white">Help Center</a></li>
-                <li><a href="#" className="hover:text-white">Contact Us</a></li>
-                <li><a href="#" className="hover:text-white">Privacy Policy</a></li>
+                <li><Link to="/help" className="hover:text-white">Help Center</Link></li>
+                <li><Link to="/contact" className="hover:text-white">Contact Us</Link></li>
+                <li><Link to="/privacy" className="hover:text-white">Privacy Policy</Link></li>
               </ul>
             </div>
           </div>
           <div className="border-t border-primary-600 mt-8 pt-8 text-center text-sm text-primary-200">
-            &copy; 2024 Forever Home. All rights reserved.
+            &copy; {new Date().getFullYear()} Forever Home. All rights reserved.
           </div>
         </div>
       </footer>
