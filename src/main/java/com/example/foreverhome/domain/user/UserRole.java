@@ -20,11 +20,28 @@ public enum UserRole {
     }
 
     /**
-     * Checks if this role requires admin verification before becoming active.
-     * Vets and Rescue Organizations must be verified by admins.
-     * @return true if the role requires verification
+     * Checks if this role requires any form of verification before becoming active.
+     * @return true if the role requires verification (VET or RESCUE_ORG)
      */
     public boolean requiresVerification() {
         return this == VET || this == RESCUE_ORG;
+    }
+
+    /**
+     * Checks if this role requires admin verification before becoming active.
+     * Only Rescue Organizations must be verified by admins.
+     * @return true if the role requires admin verification
+     */
+    public boolean requiresAdminVerification() {
+        return this == RESCUE_ORG;
+    }
+
+    /**
+     * Checks if this role requires verification by a rescue organization.
+     * Vets must be verified by rescue organizations before they can sign off on pets.
+     * @return true if the role requires rescue verification
+     */
+    public boolean requiresRescueVerification() {
+        return this == VET;
     }
 }

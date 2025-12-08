@@ -6,14 +6,13 @@
 
 Veterinarians play a critical role in the Forever Home adoption process by verifying that pets are healthy, neutered/spayed, and properly vaccinated before they become available for adoption. Their professional sign-off gives adopters confidence in their new pet's health.
 
-Vets must be verified by platform administrators (license validation) before they can access pets or complete sign-offs, ensuring only licensed professionals perform verifications.
+Vets must be verified by rescue organizations before they can access pets or complete sign-offs. This ensures the rescue organization trusts the vet to perform health checks on their pets.
 
 ## Related Documentation
 
 - [Index](index.md) - Platform overview and all user types
 - [Foster Stories](foster.md) - Pet registration process (fosters bring pets to vets)
-- [Rescue Organization Stories](rescue-organization.md) - Workflow after vet sign-off
-- [Admin Stories](admin.md) - Vet verification approval process
+- [Rescue Organization Stories](rescue-organization.md) - Workflow after vet sign-off and vet approval
 - [Domain Model](../domain-model.md) - Entity definitions
 - [Pet Status](../pet-status.md) - Status lifecycle details
 - [UI Style Guide](../ui-style-guide.md) - Component specifications
@@ -46,7 +45,7 @@ Vets must be verified by platform administrators (license validation) before the
 **Typical Flow:**
 1. Register account with Vet role
 2. Complete profile (clinic name, license number, location)
-3. Await admin verification of license
+3. Await rescue organization approval
 4. Once verified, foster brings pet to clinic
 5. Look up pet by microchip number
 6. Examine pet and verify health requirements
@@ -70,7 +69,7 @@ Vets must be verified by platform administrators (license validation) before the
 - Email verification is required before account activation
 - Receive confirmation email upon successful registration
 - Account status set to `Pending` until email verified (then `Active`)
-- **Important:** Vet accounts require admin approval before activation
+- **Important:** Vet accounts require rescue organization verification before they can verify pets
 
 **Domain Notes:**
 - Creates `User` entity with `UserRole = Vet`
@@ -161,8 +160,8 @@ Vets must be verified by platform administrators (license validation) before the
 - Required fields: clinicName, licenseNumber, location, phone
 - Optional fields: website, description, logo
 - Profile is saved and `User.profileComplete` set to `true`
-- Vet added to admin approval queue for license verification
-- Cannot access pet verification until approved by admin
+- Vet can request verification from rescue organizations
+- Cannot access pet verification until verified by a rescue organization
 
 **Domain Notes:**
 - Creates `Vet` entity linked to `User.id`
@@ -432,15 +431,17 @@ After sign-off:
 
 See [Rescue Organization Stories](rescue-organization.md) for the rescue's perspective.
 
-### Admin Verification
+### Rescue Organization Verification
 
-Before a vet can verify pets:
+Before a vet can verify pets for a rescue organization:
 1. Vet completes profile with license number
-2. Admin reviews license credentials
-3. Admin verifies legitimacy with licensing board
-4. Admin approves (`verified = true`) or rejects
+2. Vet requests verification from a rescue organization
+3. Rescue organization reviews the vet's credentials
+4. Rescue approves (`verified = true`) or declines
 
-See [Admin Stories](admin.md) for the verification process.
+This workflow ensures rescue organizations explicitly trust the vets who will perform health checks on their pets. Each rescue organization maintains their own list of approved vets.
+
+See [Rescue Organization Stories](rescue-organization.md) for the approval process.
 
 ---
 

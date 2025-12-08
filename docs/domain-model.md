@@ -97,13 +97,16 @@ Forever Home operates on a trust-based adoption model where pets must pass throu
 | website | String | Clinic website |
 | description | Text | About the practice |
 | logo | Image | Clinic branding |
-| verified | Boolean | Admin has verified credentials |
+| verified | Boolean | Rescue organization has verified this vet |
 
 **Why it exists:** Vets serve as trusted third parties who verify that pets meet adoption requirements (neutered, vaccinated, healthy). Their professional credentials add legitimacy to the verification process. Requiring vet sign-off protects adopters from receiving pets with undisclosed health issues and ensures basic animal welfare standards.
+
+**Verification Note:** Vets are verified by rescue organizations (not admins). This ensures each rescue explicitly trusts the vets who perform health checks on their pets. A vet may be verified by multiple rescue organizations.
 
 **Relationships:**
 - Creates many Vet Sign-offs
 - Looks up Pets by microchip number (no pre-assignment required)
+- Approved by many Rescue Organizations (via VetApproval)
 
 ---
 
@@ -135,6 +138,7 @@ Forever Home operates on a trust-based adoption model where pets must pass throu
 - Manages many Pets
 - Works with many Fosters
 - Processes many Adoption Applications
+- Approves many Vets (via VetApproval)
 
 ---
 
@@ -146,7 +150,29 @@ Forever Home operates on a trust-based adoption model where pets must pass throu
 | id | UUID | Unique identifier |
 | userId | UUID | Link to User |
 
-**Why it exists:** Admins ensure platform integrity by verifying rescue organizations and vets, moderating content, and handling disputes. Kept minimal as most admin context comes from the User role.
+**Why it exists:** Admins ensure platform integrity by verifying rescue organizations, moderating content, and handling disputes. Kept minimal as most admin context comes from the User role.
+
+**Note:** Vets are verified by rescue organizations, not admins. See the Vet entity for details.
+
+---
+
+### Vet Approval
+**Purpose:** Records which rescue organizations have approved which vets.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| id | UUID | Unique identifier |
+| vetId | UUID | The approved vet |
+| rescueOrgId | UUID | The approving rescue organization |
+| approvedAt | Timestamp | When approval was granted |
+| approvedBy | UUID | User who approved (rescue org representative) |
+
+**Why it exists:** Rescue organizations need to explicitly trust the vets who perform health checks on their pets. This many-to-many relationship allows:
+1. **Organization-specific trust:** Each rescue controls which vets can verify their pets
+2. **Vet flexibility:** Vets can work with multiple rescue organizations
+3. **Audit trail:** Records who approved each vet and when
+
+**Business Rule:** When a vet looks up a pet by microchip, the system checks if the vet is approved by the rescue organization that manages that pet.
 
 ---
 
@@ -472,7 +498,9 @@ Pet (1) ──────── (0..*) Favorite
 Pet (0..1) ──────── (1) Adoption
 
 RescueOrg (1) ──────── (0..*) Pet
+RescueOrg (1) ──────── (0..*) VetApproval
 Vet (1) ──────── (0..*) VetSignOff
+Vet (1) ──────── (0..*) VetApproval
 Adopter (1) ──────── (0..*) Favorite
 
 Adopter (1) ──────── (0..*) AdoptionApplication

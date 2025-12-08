@@ -4,7 +4,9 @@
 
 ## Overview
 
-Admins are platform administrators responsible for maintaining the integrity and safety of Forever Home. They verify rescue organizations and veterinarians, manage user accounts, moderate content, and monitor platform analytics.
+Admins are platform administrators responsible for maintaining the integrity and safety of Forever Home. They verify rescue organizations, manage user accounts, moderate content, and monitor platform analytics.
+
+**Note:** Veterinarians are verified by rescue organizations (not admins). This ensures rescue organizations explicitly trust the vets who perform health checks on their pets. See [Rescue Organization Stories](rescue-organization.md#us-37-approve-vets) for the vet approval workflow.
 
 The first admin account is bootstrapped via the `ADMIN_EMAIL` environment variable on startup. Additional admins can be created by existing admins.
 
@@ -12,7 +14,7 @@ The first admin account is bootstrapped via the `ADMIN_EMAIL` environment variab
 
 - [Index](index.md) - Platform overview and all user types
 - [Rescue Organization Stories](rescue-organization.md) - Organizations requiring approval
-- [Vet Stories](vet.md) - Vets requiring license verification
+- [Vet Stories](vet.md) - Vet workflow (approved by rescue organizations)
 - [Domain Model](../domain-model.md) - Entity definitions
 - [UI Style Guide](../ui-style-guide.md) - Component specifications
 
@@ -41,8 +43,8 @@ The first admin account is bootstrapped via the `ADMIN_EMAIL` environment variab
 
 **Typical Flow:**
 1. Login to admin dashboard
-2. Review pending approval queue (vets and rescue organizations)
-3. Verify credentials and approve or reject
+2. Review pending rescue organization approval queue
+3. Verify organization credentials and approve or reject
 4. Manage user accounts as needed
 5. Monitor platform analytics
 6. Moderate flagged content
@@ -73,53 +75,46 @@ ADMIN_EMAIL=admin@foreverhome.com
 
 ## User Approval
 
-### US-6.1: Approve User Registrations
+### US-6.1: Approve Rescue Organization Registrations
 
 **As an** admin
-**I want to** approve rescue organization and vet registrations
-**So that** only legitimate entities operate on the platform
+**I want to** approve rescue organization registrations
+**So that** only legitimate organizations operate on the platform
+
+**Note:** Vets are approved by rescue organizations, not admins. See [Rescue Organization Stories](rescue-organization.md#us-37-approve-vets).
 
 **Acceptance Criteria:**
-- Queue shows pending registrations (Vets and Rescue Orgs with `verified: false`)
+- Queue shows pending rescue organization registrations (`verified: false`)
 - View submitted profile details and credentials
-- For vets: Shows license number for verification
-- For rescues: Shows organization details and contact info
+- Shows organization details: name, location, contact info, website
 - Approve (`verified: true`) or reject with reason
 - Rejection sets `User.status = Suspended` with reason (or allows resubmission)
 - User is notified of decision via email
 
 **Domain Notes:**
-- Query: `Vet WHERE verified = false` UNION `RescueOrganization WHERE verified = false`
+- Query: `RescueOrganization WHERE verified = false`
 - Approve: Sets `verified = true`
 - Reject: Sets `User.status = Suspended` with reason
 
 **Approval Queue Display:**
-| Field | Vet | Rescue Org |
-|-------|-----|------------|
-| Name | Clinic Name | Organization Name |
-| Contact | Phone, Email | Contact Name, Email |
-| Location | Address | Address |
-| Credential | License Number | N/A |
-| Website | Optional | Optional |
-| Submitted | Date | Date |
+| Field | Description |
+|-------|-------------|
+| Name | Organization Name |
+| Contact | Contact Name, Email, Phone |
+| Location | Address |
+| Website | Optional |
+| Submitted | Date |
 
 **UI Components:**
-- Approval queue: List with entity type badge (Vet/Rescue)
+- Approval queue: List of pending rescue organizations
 - Detail panel: Slide-out or modal with full profile
 - Action buttons: "Approve" (primary) | "Reject" (destructive)
 - Reject modal: Reason textarea (required)
-- Filter tabs: All | Vets | Rescue Orgs
 
 **Verification Steps:**
-1. **For Vets:**
-   - Verify license number with state licensing board
-   - Confirm clinic address exists
-   - Check for any disciplinary actions
-
-2. **For Rescue Organizations:**
-   - Verify organization exists (website, social media)
-   - Confirm contact information is valid
-   - Check for any red flags or complaints
+1. Verify organization exists (website, social media)
+2. Confirm contact information is valid
+3. Check for any red flags or complaints
 
 **Priority:** P0 - MVP
 
@@ -308,15 +303,15 @@ The Admin dashboard provides a command center for platform management:
 │  │  Users   │ │   Pets   │ │ Adopted  │ │ Pending  │   │
 │  └──────────┘ └──────────┘ └──────────┘ └──────────┘   │
 ├─────────────────────────────────────────────────────────┤
-│  Approval Queue (5)                            [View All]│
+│  Rescue Org Approval Queue (2)                 [View All]│
 │  ┌──────────────────────────────────────────────────┐   │
-│  │ [Vet] Austin Veterinary Clinic                  │   │
-│  │       License: TX-12345 | Submitted 2h ago      │   │
+│  │ Happy Tails Rescue                              │   │
+│  │       Austin, TX | Submitted 1d ago             │   │
 │  │       [View] [Approve] [Reject]                 │   │
 │  └──────────────────────────────────────────────────┘   │
 │  ┌──────────────────────────────────────────────────┐   │
-│  │ [Rescue] Happy Tails Rescue                     │   │
-│  │       Austin, TX | Submitted 1d ago             │   │
+│  │ Paws of Love Rescue                             │   │
+│  │       Houston, TX | Submitted 3d ago            │   │
 │  │       [View] [Approve] [Reject]                 │   │
 │  └──────────────────────────────────────────────────┘   │
 ├─────────────────────────────────────────────────────────┤
@@ -328,7 +323,7 @@ The Admin dashboard provides a command center for platform management:
 │  └──────────────────────────────────────────────────┘   │
 ├─────────────────────────────────────────────────────────┤
 │  Recent Activity                                         │
-│  - Approved: Austin Vet Clinic (2h ago)                 │
+│  - Approved: Happy Tails Rescue (2h ago)                │
 │  - Suspended: spam_user@email.com (1d ago)              │
 │  - Dismissed flag: Pet #1234 (2d ago)                   │
 └─────────────────────────────────────────────────────────┘
@@ -350,7 +345,7 @@ All admin accounts have full platform access:
 
 | Capability | Description |
 |------------|-------------|
-| Approve Users | Verify vets and rescue organizations |
+| Approve Rescue Orgs | Verify rescue organizations (vets are approved by rescues) |
 | Manage Users | Suspend, reactivate, password reset |
 | Moderate Content | Review and act on flagged content |
 | View Analytics | Access all platform statistics |

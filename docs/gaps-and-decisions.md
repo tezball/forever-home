@@ -185,7 +185,7 @@ This document tracks identified gaps in the documentation and records decisions 
 
 ### GAP-11: Admin Bootstrap Undefined
 
-**Issue:** No mechanism to create the first admin account. US-6.1 requires an admin to approve Vets/Rescues, but how does the first admin get created?
+**Issue:** No mechanism to create the first admin account. US-6.1 requires an admin to approve Rescue Organizations, but how does the first admin get created?
 
 **Options:**
 - A) Seed data in database migrations
@@ -272,6 +272,32 @@ This document tracks identified gaps in the documentation and records decisions 
 
 ---
 
+### GAP-16: Vet Verification - Admin vs Rescue Organization
+
+**Issue:** Original docs stated vets are verified by platform admins, but this doesn't fit the trust model. Rescue organizations need to explicitly approve the vets who will perform health checks on their pets.
+
+**Options:**
+- A) Admin verifies vets (global platform trust)
+- B) Rescue organization verifies vets (organization-specific trust)
+- C) Both - admin does initial verification, rescue does per-org approval
+
+**Decision:**
+> B: Rescue organization verifies vets. This ensures each rescue explicitly trusts the vets who perform health checks on their pets. A vet can be approved by multiple rescue organizations.
+
+**Rationale:**
+1. **Domain alignment:** Rescue organizations are responsible for their pets' welfare
+2. **Distributed trust:** Different rescues may have different vet preferences
+3. **Scalability:** Reduces admin bottleneck for vet approvals
+4. **Relationship building:** Encourages vet-rescue partnerships
+
+**Affected Documentation:**
+- `user-stories/vet.md` - Updated verification flow
+- `user-stories/rescue-organization.md` - Added US-3.7: Approve Vets
+- `user-stories/admin.md` - Removed vet approval from admin scope
+- `domain-model.md` - Added VetApproval entity
+
+---
+
 ## Decision Log
 
 | Gap | Decision | Date | Decided By |
@@ -291,6 +317,7 @@ This document tracks identified gaps in the documentation and records decisions 
 | GAP-13 | A: AWS SES for email | 2025-12-07 | Product |
 | GAP-14 | N/A: Platform doesn't handle adoption process | 2025-12-07 | Product |
 | GAP-15 | A: Add description constraint (500 chars) | 2025-12-07 | Product |
+| GAP-16 | B: Vets verified by Rescue Organizations | 2025-12-08 | Product |
 
 ---
 

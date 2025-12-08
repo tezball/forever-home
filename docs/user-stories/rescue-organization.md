@@ -362,6 +362,56 @@ InProgress ──[Adoption cancelled]──► Available
 
 ---
 
+## Vet Management
+
+### US-3.7: Approve Vets
+
+**As a** rescue organization
+**I want to** approve veterinarians who can verify my pets
+**So that** I can ensure only trusted vets perform health checks on my animals
+
+**Access:** Requires `verified = true`
+
+**Acceptance Criteria:**
+- View list of vets requesting verification from this organization
+- See vet details: clinic name, license number, location, contact info
+- Approve vet (vet can now verify pets for this organization)
+- Decline vet with optional reason
+- View list of currently approved vets
+- Revoke vet approval if needed
+
+**Domain Notes:**
+- Creates `VetApproval` entity linking `Vet.id` to `RescueOrganization.id`
+- Approval is organization-specific (vet must be approved by each rescue they work with)
+- When vet looks up pet by microchip, system checks if vet is approved by that pet's rescue organization
+
+**UI Components:**
+- Pending vets queue: Card per vet with clinic details
+- Action buttons: "Approve" (primary) | "Decline" (secondary)
+- Approved vets list: Table with clinic name, location, approval date
+- Revoke button: Destructive action with confirmation modal
+
+**Vet Approval Queue:**
+```
+┌─────────────────────────────────────────────────────────┐
+│  Pending Vet Requests (2)                               │
+├─────────────────────────────────────────────────────────┤
+│  Austin Veterinary Clinic                               │
+│  Dr. Smith - License: TX-VET-12345                      │
+│  Location: Austin, TX                                   │
+│  [Approve] [Decline]                                    │
+├─────────────────────────────────────────────────────────┤
+│  Hill Country Animal Hospital                           │
+│  Dr. Johnson - License: TX-VET-67890                    │
+│  Location: Round Rock, TX                               │
+│  [Approve] [Decline]                                    │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Priority:** P1 - Core
+
+---
+
 ## Interactions with Other Users
 
 ### Working with Fosters
@@ -378,8 +428,14 @@ See [Foster Stories](foster.md) for the foster's perspective.
 
 ### Working with Vets
 
-After accepting a pet:
-1. Foster takes pet to any verified vet
+**Approving Vets:**
+1. Vet completes their profile and requests verification from a rescue
+2. Rescue reviews vet credentials (clinic name, license number)
+3. Rescue approves or declines the vet
+4. Approved vets can now verify pets for this rescue organization
+
+**Pet Verification Flow:**
+1. Foster takes pet to any vet approved by this rescue
 2. Vet looks up pet by microchip number
 3. Vet verifies health requirements and signs off
 4. Pet automatically becomes `Available`
@@ -422,6 +478,7 @@ The Rescue Organization dashboard displays:
 - **Total Adopted**: Lifetime completed adoptions
 
 ### Queues
+- **Vet Approval Queue**: Vets requesting verification from this organization
 - **Pet Registration Queue**: Pets in `PendingRescue` awaiting acceptance
 - **Application Queue**: Pending adoption applications to review
 

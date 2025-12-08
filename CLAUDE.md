@@ -46,6 +46,18 @@ Forever Home is a pet adoption platform that connects pet owners looking to reho
 
 # Run tests in native image
 ./mvnw test -PnativeTest
+
+# Run Gatling load tests (default: user registration simulation)
+./mvnw gatling:test
+
+# Run specific Gatling simulation
+./mvnw gatling:test -Dgatling.simulationClass=com.example.foreverhome.simulation.UserRegistrationSimulation
+
+# Run stress test simulation
+./mvnw gatling:test -Dgatling.simulationClass=com.example.foreverhome.simulation.RegistrationStressSimulation
+
+# Gatling with custom parameters
+./mvnw gatling:test -DBASE_URL=http://localhost:8080 -DUSERS=20 -DRAMP_DURATION=30
 ```
 
 ## Architecture

@@ -27,15 +27,18 @@ public class PetService {
     private final PetImageRepository petImageRepository;
     private final FosterRepository fosterRepository;
     private final NotificationService notificationService;
+    private final VetApprovalService vetApprovalService;
 
     public PetService(PetRepository petRepository,
                       PetImageRepository petImageRepository,
                       FosterRepository fosterRepository,
-                      NotificationService notificationService) {
+                      NotificationService notificationService,
+                      VetApprovalService vetApprovalService) {
         this.petRepository = petRepository;
         this.petImageRepository = petImageRepository;
         this.fosterRepository = fosterRepository;
         this.notificationService = notificationService;
+        this.vetApprovalService = vetApprovalService;
     }
 
     private PetDto toPetDtoWithImages(Pet pet) {
@@ -232,6 +235,39 @@ public class PetService {
         Pet pet = petRepository.findByMicrochipId(microchipId)
                 .orElseThrow(() -> new ResourceNotFoundException("Pet", "microchip: " + microchipId));
         return PetDto.from(pet);
+    }
+
+    /**
+     * Find pet by microchip for a vet, verifying the vet is approved by the pet's rescue organization.
+     *
+     * @param microchipId The microchip ID to search for
+     * @param vetUserId   The user ID of the vet performing the lookup
+     * @return The pet DTO if found and vet is approved
+     * @throws ResourceNotFoundException if pet not found
+     * @throws AccessDeniedException     if vet is not approved by the pet's rescue org
+     */
+    @Transactional(readOnly = true)
+    public PetDto findByMicrochipForVet(String microchipId, UUID vetUserId) {
+        Pet pet = petRepository.findByMicrochipId(microchipId)
+                .orElseThrow(() -> new ResourceNotFoundException("Pet", "microchip: " + microchipId));
+
+        // Only check approval for pets that have a rescue org assigned
+        if (pet.getRescueOrgId() != null) {
+            boolean isApproved = vetApprovalService.isVetUserApprovedByRescueOrg(vetUserId, pet.getRescueOrgId());
+            if (!isApproved) {
+                throw new AccessDeniedException(
+                        "You are not approved to verify pets for this rescue organization. " +
+                        "Please contact the rescue organization to request approval.");
+            }
+        }
+
+        // Also check that the pet is in a status that allows vet verification
+        if (pet.getStatus() != PetStatus.PENDING_VET) {
+            throw new InvalidStatusTransitionException(
+                    "Pet is not pending vet verification. Current status: " + pet.getStatus());
+        }
+
+        return toPetDtoWithImages(pet);
     }
 
     private Pet findPetOrThrow(UUID petId) {
