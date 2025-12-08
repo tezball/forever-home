@@ -1,7 +1,7 @@
 package com.example.foreverhome.controller;
 
 import com.example.foreverhome.domain.adoption.Favorite;
-import com.example.foreverhome.domain.pet.Pet;
+import com.example.foreverhome.dto.pet.PetDto;
 import com.example.foreverhome.security.UserPrincipal;
 import com.example.foreverhome.service.FavoriteService;
 import org.springframework.http.HttpStatus;
@@ -30,7 +30,7 @@ public class FavoriteController {
     }
 
     @GetMapping("/pets")
-    public ResponseEntity<List<Pet>> getFavoritePets(@AuthenticationPrincipal UserPrincipal principal) {
+    public ResponseEntity<List<PetDto>> getFavoritePets(@AuthenticationPrincipal UserPrincipal principal) {
         return ResponseEntity.ok(favoriteService.getFavoritePetsForAdopter(principal.userId()));
     }
 

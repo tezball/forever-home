@@ -1,6 +1,8 @@
 package com.example.foreverhome.domain.adoption;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Transient;
+import org.springframework.data.domain.Persistable;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
@@ -12,7 +14,7 @@ import java.util.UUID;
  * Pets that adopters have saved for later.
  */
 @Table("favorites")
-public class Favorite {
+public class Favorite implements Persistable<UUID> {
 
     @Id
     private UUID id;
@@ -26,14 +28,18 @@ public class Favorite {
     @Column("created_at")
     private Instant createdAt;
 
+    @Transient
+    private boolean isNew = false;
+
     protected Favorite() {
     }
 
-    private Favorite(UUID id, UUID adopterId, UUID petId, Instant createdAt) {
+    private Favorite(UUID id, UUID adopterId, UUID petId, Instant createdAt, boolean isNew) {
         this.id = id;
         this.adopterId = adopterId;
         this.petId = petId;
         this.createdAt = createdAt;
+        this.isNew = isNew;
     }
 
     public static Favorite create(UUID adopterId, UUID petId) {
@@ -43,7 +49,12 @@ public class Favorite {
         if (petId == null) {
             throw new IllegalArgumentException("petId cannot be null");
         }
-        return new Favorite(UUID.randomUUID(), adopterId, petId, Instant.now());
+        return new Favorite(UUID.randomUUID(), adopterId, petId, Instant.now(), true);
+    }
+
+    @Override
+    public boolean isNew() {
+        return isNew;
     }
 
     public UUID getId() { return id; }

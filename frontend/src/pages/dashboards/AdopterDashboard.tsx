@@ -18,7 +18,7 @@ export function AdopterDashboard() {
   const fetchData = async () => {
     try {
       const [favoritesRes, applicationsRes] = await Promise.all([
-        apiClient.get<Pet[]>('/favorites'),
+        apiClient.get<Pet[]>('/favorites/pets'),
         apiClient.get<AdoptionApplication[]>('/applications'),
       ]);
       setFavorites(favoritesRes.data);

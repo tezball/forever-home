@@ -39,7 +39,10 @@ export function PetDetailPage() {
 
   useEffect(() => {
     fetchPet();
-  }, [id]);
+    if (isAuthenticated && user?.role === 'ADOPTER') {
+      fetchFavoriteStatus();
+    }
+  }, [id, isAuthenticated, user?.role]);
 
   const fetchPet = async () => {
     setLoading(true);
@@ -53,6 +56,15 @@ export function PetDetailPage() {
       setPet(getMockPet(id!));
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchFavoriteStatus = async () => {
+    try {
+      const response = await apiClient.get<boolean>(`/favorites/${id}/status`);
+      setFavorite(response.data);
+    } catch {
+      // Ignore errors - user might not have favorited this pet
     }
   };
 
