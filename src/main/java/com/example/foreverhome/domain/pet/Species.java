@@ -2,13 +2,11 @@ package com.example.foreverhome.domain.pet;
 
 /**
  * Represents the species of a pet.
+ * Forever Home specializes in cats and dogs only.
  */
 public enum Species {
     DOG("Dog"),
-    CAT("Cat"),
-    RABBIT("Rabbit"),
-    BIRD("Bird"),
-    OTHER("Other");
+    CAT("Cat");
 
     private final String displayName;
 

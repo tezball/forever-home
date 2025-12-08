@@ -7,9 +7,6 @@ const speciesOptions = [
   { value: '', label: 'All Species' },
   { value: 'DOG', label: 'Dogs' },
   { value: 'CAT', label: 'Cats' },
-  { value: 'RABBIT', label: 'Rabbits' },
-  { value: 'BIRD', label: 'Birds' },
-  { value: 'OTHER', label: 'Other' },
 ];
 
 const sizeOptions = [
@@ -228,15 +225,15 @@ function getMockPets(): Pet[] {
     },
     {
       id: '6',
-      name: 'Coco',
-      species: 'RABBIT',
-      breed: 'Holland Lop',
+      name: 'Shadow',
+      species: 'CAT',
+      breed: 'Russian Blue',
       age: 2,
       ageUnit: 'YEARS',
       sex: 'FEMALE',
-      size: 'SMALL',
+      size: 'MEDIUM',
       microchipId: 'MC123461',
-      description: 'Coco is a sweet and gentle bunny who loves to hop around and munch on veggies.',
+      description: 'Shadow is a graceful and elegant cat who loves quiet afternoons and gentle pets.',
       healthNotes: null,
       status: 'AVAILABLE' as PetStatus,
       fosterId: 'f6',

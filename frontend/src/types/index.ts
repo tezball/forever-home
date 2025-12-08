@@ -1,7 +1,7 @@
 export type UserRole = 'ADMIN' | 'FOSTER' | 'ADOPTER' | 'VET' | 'RESCUE_ORG';
 export type AccountStatus = 'PENDING' | 'ACTIVE' | 'SUSPENDED';
 export type PetStatus = 'DRAFT' | 'PENDING_RESCUE' | 'PENDING_VET' | 'AVAILABLE' | 'IN_PROGRESS' | 'ADOPTED' | 'WITHDRAWN' | 'ON_HOLD';
-export type Species = 'DOG' | 'CAT' | 'RABBIT' | 'BIRD' | 'OTHER';
+export type Species = 'DOG' | 'CAT';
 export type PetSize = 'SMALL' | 'MEDIUM' | 'LARGE';
 export type PetSex = 'MALE' | 'FEMALE';
 export type AgeUnit = 'MONTHS' | 'YEARS';

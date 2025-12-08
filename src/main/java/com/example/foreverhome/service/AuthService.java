@@ -1,5 +1,6 @@
 package com.example.foreverhome.service;
 
+import com.example.foreverhome.config.EmailVerificationProperties;
 import com.example.foreverhome.domain.user.AccountStatus;
 import com.example.foreverhome.domain.user.RefreshToken;
 import com.example.foreverhome.domain.user.User;
@@ -15,6 +16,8 @@ import com.example.foreverhome.logging.UserJourneyLogger;
 import com.example.foreverhome.repository.RefreshTokenRepository;
 import com.example.foreverhome.repository.UserRepository;
 import com.example.foreverhome.security.JwtTokenProvider;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,25 +30,30 @@ import java.util.UUID;
 @Transactional
 public class AuthService {
 
+    private static final Logger logger = LoggerFactory.getLogger(AuthService.class);
+
     private final UserRepository userRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final JwtTokenProvider jwtTokenProvider;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
     private final UserJourneyLogger journeyLogger;
+    private final EmailVerificationProperties verificationProperties;
 
     public AuthService(UserRepository userRepository,
                        RefreshTokenRepository refreshTokenRepository,
                        JwtTokenProvider jwtTokenProvider,
                        PasswordEncoder passwordEncoder,
                        EmailService emailService,
-                       UserJourneyLogger journeyLogger) {
+                       UserJourneyLogger journeyLogger,
+                       EmailVerificationProperties verificationProperties) {
         this.userRepository = userRepository;
         this.refreshTokenRepository = refreshTokenRepository;
         this.jwtTokenProvider = jwtTokenProvider;
         this.passwordEncoder = passwordEncoder;
         this.emailService = emailService;
         this.journeyLogger = journeyLogger;
+        this.verificationProperties = verificationProperties;
     }
 
     public RegisterResponse register(RegisterRequest request) {
@@ -60,15 +68,22 @@ public class AuthService {
         String passwordHash = passwordEncoder.encode(request.password());
         User user = User.create(request.email(), passwordHash, request.role(), request.name());
 
-        // Generate email verification token
-        String verificationToken = UUID.randomUUID().toString();
-        user.setEmailVerificationToken(verificationToken);
+        // Handle email verification based on configuration
+        if (verificationProperties.autoActivate()) {
+            // Auto-activate user in dev mode
+            user.activate();
+            logger.info("Auto-activated user {} (app.email.verification.auto-activate=true)", request.email());
+        } else {
+            // Generate email verification token
+            String verificationToken = UUID.randomUUID().toString();
+            user.setEmailVerificationToken(verificationToken);
+
+            // Send verification email
+            emailService.sendVerificationEmail(request.email(), verificationToken);
+        }
 
         // Save user
         userRepository.save(user);
-
-        // Send verification email
-        emailService.sendVerificationEmail(request.email(), verificationToken);
 
         journeyLogger.logAuth(UserJourneyLogger.ACTION_REGISTER, request.email(), true,
             "User registered with role " + request.role());

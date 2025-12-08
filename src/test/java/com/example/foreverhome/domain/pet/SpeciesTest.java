@@ -14,16 +14,13 @@ class SpeciesTest {
     class GivenAllDefinedSpecies {
 
         @Test
-        @DisplayName("should have exactly 5 species: DOG, CAT, RABBIT, BIRD, OTHER")
-        void shouldHaveExactlyFiveSpecies() {
+        @DisplayName("should have exactly 2 species: DOG, CAT")
+        void shouldHaveExactlyTwoSpecies() {
             assertThat(Species.values())
-                    .hasSize(5)
+                    .hasSize(2)
                     .containsExactlyInAnyOrder(
                             Species.DOG,
-                            Species.CAT,
-                            Species.RABBIT,
-                            Species.BIRD,
-                            Species.OTHER
+                            Species.CAT
                     );
         }
     }
@@ -42,24 +39,6 @@ class SpeciesTest {
         @DisplayName("CAT should have display name 'Cat'")
         void catShouldHaveCorrectDisplayName() {
             assertThat(Species.CAT.getDisplayName()).isEqualTo("Cat");
-        }
-
-        @Test
-        @DisplayName("RABBIT should have display name 'Rabbit'")
-        void rabbitShouldHaveCorrectDisplayName() {
-            assertThat(Species.RABBIT.getDisplayName()).isEqualTo("Rabbit");
-        }
-
-        @Test
-        @DisplayName("BIRD should have display name 'Bird'")
-        void birdShouldHaveCorrectDisplayName() {
-            assertThat(Species.BIRD.getDisplayName()).isEqualTo("Bird");
-        }
-
-        @Test
-        @DisplayName("OTHER should have display name 'Other'")
-        void otherShouldHaveCorrectDisplayName() {
-            assertThat(Species.OTHER.getDisplayName()).isEqualTo("Other");
         }
     }
 }

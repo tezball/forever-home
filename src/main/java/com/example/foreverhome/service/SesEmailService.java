@@ -3,11 +3,13 @@ package com.example.foreverhome.service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.services.ses.SesClient;
 import software.amazon.awssdk.services.ses.model.*;
 
 @Service
+@ConditionalOnProperty(name = "app.email.verification.use-console", havingValue = "false", matchIfMissing = true)
 public class SesEmailService implements EmailService {
 
     private static final Logger logger = LoggerFactory.getLogger(SesEmailService.class);

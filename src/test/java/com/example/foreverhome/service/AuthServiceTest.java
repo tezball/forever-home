@@ -1,5 +1,6 @@
 package com.example.foreverhome.service;
 
+import com.example.foreverhome.config.EmailVerificationProperties;
 import com.example.foreverhome.domain.user.AccountStatus;
 import com.example.foreverhome.domain.user.RefreshToken;
 import com.example.foreverhome.domain.user.User;
@@ -58,17 +59,22 @@ class AuthServiceTest {
     @Mock
     private UserJourneyLogger journeyLogger;
 
+    private EmailVerificationProperties verificationProperties;
+
     private AuthService authService;
 
     @BeforeEach
     void setUp() {
+        // Default to normal verification flow (not auto-activate)
+        verificationProperties = new EmailVerificationProperties(false, false);
         authService = new AuthService(
                 userRepository,
                 refreshTokenRepository,
                 jwtTokenProvider,
                 passwordEncoder,
                 emailService,
-                journeyLogger
+                journeyLogger,
+                verificationProperties
         );
     }
 
@@ -145,6 +151,42 @@ class AuthServiceTest {
 
             // Then
             verify(emailService).sendVerificationEmail(eq("test@example.com"), anyString());
+        }
+
+        @Test
+        @DisplayName("given auto-activate enabled, when register, then creates user with active status")
+        void givenAutoActivateEnabled_whenRegister_thenCreatesUserWithActiveStatus() {
+            // Given - create service with auto-activate enabled
+            EmailVerificationProperties autoActivateProperties = new EmailVerificationProperties(true, false);
+            AuthService autoActivateAuthService = new AuthService(
+                    userRepository,
+                    refreshTokenRepository,
+                    jwtTokenProvider,
+                    passwordEncoder,
+                    emailService,
+                    journeyLogger,
+                    autoActivateProperties
+            );
+
+            RegisterRequest request = new RegisterRequest(
+                    "test@example.com",
+                    "password123",
+                    "Test User",
+                    UserRole.ADOPTER
+            );
+            when(userRepository.existsByEmail("test@example.com")).thenReturn(false);
+            when(passwordEncoder.encode("password123")).thenReturn("hashedPassword");
+            when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            // When
+            autoActivateAuthService.register(request);
+
+            // Then
+            ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
+            verify(userRepository).save(userCaptor.capture());
+            User savedUser = userCaptor.getValue();
+            assertThat(savedUser.getStatus()).isEqualTo(AccountStatus.ACTIVE);
+            verify(emailService, never()).sendVerificationEmail(anyString(), anyString());
         }
     }
 
