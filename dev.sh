@@ -3,8 +3,6 @@
 # Forever Home - Development Environment Manager
 # Usage: ./dev.sh [start|stop|restart|status]
 
-set -e
-
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -18,9 +16,14 @@ FRONTEND_PORT=5173
 POSTGRES_PORT=5432
 LOCALSTACK_PORT=4566
 
-# Check if a port is in use
+# Check if a port is in use (for local processes)
 port_in_use() {
     lsof -ti:"$1" >/dev/null 2>&1
+}
+
+# Check if a port is accepting connections (for Docker services)
+port_accepting() {
+    nc -z localhost "$1" 2>/dev/null
 }
 
 # Kill process on a port
@@ -28,20 +31,20 @@ kill_port() {
     lsof -ti:"$1" | xargs -r kill -9 2>/dev/null || true
 }
 
-# Wait for a service to be ready
+# Wait for a service to be ready (uses nc for better Docker support)
 wait_for_port() {
     local port=$1
     local name=$2
     local max_wait=${3:-30}
 
     for i in $(seq 1 $max_wait); do
-        if port_in_use "$port"; then
+        if nc -z localhost "$port" 2>/dev/null; then
             echo -e "${GREEN}[$name] Running on port $port${NC}"
             return 0
         fi
         sleep 1
     done
-    echo -e "${RED}[$name] Failed to start on port $port${NC}"
+    echo -e "${RED}[$name] Failed to start on port $port after ${max_wait}s${NC}"
     return 1
 }
 
@@ -65,10 +68,10 @@ start_docker() {
     cd "$PROJECT_ROOT"
     docker compose up -d
 
-    # Wait for Docker services
+    # Wait for Docker services (don't fail, just warn)
     echo -e "${YELLOW}[Docker] Waiting for services...${NC}"
-    wait_for_port $POSTGRES_PORT "PostgreSQL" 30
-    wait_for_port $LOCALSTACK_PORT "LocalStack" 30
+    wait_for_port $POSTGRES_PORT "PostgreSQL" 30 || echo -e "${YELLOW}[PostgreSQL] May still be starting...${NC}"
+    wait_for_port $LOCALSTACK_PORT "LocalStack" 30 || echo -e "${YELLOW}[LocalStack] May still be starting...${NC}"
 }
 
 # Stop Docker services
@@ -134,25 +137,25 @@ show_status() {
     echo -e "${BLUE}=== Forever Home Service Status ===${NC}"
     echo
 
-    if port_in_use $POSTGRES_PORT; then
+    if nc -z localhost $POSTGRES_PORT 2>/dev/null; then
         echo -e "${GREEN}[PostgreSQL]  Running on port $POSTGRES_PORT${NC}"
     else
         echo -e "${RED}[PostgreSQL]  Not running${NC}"
     fi
 
-    if port_in_use $LOCALSTACK_PORT; then
+    if nc -z localhost $LOCALSTACK_PORT 2>/dev/null; then
         echo -e "${GREEN}[LocalStack]  Running on port $LOCALSTACK_PORT${NC}"
     else
         echo -e "${RED}[LocalStack]  Not running${NC}"
     fi
 
-    if port_in_use $BACKEND_PORT; then
+    if nc -z localhost $BACKEND_PORT 2>/dev/null; then
         echo -e "${GREEN}[Backend]     Running on http://localhost:$BACKEND_PORT${NC}"
     else
         echo -e "${RED}[Backend]     Not running${NC}"
     fi
 
-    if port_in_use $FRONTEND_PORT; then
+    if nc -z localhost $FRONTEND_PORT 2>/dev/null; then
         echo -e "${GREEN}[Frontend]    Running on http://localhost:$FRONTEND_PORT${NC}"
     else
         echo -e "${RED}[Frontend]    Not running${NC}"
