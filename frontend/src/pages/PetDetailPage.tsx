@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Button, Modal } from '../components';
+import { Button, Modal, ImageCarousel } from '../components';
 import type { Pet, PetStatus } from '../types';
 import apiClient from '../api/client';
 
@@ -120,25 +120,11 @@ export function PetDetailPage() {
       <div className="grid md:grid-cols-2 gap-8">
         {/* Image Gallery */}
         <div>
-          <div className="aspect-w-4 aspect-h-3 rounded-lg overflow-hidden bg-secondary-100">
-            <img
-              src={pet.imageUrls[0] || `https://placedog.net/600/450?id=${pet.id.slice(0, 8)}`}
-              alt={pet.name}
-              className="w-full h-80 object-cover"
-            />
-          </div>
-          {pet.imageUrls.length > 1 && (
-            <div className="flex gap-2 mt-4 overflow-x-auto">
-              {pet.imageUrls.map((url, index) => (
-                <img
-                  key={index}
-                  src={url}
-                  alt={`${pet.name} ${index + 1}`}
-                  className="w-16 h-16 object-cover rounded cursor-pointer hover:opacity-80"
-                />
-              ))}
-            </div>
-          )}
+          <ImageCarousel
+            images={pet.imageUrls}
+            petName={pet.name}
+            placeholderUrl={`https://placedog.net/600/450?id=${pet.id.slice(0, 8)}`}
+          />
         </div>
 
         {/* Pet Info */}

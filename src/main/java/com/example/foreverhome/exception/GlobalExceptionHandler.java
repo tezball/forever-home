@@ -107,6 +107,30 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
 
+    @ExceptionHandler(com.example.foreverhome.service.S3StorageService.StorageException.class)
+    public ResponseEntity<ErrorResponse> handleStorageException(
+            com.example.foreverhome.service.S3StorageService.StorageException ex) {
+        ErrorResponse error = new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                "Storage Error",
+                ex.getMessage(),
+                Instant.now()
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    @ExceptionHandler(com.example.foreverhome.service.PetImageService.ImageLimitExceededException.class)
+    public ResponseEntity<ErrorResponse> handleImageLimitExceeded(
+            com.example.foreverhome.service.PetImageService.ImageLimitExceededException ex) {
+        ErrorResponse error = new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                "Image Limit Exceeded",
+                ex.getMessage(),
+                Instant.now()
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
     @ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<ErrorResponse> handleIllegalState(IllegalStateException ex) {
         ErrorResponse error = new ErrorResponse(

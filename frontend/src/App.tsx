@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Header } from './components';
-import { HomePage, LoginPage, RegisterPage, PetListPage, PetDetailPage, RescuesPage, ForgotPasswordPage, HelpCenterPage, ContactPage, PrivacyPolicyPage } from './pages';
+import { HomePage, LoginPage, RegisterPage, PetListPage, PetDetailPage, PetFormPage, RescuesPage, ForgotPasswordPage, HelpCenterPage, ContactPage, PrivacyPolicyPage } from './pages';
 import {
   FosterDashboard,
   AdopterDashboard,
@@ -62,6 +62,22 @@ function AppRoutes() {
             element={
               <ProtectedRoute allowedRoles={['FOSTER']}>
                 <FosterDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/foster/pets/new"
+            element={
+              <ProtectedRoute allowedRoles={['FOSTER']}>
+                <PetFormPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/foster/pets/:id/edit"
+            element={
+              <ProtectedRoute allowedRoles={['FOSTER']}>
+                <PetFormPage />
               </ProtectedRoute>
             }
           />

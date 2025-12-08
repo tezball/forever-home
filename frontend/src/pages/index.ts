@@ -3,6 +3,7 @@ export { LoginPage } from './LoginPage';
 export { RegisterPage } from './RegisterPage';
 export { PetListPage } from './PetListPage';
 export { PetDetailPage } from './PetDetailPage';
+export { PetFormPage } from './PetFormPage';
 export { RescuesPage } from './RescuesPage';
 export { ForgotPasswordPage } from './ForgotPasswordPage';
 export { HelpCenterPage } from './HelpCenterPage';

@@ -90,3 +90,12 @@ export interface Notification {
   read: boolean;
   createdAt: string;
 }
+
+export interface PetImage {
+  id: string;
+  petId: string;
+  url: string;
+  isPrimary: boolean;
+  displayOrder: number;
+  uploadedAt: string;
+}

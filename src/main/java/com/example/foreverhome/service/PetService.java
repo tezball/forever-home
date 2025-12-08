@@ -1,13 +1,16 @@
 package com.example.foreverhome.service;
 
 import com.example.foreverhome.domain.pet.Pet;
+import com.example.foreverhome.domain.pet.PetImage;
 import com.example.foreverhome.domain.pet.PetStatus;
+import com.example.foreverhome.domain.profile.Foster;
 import com.example.foreverhome.dto.pet.CreatePetRequest;
 import com.example.foreverhome.dto.pet.PetDto;
 import com.example.foreverhome.dto.pet.UpdatePetRequest;
 import com.example.foreverhome.exception.AccessDeniedException;
 import com.example.foreverhome.exception.InvalidStatusTransitionException;
 import com.example.foreverhome.exception.ResourceNotFoundException;
+import com.example.foreverhome.repository.FosterRepository;
 import com.example.foreverhome.repository.PetImageRepository;
 import com.example.foreverhome.repository.PetRepository;
 import org.springframework.stereotype.Service;
@@ -22,19 +25,34 @@ public class PetService {
 
     private final PetRepository petRepository;
     private final PetImageRepository petImageRepository;
+    private final FosterRepository fosterRepository;
     private final NotificationService notificationService;
 
     public PetService(PetRepository petRepository,
                       PetImageRepository petImageRepository,
+                      FosterRepository fosterRepository,
                       NotificationService notificationService) {
         this.petRepository = petRepository;
         this.petImageRepository = petImageRepository;
+        this.fosterRepository = fosterRepository;
         this.notificationService = notificationService;
     }
 
-    public PetDto createPet(UUID fosterId, CreatePetRequest request) {
+    private PetDto toPetDtoWithImages(Pet pet) {
+        List<String> imageUrls = petImageRepository.findByPetIdOrderByDisplayOrder(pet.getId())
+                .stream()
+                .map(PetImage::getUrl)
+                .toList();
+        return PetDto.from(pet, imageUrls);
+    }
+
+    public PetDto createPet(UUID userId, CreatePetRequest request) {
+        // Look up the foster profile by user ID
+        Foster foster = fosterRepository.findByUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Foster profile not found for user"));
+
         Pet pet = Pet.create(
-                fosterId,
+                foster.getId(),
                 request.name(),
                 request.species(),
                 request.breed(),
@@ -53,34 +71,42 @@ public class PetService {
     @Transactional(readOnly = true)
     public PetDto getPet(UUID petId) {
         Pet pet = findPetOrThrow(petId);
-        return PetDto.from(pet);
+        return toPetDtoWithImages(pet);
     }
 
     @Transactional(readOnly = true)
     public List<PetDto> getAvailablePets() {
         return petRepository.findByStatus(PetStatus.AVAILABLE).stream()
-                .map(PetDto::from)
+                .map(this::toPetDtoWithImages)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public List<PetDto> getPetsByFoster(UUID fosterId) {
-        return petRepository.findByFosterId(fosterId).stream()
-                .map(PetDto::from)
+    public List<PetDto> getPetsByFoster(UUID userId) {
+        // Look up foster profile by user ID to get foster's actual ID
+        Foster foster = fosterRepository.findByUserId(userId)
+                .orElse(null);
+
+        if (foster == null) {
+            return List.of();
+        }
+
+        return petRepository.findByFosterId(foster.getId()).stream()
+                .map(this::toPetDtoWithImages)
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public List<PetDto> getPetsByRescueOrg(UUID rescueOrgId) {
         return petRepository.findByRescueOrgId(rescueOrgId).stream()
-                .map(PetDto::from)
+                .map(this::toPetDtoWithImages)
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public List<PetDto> getPendingPetsForRescueOrg(UUID rescueOrgId) {
         return petRepository.findPendingByRescueOrgId(rescueOrgId).stream()
-                .map(PetDto::from)
+                .map(this::toPetDtoWithImages)
                 .toList();
     }
 

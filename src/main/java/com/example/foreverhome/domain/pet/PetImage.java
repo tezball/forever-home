@@ -1,6 +1,8 @@
 package com.example.foreverhome.domain.pet;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Transient;
+import org.springframework.data.domain.Persistable;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
@@ -12,7 +14,7 @@ import java.util.UUID;
  * Photos of pets to help adopters connect emotionally.
  */
 @Table("pet_images")
-public class PetImage {
+public class PetImage implements Persistable<UUID> {
 
     @Id
     private UUID id;
@@ -31,6 +33,9 @@ public class PetImage {
 
     @Column("uploaded_at")
     private Instant uploadedAt;
+
+    @Transient
+    private boolean isNew = false;
 
     protected PetImage() {
     }
@@ -51,7 +56,9 @@ public class PetImage {
         if (url == null || url.isBlank()) {
             throw new IllegalArgumentException("url cannot be null or blank");
         }
-        return new PetImage(UUID.randomUUID(), petId, url, primary, displayOrder, Instant.now());
+        PetImage image = new PetImage(UUID.randomUUID(), petId, url, primary, displayOrder, Instant.now());
+        image.isNew = true;
+        return image;
     }
 
     public UUID getId() {
@@ -97,5 +104,10 @@ public class PetImage {
     @Override
     public int hashCode() {
         return Objects.hash(id);
+    }
+
+    @Override
+    public boolean isNew() {
+        return isNew;
     }
 }

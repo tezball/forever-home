@@ -1,6 +1,7 @@
 package com.example.foreverhome.service;
 
 import com.example.foreverhome.domain.pet.*;
+import com.example.foreverhome.domain.profile.Foster;
 import com.example.foreverhome.domain.user.User;
 import com.example.foreverhome.domain.user.UserRole;
 import com.example.foreverhome.dto.pet.CreatePetRequest;
@@ -9,6 +10,7 @@ import com.example.foreverhome.dto.pet.UpdatePetRequest;
 import com.example.foreverhome.exception.AccessDeniedException;
 import com.example.foreverhome.exception.InvalidStatusTransitionException;
 import com.example.foreverhome.exception.ResourceNotFoundException;
+import com.example.foreverhome.repository.FosterRepository;
 import com.example.foreverhome.repository.PetImageRepository;
 import com.example.foreverhome.repository.PetRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,13 +42,16 @@ class PetServiceTest {
     private PetImageRepository petImageRepository;
 
     @Mock
+    private FosterRepository fosterRepository;
+
+    @Mock
     private NotificationService notificationService;
 
     private PetService petService;
 
     @BeforeEach
     void setUp() {
-        petService = new PetService(petRepository, petImageRepository, notificationService);
+        petService = new PetService(petRepository, petImageRepository, fosterRepository, notificationService);
     }
 
     @Nested
@@ -57,7 +62,18 @@ class PetServiceTest {
         @DisplayName("given valid pet data from foster, when create, then creates pet in draft status")
         void givenValidPetDataFromFoster_whenCreate_thenCreatesPetInDraftStatus() {
             // Given
+            UUID userId = UUID.randomUUID();
             UUID fosterId = UUID.randomUUID();
+            Foster foster = Foster.create(userId, "John", "Doe", "555-1234", null);
+            // Use reflection to set the foster's id since it's set internally
+            try {
+                java.lang.reflect.Field idField = Foster.class.getDeclaredField("id");
+                idField.setAccessible(true);
+                idField.set(foster, fosterId);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+
             CreatePetRequest request = new CreatePetRequest(
                     "Buddy",
                     Species.DOG,
@@ -70,10 +86,11 @@ class PetServiceTest {
                     "Friendly and energetic",
                     null
             );
+            when(fosterRepository.findByUserId(userId)).thenReturn(Optional.of(foster));
             when(petRepository.save(any(Pet.class))).thenAnswer(inv -> inv.getArgument(0));
 
             // When
-            PetDto result = petService.createPet(fosterId, request);
+            PetDto result = petService.createPet(userId, request);
 
             // Then
             assertThat(result).isNotNull();
@@ -85,6 +102,31 @@ class PetServiceTest {
             Pet savedPet = petCaptor.getValue();
             assertThat(savedPet.getFosterId()).isEqualTo(fosterId);
             assertThat(savedPet.getStatus()).isEqualTo(PetStatus.DRAFT);
+        }
+
+        @Test
+        @DisplayName("given user without foster profile, when create, then throws ResourceNotFoundException")
+        void givenUserWithoutFosterProfile_whenCreate_thenThrowsResourceNotFoundException() {
+            // Given
+            UUID userId = UUID.randomUUID();
+            CreatePetRequest request = new CreatePetRequest(
+                    "Buddy",
+                    Species.DOG,
+                    "Golden Retriever",
+                    3,
+                    AgeUnit.YEARS,
+                    PetSex.MALE,
+                    PetSize.LARGE,
+                    "CHIP123456",
+                    "Friendly and energetic",
+                    null
+            );
+            when(fosterRepository.findByUserId(userId)).thenReturn(Optional.empty());
+
+            // When/Then
+            assertThatThrownBy(() -> petService.createPet(userId, request))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageContaining("Foster profile not found");
         }
     }
 

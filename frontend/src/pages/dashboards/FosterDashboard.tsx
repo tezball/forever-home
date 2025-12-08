@@ -86,7 +86,7 @@ export function FosterDashboard() {
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Drafts</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {draftPets.map((pet) => (
-                  <PetCard key={pet.id} pet={pet} />
+                  <PetCard key={pet.id} pet={pet} showEditButton />
                 ))}
               </div>
             </section>
@@ -98,7 +98,7 @@ export function FosterDashboard() {
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Pending Review</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {pendingPets.map((pet) => (
-                  <PetCard key={pet.id} pet={pet} />
+                  <PetCard key={pet.id} pet={pet} showEditButton />
                 ))}
               </div>
             </section>
@@ -110,7 +110,7 @@ export function FosterDashboard() {
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Active Listings</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {activePets.map((pet) => (
-                  <PetCard key={pet.id} pet={pet} />
+                  <PetCard key={pet.id} pet={pet} showEditButton />
                 ))}
               </div>
             </section>

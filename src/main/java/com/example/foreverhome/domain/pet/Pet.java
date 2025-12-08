@@ -2,6 +2,8 @@ package com.example.foreverhome.domain.pet;
 
 import com.example.foreverhome.exception.InvalidStateTransitionException;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Transient;
+import org.springframework.data.domain.Persistable;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
@@ -13,7 +15,7 @@ import java.util.UUID;
  * Central entity representing an animal seeking a forever home.
  */
 @Table("pets")
-public class Pet {
+public class Pet implements Persistable<UUID> {
 
     private static final int MAX_DESCRIPTION_LENGTH = 500;
 
@@ -65,6 +67,9 @@ public class Pet {
     @Column("health_notes")
     private String healthNotes;
 
+    @Transient
+    private boolean isNew = false;
+
     protected Pet() {
     }
 
@@ -112,9 +117,11 @@ public class Pet {
         }
 
         Instant now = Instant.now();
-        return new Pet(UUID.randomUUID(), name.trim(), species, breed, age, ageUnit,
+        Pet pet = new Pet(UUID.randomUUID(), name.trim(), species, breed, age, ageUnit,
                 sex, size, description, microchipId.trim(), PetStatus.DRAFT,
                 fosterId, null, now, now, healthNotes);
+        pet.isNew = true;
+        return pet;
     }
 
     private static void validateRequired(Object value, String fieldName) {
@@ -126,7 +133,14 @@ public class Pet {
         }
     }
 
+    // Persistable implementation
+    @Override
+    public boolean isNew() {
+        return isNew;
+    }
+
     // Getters
+    @Override
     public UUID getId() { return id; }
     public String getName() { return name; }
     public Species getSpecies() { return species; }
