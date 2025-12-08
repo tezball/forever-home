@@ -115,7 +115,9 @@ public class PetController {
 
     @GetMapping("/lookup")
     @PreAuthorize("hasRole('VET')")
-    public ResponseEntity<PetDto> lookupByMicrochip(@RequestParam String microchip) {
-        return ResponseEntity.ok(petService.findByMicrochip(microchip));
+    public ResponseEntity<PetDto> lookupByMicrochip(
+            @RequestParam String microchip,
+            @AuthenticationPrincipal UserPrincipal principal) {
+        return ResponseEntity.ok(petService.findByMicrochipForVet(microchip, principal.userId()));
     }
 }

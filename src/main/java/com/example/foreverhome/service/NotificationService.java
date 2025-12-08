@@ -115,6 +115,24 @@ public class NotificationService {
         );
     }
 
+    public void notifyVetApproved(UUID vetUserId, String rescueOrgName) {
+        createNotification(
+                vetUserId,
+                NotificationType.SYSTEM_ALERT,
+                "Vet Approval Granted",
+                "You have been approved to verify pets for '" + rescueOrgName + "'."
+        );
+    }
+
+    public void notifyVetApprovalRevoked(UUID vetUserId, String rescueOrgName) {
+        createNotification(
+                vetUserId,
+                NotificationType.SYSTEM_ALERT,
+                "Vet Approval Revoked",
+                "Your approval to verify pets for '" + rescueOrgName + "' has been revoked."
+        );
+    }
+
     private void createNotification(UUID userId, NotificationType type, String title, String message) {
         Notification notification = Notification.create(userId, type, title, message);
         notificationRepository.save(notification);

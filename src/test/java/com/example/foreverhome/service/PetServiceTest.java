@@ -47,11 +47,14 @@ class PetServiceTest {
     @Mock
     private NotificationService notificationService;
 
+    @Mock
+    private VetApprovalService vetApprovalService;
+
     private PetService petService;
 
     @BeforeEach
     void setUp() {
-        petService = new PetService(petRepository, petImageRepository, fosterRepository, notificationService);
+        petService = new PetService(petRepository, petImageRepository, fosterRepository, notificationService, vetApprovalService);
     }
 
     @Nested
