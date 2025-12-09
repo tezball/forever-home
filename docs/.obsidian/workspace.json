@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "ui-style-guide.md",
+                "file": "Roadmap.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "ui-style-guide"
+              "title": "Roadmap"
             }
           }
         ]
@@ -94,7 +94,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "ui-style-guide.md",
+                "file": "Roadmap.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -104,7 +104,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Backlinks for ui-style-guide"
+              "title": "Backlinks for Roadmap"
             }
           },
           {
@@ -113,12 +113,12 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "ui-style-guide.md",
+                "file": "Roadmap.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "Outgoing links from ui-style-guide"
+              "title": "Outgoing links from Roadmap"
             }
           },
           {
@@ -156,13 +156,13 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "ui-style-guide.md",
+                "file": "Roadmap.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Outline of ui-style-guide"
+              "title": "Outline of Roadmap"
             }
           },
           {
@@ -197,6 +197,9 @@
   },
   "active": "07065cb54547aed8",
   "lastOpenFiles": [
+    "domain-model.md",
+    "Home.md",
+    "ui-style-guide.md",
     "user-stories/index.md",
     "ui-style-guide.md.tmp.12457.1765292013984",
     "user-stories/notifications.md.tmp.12457.1765291882592",
@@ -209,10 +212,8 @@
     "user-stories/index.md.tmp.12457.1765291825415",
     "user-stories/index.md.tmp.12457.1765291806698",
     "Roadmap.md",
-    "Home.md",
     "user-stories/notifications.md",
     "user-stories/admin.md",
-    "pet-status.md",
-    "ui-style-guide.md"
+    "pet-status.md"
   ]
 }

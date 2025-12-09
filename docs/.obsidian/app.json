@@ -5,6 +5,6 @@
   "newLinkFormat": "shortest",
   "useMarkdownLinks": false,
   "showLineNumber": true,
-  "readableLineLength": true,
+  "readableLineLength": false,
   "strictLineBreaks": false
 }

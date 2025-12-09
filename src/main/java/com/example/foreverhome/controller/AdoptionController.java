@@ -2,9 +2,12 @@ package com.example.foreverhome.controller;
 
 import com.example.foreverhome.domain.adoption.Adoption;
 import com.example.foreverhome.domain.adoption.AdoptionApplication;
+import com.example.foreverhome.domain.profile.RescueOrganization;
 import com.example.foreverhome.dto.adoption.FinalizeAdoptionRequest;
 import com.example.foreverhome.dto.adoption.RejectApplicationRequest;
 import com.example.foreverhome.dto.adoption.SubmitApplicationRequest;
+import com.example.foreverhome.exception.ResourceNotFoundException;
+import com.example.foreverhome.repository.RescueOrganizationRepository;
 import com.example.foreverhome.security.UserPrincipal;
 import com.example.foreverhome.service.AdoptionService;
 import jakarta.validation.Valid;
@@ -22,9 +25,12 @@ import java.util.UUID;
 public class AdoptionController {
 
     private final AdoptionService adoptionService;
+    private final RescueOrganizationRepository rescueOrganizationRepository;
 
-    public AdoptionController(AdoptionService adoptionService) {
+    public AdoptionController(AdoptionService adoptionService,
+                              RescueOrganizationRepository rescueOrganizationRepository) {
         this.adoptionService = adoptionService;
+        this.rescueOrganizationRepository = rescueOrganizationRepository;
     }
 
     @PostMapping("/applications")
@@ -56,7 +62,8 @@ public class AdoptionController {
     public ResponseEntity<AdoptionApplication> approveApplication(
             @PathVariable UUID id,
             @AuthenticationPrincipal UserPrincipal principal) {
-        AdoptionApplication application = adoptionService.approveApplication(id, principal.userId());
+        RescueOrganization rescueOrg = getRescueOrgForUser(principal.userId());
+        AdoptionApplication application = adoptionService.approveApplication(id, rescueOrg.getId());
         return ResponseEntity.ok(application);
     }
 
@@ -66,7 +73,8 @@ public class AdoptionController {
             @PathVariable UUID id,
             @AuthenticationPrincipal UserPrincipal principal,
             @Valid @RequestBody RejectApplicationRequest request) {
-        AdoptionApplication application = adoptionService.rejectApplication(id, principal.userId(), request.reason());
+        RescueOrganization rescueOrg = getRescueOrgForUser(principal.userId());
+        AdoptionApplication application = adoptionService.rejectApplication(id, rescueOrg.getId(), request.reason());
         return ResponseEntity.ok(application);
     }
 
@@ -84,7 +92,8 @@ public class AdoptionController {
     public ResponseEntity<Adoption> finalizeAdoption(
             @AuthenticationPrincipal UserPrincipal principal,
             @Valid @RequestBody FinalizeAdoptionRequest request) {
-        Adoption adoption = adoptionService.finalizeAdoption(request.applicationId(), principal.userId());
+        RescueOrganization rescueOrg = getRescueOrgForUser(principal.userId());
+        Adoption adoption = adoptionService.finalizeAdoption(request.applicationId(), rescueOrg.getId());
         return ResponseEntity.status(HttpStatus.CREATED).body(adoption);
     }
 
@@ -92,5 +101,10 @@ public class AdoptionController {
     @PreAuthorize("hasRole('ADOPTER')")
     public ResponseEntity<List<Adoption>> getMyAdoptions(@AuthenticationPrincipal UserPrincipal principal) {
         return ResponseEntity.ok(adoptionService.getAdoptionsForAdopter(principal.userId()));
+    }
+
+    private RescueOrganization getRescueOrgForUser(UUID userId) {
+        return rescueOrganizationRepository.findByUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Rescue organization profile not found for user"));
     }
 }
