@@ -154,13 +154,28 @@ run_gatling() {
     cd "$PROJECT_ROOT"
 
     case "$simulation" in
+        all|allflows)
+            echo -e "${YELLOW}[Gatling] Running ALL user flows simulation...${NC}"
+            echo -e "${BLUE}This tests: Public browsing, Foster, Adopter, Rescue Org, Vet, and Admin flows${NC}"
+            ./mvnw gatling:test -Dgatling.simulationClass=com.example.foreverhome.simulation.AllUserFlowsSimulation $extra_args
+            ;;
+        endurance)
+            echo -e "${YELLOW}[Gatling] Running endurance simulation (runs forever until Ctrl+C)...${NC}"
+            ./mvnw gatling:test -Dgatling.simulationClass=com.example.foreverhome.simulation.FullFeatureEnduranceSimulation $extra_args
+            ;;
         stress)
             echo -e "${YELLOW}[Gatling] Running stress test simulation...${NC}"
             ./mvnw gatling:test -Dgatling.simulationClass=com.example.foreverhome.simulation.RegistrationStressSimulation $extra_args
             ;;
-        registration|"")
+        registration)
             echo -e "${YELLOW}[Gatling] Running user registration simulation...${NC}"
             ./mvnw gatling:test -Dgatling.simulationClass=com.example.foreverhome.simulation.UserRegistrationSimulation $extra_args
+            ;;
+        "")
+            # Default to allflows simulation
+            echo -e "${YELLOW}[Gatling] Running ALL user flows simulation (default)...${NC}"
+            echo -e "${BLUE}This tests: Public browsing, Foster, Adopter, Rescue Org, Vet, and Admin flows${NC}"
+            ./mvnw gatling:test -Dgatling.simulationClass=com.example.foreverhome.simulation.AllUserFlowsSimulation $extra_args
             ;;
         *)
             # Treat as a full class name
@@ -259,18 +274,35 @@ case "${1:-}" in
         echo "  gatling [SIM] [OPTS] - Run Gatling load tests"
         echo
         echo "Gatling simulations:"
-        echo "  registration  - User registration simulation (default)"
-        echo "  stress        - Stress test simulation"
-        echo "  <class>       - Custom simulation class name"
+        echo "  all, allflows  - ALL user flows simulation (default) - tests all roles and features"
+        echo "  registration   - User registration simulation only"
+        echo "  stress         - Stress test simulation (high load)"
+        echo "  endurance      - Endurance test (runs forever until Ctrl+C)"
+        echo "  <class>        - Custom simulation class name"
         echo
         echo "Gatling options (pass after simulation name):"
-        echo "  -DUSERS=N          - Number of users (default: 10)"
-        echo "  -DRAMP_DURATION=N  - Ramp-up duration in seconds (default: 10)"
+        echo "  -DUSERS=N           - Number of users per scenario (default: 5 for all, 10 for others)"
+        echo "  -DRAMP_DURATION=N   - Ramp-up duration in seconds (default: 30)"
+        echo "  -DTEST_DURATION=N   - Total test duration in seconds (default: 120)"
+        echo "  -DADMIN_EMAIL=X     - Admin email for admin tests (default: admin@foreverhome.com)"
+        echo "  -DADMIN_PASSWORD=X  - Admin password (default: AdminPass123!)"
         echo
         echo "Examples:"
-        echo "  $0 gatling                           # Run default registration simulation"
+        echo "  $0 gatling                           # Run all user flows simulation (default)"
+        echo "  $0 gatling all                       # Same as above"
+        echo "  $0 gatling all -DUSERS=10            # All flows with 10 users per scenario"
+        echo "  $0 gatling registration              # Run registration simulation"
         echo "  $0 gatling stress                    # Run stress test"
+        echo "  $0 gatling endurance                 # Run forever until Ctrl+C"
         echo "  $0 gatling registration -DUSERS=50  # Registration with 50 users"
+        echo
+        echo "All flows simulation covers:"
+        echo "  - Public browsing (pets, rescue profiles, vet profiles)"
+        echo "  - Foster flow (register, create pet, submit for review)"
+        echo "  - Adopter flow (browse, favorite, apply, track applications)"
+        echo "  - Rescue Org flow (approve pets, manage vets, process applications)"
+        echo "  - Vet flow (lookup pets, sign-off)"
+        echo "  - Admin flow (analytics, moderation, user management)"
         exit 1
         ;;
 esac
