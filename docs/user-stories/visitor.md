@@ -1,6 +1,10 @@
 # Visitor User Stories
 
+#mvp #polish
+
 > **User Type:** Unauthenticated users exploring the Forever Home platform
+
+**Related:** [[index|User Stories Index]] | [[../Roadmap|Roadmap]]
 
 ## Overview
 

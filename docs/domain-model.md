@@ -1,6 +1,14 @@
 # Domain Model
 
-This document defines the core types in the Forever Home domain and the rationale for their existence.
+#mvp #architecture
+
+> This document defines the core types in the Forever Home domain and the rationale for their existence.
+
+**Related Documentation:**
+- [[Roadmap]] - Implementation phases and status
+- [[pet-status]] - Pet lifecycle state machine
+- [[user-stories/index]] - User stories by role
+- [[gaps-and-decisions]] - Architectural decisions
 
 ## Domain Overview
 
@@ -462,7 +470,7 @@ Months | Years
 ```
 Draft | PendingRescue | PendingVet | Available | InProgress | Adopted | Withdrawn | OnHold
 ```
-*See [pet-status.md](./pet-status.md) for detailed definitions.*
+*See [[pet-status]] for detailed definitions.*
 
 ### HealthStatus
 ```

@@ -1,6 +1,10 @@
 # Rescue Organization User Stories
 
+#mvp #core
+
 > **User Type:** Verified entities that facilitate pet adoptions between fosters and adopters
+
+**Related:** [[index|User Stories Index]] | [[../domain-model|Domain Model]] | [[../pet-status|Pet Status]] | [[../Roadmap|Roadmap]]
 
 ## Overview
 

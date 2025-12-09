@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Forever Home - Development Environment Manager
-# Usage: ./dev.sh [start|stop|restart|status]
+# Usage: ./dev.sh [start|stop|restart|status|gatling]
 
 # Colors for output
 RED='\033[0;31m'
@@ -132,6 +132,42 @@ stop_apps() {
     fi
 }
 
+# Run Gatling load tests
+run_gatling() {
+    local simulation="${1:-}"
+    shift 2>/dev/null || true
+    local extra_args="$*"
+
+    # Check if backend is running
+    if ! nc -z localhost $BACKEND_PORT 2>/dev/null; then
+        echo -e "${RED}[Gatling] Backend is not running on port $BACKEND_PORT${NC}"
+        echo -e "${YELLOW}Start the backend first with: ./dev.sh start${NC}"
+        exit 1
+    fi
+
+    echo -e "${BLUE}[Gatling] Running load tests against http://localhost:$BACKEND_PORT${NC}"
+
+    cd "$PROJECT_ROOT"
+
+    case "$simulation" in
+        stress)
+            echo -e "${YELLOW}[Gatling] Running stress test simulation...${NC}"
+            ./mvnw gatling:test -Dgatling.simulationClass=com.example.foreverhome.simulation.RegistrationStressSimulation $extra_args
+            ;;
+        registration|"")
+            echo -e "${YELLOW}[Gatling] Running user registration simulation...${NC}"
+            ./mvnw gatling:test -Dgatling.simulationClass=com.example.foreverhome.simulation.UserRegistrationSimulation $extra_args
+            ;;
+        *)
+            # Treat as a full class name
+            echo -e "${YELLOW}[Gatling] Running simulation: $simulation${NC}"
+            ./mvnw gatling:test -Dgatling.simulationClass="$simulation" $extra_args
+            ;;
+    esac
+
+    echo -e "${GREEN}[Gatling] Load test complete. Reports at target/gatling/${NC}"
+}
+
 # Show status
 show_status() {
     echo -e "${BLUE}=== Forever Home Service Status ===${NC}"
@@ -192,14 +228,33 @@ case "${1:-}" in
     status)
         show_status
         ;;
+    gatling)
+        shift
+        run_gatling "$@"
+        ;;
     *)
-        echo "Usage: $0 {start|stop|restart|status}"
+        echo "Usage: $0 {start|stop|restart|status|gatling}"
         echo
         echo "Commands:"
-        echo "  start   - Start all services (Docker + Backend + Frontend)"
-        echo "  stop    - Stop all services"
-        echo "  restart - Restart backend and frontend (keeps Docker running)"
-        echo "  status  - Show status of all services"
+        echo "  start                - Start all services (Docker + Backend + Frontend)"
+        echo "  stop                 - Stop all services"
+        echo "  restart              - Restart backend and frontend (keeps Docker running)"
+        echo "  status               - Show status of all services"
+        echo "  gatling [SIM] [OPTS] - Run Gatling load tests"
+        echo
+        echo "Gatling simulations:"
+        echo "  registration  - User registration simulation (default)"
+        echo "  stress        - Stress test simulation"
+        echo "  <class>       - Custom simulation class name"
+        echo
+        echo "Gatling options (pass after simulation name):"
+        echo "  -DUSERS=N          - Number of users (default: 10)"
+        echo "  -DRAMP_DURATION=N  - Ramp-up duration in seconds (default: 10)"
+        echo
+        echo "Examples:"
+        echo "  $0 gatling                           # Run default registration simulation"
+        echo "  $0 gatling stress                    # Run stress test"
+        echo "  $0 gatling registration -DUSERS=50  # Registration with 50 users"
         exit 1
         ;;
 esac

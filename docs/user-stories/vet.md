@@ -1,6 +1,10 @@
 # Vet User Stories
 
+#mvp #enhanced
+
 > **User Type:** Licensed veterinarians who verify pet health for adoption readiness
+
+**Related:** [[index|User Stories Index]] | [[../domain-model|Domain Model]] | [[../pet-status|Pet Status]] | [[../Roadmap|Roadmap]]
 
 ## Overview
 

@@ -1,6 +1,10 @@
 # Adopter User Stories
 
+#mvp #core #enhanced
+
 > **User Type:** People seeking to adopt a pet through verified rescue organizations
+
+**Related:** [[index|User Stories Index]] | [[../domain-model|Domain Model]] | [[../Roadmap|Roadmap]]
 
 ## Overview
 

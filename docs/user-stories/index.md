@@ -1,12 +1,17 @@
 # Forever Home - User Stories
 
+#mvp #core #enhanced #polish
+
 > This documentation describes all user stories for the Forever Home pet adoption platform, organized by user type.
 
 ## Related Documentation
 
-- [Domain Model](../domain-model.md) - Entity definitions and relationships
-- [Pet Status](../pet-status.md) - Status lifecycle and transitions
-- [UI Style Guide](../ui-style-guide.md) - Component specifications
+- [[Home]] - Vault home page
+- [[Roadmap]] - Implementation roadmap and priorities
+- [[domain-model]] - Entity definitions and relationships
+- [[pet-status]] - Status lifecycle and transitions
+- [[ui-style-guide]] - Component specifications
+- [[gaps-and-decisions]] - Requirement decisions
 
 ---
 
@@ -16,15 +21,15 @@ Forever Home serves six distinct user types, each with their own journey through
 
 | User Type | Description | Documentation |
 |-----------|-------------|---------------|
-| [Visitor](visitor.md) | Unauthenticated users exploring the platform | Public browsing and discovery |
-| [Foster](foster.md) | Pet owners looking to rehome their pets | Pet registration and rehoming journey |
-| [Adopter](adopter.md) | People seeking to adopt a pet | Browsing, applying, and adoption journey |
-| [Rescue Organization](rescue-organization.md) | Verified entities facilitating adoptions | Pet intake and adoption management |
-| [Vet](vet.md) | Licensed veterinarians verifying pet health | Health verification and sign-off |
-| [Admin](admin.md) | Platform administrators | User approvals, moderation, analytics |
+| [[visitor\|Visitor]] | Unauthenticated users exploring the platform | Public browsing and discovery |
+| [[foster\|Foster]] | Pet owners looking to rehome their pets | Pet registration and rehoming journey |
+| [[adopter\|Adopter]] | People seeking to adopt a pet | Browsing, applying, and adoption journey |
+| [[rescue-organization\|Rescue Organization]] | Verified entities facilitating adoptions | Pet intake and adoption management |
+| [[vet\|Vet]] | Licensed veterinarians verifying pet health | Health verification and sign-off |
+| [[admin\|Admin]] | Platform administrators | User approvals, moderation, analytics |
 
 Cross-cutting concerns:
-- [Notifications](notifications.md) - Email and in-app notification system
+- [[notifications]] - Email and in-app notification system
 
 ---
 

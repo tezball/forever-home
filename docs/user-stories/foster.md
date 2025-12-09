@@ -1,6 +1,10 @@
 # Foster User Stories
 
+#mvp #core #enhanced
+
 > **User Type:** Pet owners looking to rehome their pets through rescue organizations
+
+**Related:** [[index|User Stories Index]] | [[../domain-model|Domain Model]] | [[../pet-status|Pet Status]] | [[../Roadmap|Roadmap]]
 
 ## Overview
 

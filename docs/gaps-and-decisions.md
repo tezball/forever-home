@@ -1,6 +1,14 @@
 # Gaps and Decisions
 
-This document tracks identified gaps in the documentation and records decisions made to resolve them.
+#decision #architecture
+
+> This document tracks identified gaps in the documentation and records decisions made to resolve them.
+
+**Related Documentation:**
+- [[Roadmap]] - Implementation roadmap and priorities
+- [[domain-model]] - Entity definitions affected by decisions
+- [[pet-status]] - Status lifecycle decisions
+- [[e2e-review]] - Testing and bug findings
 
 ---
 

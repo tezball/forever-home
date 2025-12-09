@@ -1,6 +1,10 @@
 # Admin User Stories
 
+#mvp #enhanced #polish
+
 > **User Type:** Platform administrators who manage users, approvals, content, and analytics
+
+**Related:** [[index|User Stories Index]] | [[../domain-model|Domain Model]] | [[../Roadmap|Roadmap]]
 
 ## Overview
 
