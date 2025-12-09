@@ -1,6 +1,14 @@
 # UI Style Guide
 
-A mobile-first design system for Forever Home. Clean, professional, and trustworthy.
+#design #architecture
+
+> A mobile-first design system for Forever Home. Clean, professional, and trustworthy.
+
+**Related Documentation:**
+- [[Home]] - Vault home page
+- [[Roadmap]] - Implementation roadmap
+- [[user-stories/index]] - User stories with UI specs
+- [[domain-model]] - Entity definitions
 
 ## Design Principles
 

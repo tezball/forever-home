@@ -1,0 +1,47 @@
+# Example Terraform variables file
+# Copy this file to terraform.tfvars and customize for your environment
+
+# AWS Configuration
+aws_region = "us-east-1"
+environment = "dev"
+
+# VPC Configuration
+vpc_cidr = "10.0.0.0/16"
+availability_zones = ["us-east-1a", "us-east-1b"]
+
+# ECS Configuration - Minimal sizing (smallest Fargate task)
+# 256 CPU = 0.25 vCPU, 512 MB memory (minimum for Fargate)
+ecs_task_cpu    = 256
+ecs_task_memory = 512
+ecs_desired_count = 1
+container_port = 8080
+
+# RDS Configuration - Minimal sizing
+# db.t4g.micro is the smallest available instance (~$12/month)
+db_instance_class    = "db.t4g.micro"
+db_allocated_storage = 20
+db_name              = "foreverhome"
+db_username          = "foreverhome_admin"
+db_multi_az          = false  # Set to true for production
+
+# Application Configuration
+admin_email          = "admin@yourdomain.com"
+app_base_url         = ""  # Leave empty to use ALB DNS name
+cors_allowed_origins = "http://localhost:5173,http://localhost:3000"
+
+# S3 Configuration
+s3_bucket_name = ""  # Leave empty for auto-generated name
+
+# Domain Configuration (optional)
+domain_name        = ""
+create_certificate = false
+
+# Production Overrides Example:
+# environment         = "prod"
+# ecs_task_cpu        = 512
+# ecs_task_memory     = 1024
+# ecs_desired_count   = 2
+# db_instance_class   = "db.t4g.small"
+# db_multi_az         = true
+# create_certificate  = true
+# domain_name         = "api.foreverhome.com"

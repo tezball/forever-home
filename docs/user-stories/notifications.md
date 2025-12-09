@@ -1,6 +1,10 @@
 # Notification User Stories
 
+#enhanced
+
 > **Cross-cutting Concern:** Email and in-app notifications for all authenticated user types
+
+**Related:** [[index|User Stories Index]] | [[../domain-model|Domain Model]] | [[../Roadmap|Roadmap]]
 
 ## Overview
 

@@ -1,0 +1,124 @@
+# Outputs for Forever Home Infrastructure
+
+# VPC Outputs
+output "vpc_id" {
+  description = "VPC ID"
+  value       = aws_vpc.main.id
+}
+
+output "public_subnet_ids" {
+  description = "Public subnet IDs"
+  value       = aws_subnet.public[*].id
+}
+
+output "private_subnet_ids" {
+  description = "Private subnet IDs"
+  value       = aws_subnet.private[*].id
+}
+
+# ECR Outputs
+output "ecr_repository_url" {
+  description = "ECR repository URL for the application"
+  value       = aws_ecr_repository.app.repository_url
+}
+
+output "ecr_repository_name" {
+  description = "ECR repository name"
+  value       = aws_ecr_repository.app.name
+}
+
+# RDS Outputs
+output "rds_endpoint" {
+  description = "RDS endpoint"
+  value       = aws_db_instance.main.endpoint
+}
+
+output "rds_database_name" {
+  description = "RDS database name"
+  value       = aws_db_instance.main.db_name
+}
+
+output "rds_secret_arn" {
+  description = "ARN of the RDS credentials secret"
+  value       = aws_secretsmanager_secret.db_password.arn
+}
+
+# ECS Outputs
+output "ecs_cluster_name" {
+  description = "ECS cluster name"
+  value       = aws_ecs_cluster.main.name
+}
+
+output "ecs_cluster_arn" {
+  description = "ECS cluster ARN"
+  value       = aws_ecs_cluster.main.arn
+}
+
+output "ecs_service_name" {
+  description = "ECS service name"
+  value       = aws_ecs_service.app.name
+}
+
+output "ecs_task_definition_arn" {
+  description = "ECS task definition ARN"
+  value       = aws_ecs_task_definition.app.arn
+}
+
+# ALB Outputs
+output "alb_dns_name" {
+  description = "ALB DNS name"
+  value       = aws_lb.main.dns_name
+}
+
+output "alb_zone_id" {
+  description = "ALB zone ID (for Route53 alias)"
+  value       = aws_lb.main.zone_id
+}
+
+output "application_url" {
+  description = "Application URL"
+  value       = var.domain_name != "" ? "https://${var.domain_name}" : "http://${aws_lb.main.dns_name}"
+}
+
+# S3 Outputs
+output "s3_bucket_name" {
+  description = "S3 bucket name for images"
+  value       = aws_s3_bucket.images.id
+}
+
+output "s3_bucket_arn" {
+  description = "S3 bucket ARN"
+  value       = aws_s3_bucket.images.arn
+}
+
+# CloudWatch Outputs
+output "cloudwatch_log_group" {
+  description = "CloudWatch log group name"
+  value       = aws_cloudwatch_log_group.app.name
+}
+
+# Secrets Outputs
+output "jwt_secret_arn" {
+  description = "ARN of the JWT secret"
+  value       = aws_secretsmanager_secret.jwt_secret.arn
+}
+
+# Deployment Commands
+output "docker_login_command" {
+  description = "Command to login to ECR"
+  value       = "aws ecr get-login-password --region ${var.aws_region} | docker login --username AWS --password-stdin ${aws_ecr_repository.app.repository_url}"
+}
+
+output "docker_build_push_commands" {
+  description = "Commands to build and push Docker image"
+  value       = <<-EOT
+    # Build the Docker image
+    docker build -t ${aws_ecr_repository.app.repository_url}:latest .
+
+    # Push to ECR
+    docker push ${aws_ecr_repository.app.repository_url}:latest
+
+    # Force new deployment
+    aws ecs update-service --cluster ${aws_ecs_cluster.main.name} --service ${aws_ecs_service.app.name} --force-new-deployment
+  EOT
+}
