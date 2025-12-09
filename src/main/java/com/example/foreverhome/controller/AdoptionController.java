@@ -2,8 +2,12 @@ package com.example.foreverhome.controller;
 
 import com.example.foreverhome.domain.adoption.Adoption;
 import com.example.foreverhome.domain.adoption.AdoptionApplication;
+import com.example.foreverhome.dto.adoption.FinalizeAdoptionRequest;
+import com.example.foreverhome.dto.adoption.RejectApplicationRequest;
+import com.example.foreverhome.dto.adoption.SubmitApplicationRequest;
 import com.example.foreverhome.security.UserPrincipal;
 import com.example.foreverhome.service.AdoptionService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -11,7 +15,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -28,11 +31,9 @@ public class AdoptionController {
     @PreAuthorize("hasRole('ADOPTER')")
     public ResponseEntity<AdoptionApplication> submitApplication(
             @AuthenticationPrincipal UserPrincipal principal,
-            @RequestBody Map<String, Object> request) {
-        UUID petId = UUID.fromString((String) request.get("petId"));
-        String message = (String) request.get("message");
+            @Valid @RequestBody SubmitApplicationRequest request) {
         AdoptionApplication application = adoptionService.submitApplication(
-                principal.userId(), petId, message
+                principal.userId(), request.petId(), request.message()
         );
         return ResponseEntity.status(HttpStatus.CREATED).body(application);
     }
@@ -64,9 +65,8 @@ public class AdoptionController {
     public ResponseEntity<AdoptionApplication> rejectApplication(
             @PathVariable UUID id,
             @AuthenticationPrincipal UserPrincipal principal,
-            @RequestBody Map<String, String> request) {
-        String reason = request.get("reason");
-        AdoptionApplication application = adoptionService.rejectApplication(id, principal.userId(), reason);
+            @Valid @RequestBody RejectApplicationRequest request) {
+        AdoptionApplication application = adoptionService.rejectApplication(id, principal.userId(), request.reason());
         return ResponseEntity.ok(application);
     }
 
@@ -83,9 +83,8 @@ public class AdoptionController {
     @PreAuthorize("hasRole('RESCUE_ORG')")
     public ResponseEntity<Adoption> finalizeAdoption(
             @AuthenticationPrincipal UserPrincipal principal,
-            @RequestBody Map<String, String> request) {
-        UUID applicationId = UUID.fromString(request.get("applicationId"));
-        Adoption adoption = adoptionService.finalizeAdoption(applicationId, principal.userId());
+            @Valid @RequestBody FinalizeAdoptionRequest request) {
+        Adoption adoption = adoptionService.finalizeAdoption(request.applicationId(), principal.userId());
         return ResponseEntity.status(HttpStatus.CREATED).body(adoption);
     }
 

@@ -42,4 +42,7 @@ public interface PetRepository extends CrudRepository<Pet, UUID> {
 
     @Query("SELECT * FROM pets WHERE rescue_org_id = :rescueOrgId AND status = 'PENDING_RESCUE' ORDER BY created_at DESC")
     List<Pet> findPendingByRescueOrgId(@Param("rescueOrgId") UUID rescueOrgId);
+
+    @Query("SELECT * FROM pets WHERE id IN (:ids)")
+    List<Pet> findByIdIn(@Param("ids") List<UUID> ids);
 }

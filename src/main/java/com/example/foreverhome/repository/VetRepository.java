@@ -24,4 +24,10 @@ public interface VetRepository extends CrudRepository<Vet, UUID> {
 
     @Query("SELECT * FROM vets WHERE verified = false")
     List<Vet> findPendingVerification();
+
+    @Query("SELECT * FROM vets WHERE id NOT IN (SELECT vet_id FROM vet_approvals WHERE rescue_org_id = :rescueOrgId)")
+    List<Vet> findNotApprovedByRescueOrg(@Param("rescueOrgId") UUID rescueOrgId);
+
+    @Query("SELECT * FROM vets WHERE id IN (:ids)")
+    List<Vet> findByIdIn(@Param("ids") List<UUID> ids);
 }

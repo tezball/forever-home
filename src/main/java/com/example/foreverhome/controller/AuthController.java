@@ -1,9 +1,6 @@
 package com.example.foreverhome.controller;
 
-import com.example.foreverhome.dto.auth.LoginRequest;
-import com.example.foreverhome.dto.auth.LoginResponse;
-import com.example.foreverhome.dto.auth.RegisterRequest;
-import com.example.foreverhome.dto.auth.RegisterResponse;
+import com.example.foreverhome.dto.auth.*;
 import com.example.foreverhome.service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -35,16 +32,14 @@ public class AuthController {
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<Map<String, String>> refresh(@RequestBody Map<String, String> request) {
-        String refreshToken = request.get("refreshToken");
-        String newAccessToken = authService.refreshAccessToken(refreshToken);
+    public ResponseEntity<Map<String, String>> refresh(@Valid @RequestBody RefreshTokenRequest request) {
+        String newAccessToken = authService.refreshAccessToken(request.refreshToken());
         return ResponseEntity.ok(Map.of("accessToken", newAccessToken));
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout(@RequestBody Map<String, String> request) {
-        String refreshToken = request.get("refreshToken");
-        authService.logout(refreshToken);
+    public ResponseEntity<Void> logout(@Valid @RequestBody LogoutRequest request) {
+        authService.logout(request.refreshToken());
         return ResponseEntity.noContent().build();
     }
 
@@ -55,17 +50,14 @@ public class AuthController {
     }
 
     @PostMapping("/forgot-password")
-    public ResponseEntity<Map<String, String>> forgotPassword(@RequestBody Map<String, String> request) {
-        String email = request.get("email");
-        authService.forgotPassword(email);
+    public ResponseEntity<Map<String, String>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        authService.forgotPassword(request.email());
         return ResponseEntity.ok(Map.of("message", "If the email exists, a password reset link has been sent"));
     }
 
     @PostMapping("/reset-password")
-    public ResponseEntity<Map<String, String>> resetPassword(@RequestBody Map<String, String> request) {
-        String token = request.get("token");
-        String newPassword = request.get("password");
-        authService.resetPassword(token, newPassword);
+    public ResponseEntity<Map<String, String>> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        authService.resetPassword(request.token(), request.newPassword());
         return ResponseEntity.ok(Map.of("message", "Password reset successfully"));
     }
 }

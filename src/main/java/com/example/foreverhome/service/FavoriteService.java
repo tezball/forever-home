@@ -88,10 +88,18 @@ public class FavoriteService {
     public List<PetDto> getFavoritePetsForAdopter(UUID userId) {
         Adopter adopter = getAdopterByUserId(userId);
         List<Favorite> favorites = favoriteRepository.findByAdopterId(adopter.getId());
-        return favorites.stream()
-                .map(fav -> petRepository.findById(fav.getPetId()))
-                .filter(java.util.Optional::isPresent)
-                .map(java.util.Optional::get)
+
+        if (favorites.isEmpty()) {
+            return List.of();
+        }
+
+        // Batch fetch all pets in one query to avoid N+1
+        List<UUID> petIds = favorites.stream()
+                .map(Favorite::getPetId)
+                .toList();
+        List<Pet> pets = petRepository.findByIdIn(petIds);
+
+        return pets.stream()
                 .map(this::toPetDtoWithImages)
                 .toList();
     }

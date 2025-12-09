@@ -114,11 +114,16 @@ public class VetApprovalService {
                 .orElseThrow(() -> new ResourceNotFoundException("Rescue organization not found for user"));
 
         List<VetApproval> approvals = vetApprovalRepository.findByRescueOrgId(rescueOrg.getId());
-        return approvals.stream()
-                .map(approval -> vetRepository.findById(approval.getVetId()))
-                .filter(java.util.Optional::isPresent)
-                .map(java.util.Optional::get)
+
+        if (approvals.isEmpty()) {
+            return List.of();
+        }
+
+        // Batch fetch all vets in one query to avoid N+1
+        List<UUID> vetIds = approvals.stream()
+                .map(VetApproval::getVetId)
                 .toList();
+        return vetRepository.findByIdIn(vetIds);
     }
 
     /**
@@ -146,16 +151,8 @@ public class VetApprovalService {
         RescueOrganization rescueOrg = rescueOrganizationRepository.findByUserId(rescueOrgUserId)
                 .orElseThrow(() -> new ResourceNotFoundException("Rescue organization not found for user"));
 
-        // Get all vets and filter out ones already approved by this rescue
-        List<Vet> allVets = (List<Vet>) vetRepository.findAll();
-        List<VetApproval> approvals = vetApprovalRepository.findByRescueOrgId(rescueOrg.getId());
-        List<UUID> approvedVetIds = approvals.stream()
-                .map(VetApproval::getVetId)
-                .toList();
-
-        return allVets.stream()
-                .filter(vet -> !approvedVetIds.contains(vet.getId()))
-                .toList();
+        // Use efficient single query instead of loading all vets
+        return vetRepository.findNotApprovedByRescueOrg(rescueOrg.getId());
     }
 
     /**

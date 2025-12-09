@@ -1,5 +1,6 @@
 package com.example.foreverhome.service;
 
+import com.example.foreverhome.controller.VetController.VetSignOffRequest;
 import com.example.foreverhome.domain.pet.Pet;
 import com.example.foreverhome.domain.pet.PetImage;
 import com.example.foreverhome.domain.pet.PetStatus;
@@ -8,6 +9,7 @@ import com.example.foreverhome.dto.pet.CreatePetRequest;
 import com.example.foreverhome.dto.pet.PetDto;
 import com.example.foreverhome.dto.pet.UpdatePetRequest;
 import com.example.foreverhome.exception.AccessDeniedException;
+import com.example.foreverhome.exception.DuplicateMicrochipException;
 import com.example.foreverhome.exception.InvalidStatusTransitionException;
 import com.example.foreverhome.exception.ResourceNotFoundException;
 import com.example.foreverhome.repository.FosterRepository;
@@ -53,6 +55,11 @@ public class PetService {
         // Look up the foster profile by user ID
         Foster foster = fosterRepository.findByUserId(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Foster profile not found for user"));
+
+        // Check for duplicate microchip
+        if (petRepository.existsByMicrochipId(request.microchipId())) {
+            throw new DuplicateMicrochipException(request.microchipId());
+        }
 
         Pet pet = Pet.create(
                 foster.getId(),
@@ -285,5 +292,54 @@ public class PetService {
         if (pet.getRescueOrgId() == null || !pet.getRescueOrgId().equals(rescueOrgId)) {
             throw new AccessDeniedException("This pet is not associated with your rescue organization");
         }
+    }
+
+    /**
+     * Sign off on a pet with full validation that the vet is approved by the pet's rescue org.
+     */
+    public PetDto signOffByVetWithValidation(UUID petId, UUID vetUserId, VetSignOffRequest request) {
+        Pet pet = findPetOrThrow(petId);
+
+        // Verify the vet is approved by this pet's rescue org
+        if (pet.getRescueOrgId() != null) {
+            boolean isApproved = vetApprovalService.isVetUserApprovedByRescueOrg(vetUserId, pet.getRescueOrgId());
+            if (!isApproved) {
+                throw new AccessDeniedException(
+                        "You are not approved to verify pets for this rescue organization. " +
+                        "Please contact the rescue organization to request approval.");
+            }
+        }
+
+        // Validate health requirements
+        if (!Boolean.TRUE.equals(request.isNeutered())) {
+            throw new InvalidStatusTransitionException("Pet must be neutered before sign-off");
+        }
+        if (!Boolean.TRUE.equals(request.isVaccinated())) {
+            throw new InvalidStatusTransitionException("Pet must be vaccinated before sign-off");
+        }
+        if (!Boolean.TRUE.equals(request.isHealthy())) {
+            throw new InvalidStatusTransitionException("Pet must be healthy before sign-off");
+        }
+
+        return signOffByVet(petId);
+    }
+
+    /**
+     * Decline a pet with full validation that the vet is approved by the pet's rescue org.
+     */
+    public PetDto declineByVetWithValidation(UUID petId, UUID vetUserId, String reason) {
+        Pet pet = findPetOrThrow(petId);
+
+        // Verify the vet is approved by this pet's rescue org
+        if (pet.getRescueOrgId() != null) {
+            boolean isApproved = vetApprovalService.isVetUserApprovedByRescueOrg(vetUserId, pet.getRescueOrgId());
+            if (!isApproved) {
+                throw new AccessDeniedException(
+                        "You are not approved to verify pets for this rescue organization. " +
+                        "Please contact the rescue organization to request approval.");
+            }
+        }
+
+        return declineByVet(petId, reason);
     }
 }

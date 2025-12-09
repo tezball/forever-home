@@ -1,7 +1,9 @@
 package com.example.foreverhome.controller;
 
 import com.example.foreverhome.dto.pet.CreatePetRequest;
+import com.example.foreverhome.dto.pet.DeclinePetRequest;
 import com.example.foreverhome.dto.pet.PetDto;
+import com.example.foreverhome.dto.pet.SubmitForReviewRequest;
 import com.example.foreverhome.dto.pet.UpdatePetRequest;
 import com.example.foreverhome.security.UserPrincipal;
 import com.example.foreverhome.service.PetService;
@@ -13,7 +15,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -60,9 +61,8 @@ public class PetController {
     public ResponseEntity<PetDto> submitForReview(
             @PathVariable UUID id,
             @AuthenticationPrincipal UserPrincipal principal,
-            @RequestBody Map<String, UUID> request) {
-        UUID rescueOrgId = request.get("rescueOrgId");
-        PetDto pet = petService.submitForReview(id, principal.userId(), rescueOrgId);
+            @Valid @RequestBody SubmitForReviewRequest request) {
+        PetDto pet = petService.submitForReview(id, principal.userId(), request.rescueOrgId());
         return ResponseEntity.ok(pet);
     }
 
@@ -80,9 +80,8 @@ public class PetController {
     public ResponseEntity<PetDto> declineByRescue(
             @PathVariable UUID id,
             @AuthenticationPrincipal UserPrincipal principal,
-            @RequestBody Map<String, String> request) {
-        String reason = request.get("reason");
-        PetDto pet = petService.declineByRescue(id, principal.userId(), reason);
+            @Valid @RequestBody DeclinePetRequest request) {
+        PetDto pet = petService.declineByRescue(id, principal.userId(), request.reason());
         return ResponseEntity.ok(pet);
     }
 

@@ -4,6 +4,7 @@ import com.example.foreverhome.domain.pet.PetStatus;
 import com.example.foreverhome.domain.user.AccountStatus;
 import com.example.foreverhome.domain.user.User;
 import com.example.foreverhome.domain.user.UserRole;
+import com.example.foreverhome.exception.ResourceNotFoundException;
 import com.example.foreverhome.repository.AdoptionRepository;
 import com.example.foreverhome.repository.PetRepository;
 import com.example.foreverhome.repository.UserRepository;
@@ -12,7 +13,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 import java.util.stream.StreamSupport;
 
 @RestController
@@ -32,8 +32,8 @@ public class AdminController {
 
     @GetMapping("/analytics")
     public ResponseEntity<AnalyticsResponse> getAnalytics() {
-        long totalUsers = StreamSupport.stream(userRepository.findAll().spliterator(), false).count();
-        long totalPets = StreamSupport.stream(petRepository.findAll().spliterator(), false).count();
+        long totalUsers = userRepository.count();
+        long totalPets = petRepository.count();
         long totalAdoptions = adoptionRepository.countAll();
 
         // Count pending approvals (RESCUE_ORGs with PENDING status - vets are approved by rescues)
@@ -109,7 +109,7 @@ public class AdminController {
     public ResponseEntity<Void> approveUser(@PathVariable String type, @PathVariable String id) {
         var userId = java.util.UUID.fromString(id);
         var user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User", userId));
 
         user.activate();
         userRepository.save(user);
@@ -121,7 +121,7 @@ public class AdminController {
     public ResponseEntity<Void> rejectUser(@PathVariable String type, @PathVariable String id) {
         var userId = java.util.UUID.fromString(id);
         var user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User", userId));
 
         user.suspend();
         userRepository.save(user);
@@ -133,7 +133,7 @@ public class AdminController {
     public ResponseEntity<Void> suspendUser(@PathVariable String id) {
         var userId = java.util.UUID.fromString(id);
         var user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User", userId));
 
         user.suspend();
         userRepository.save(user);
@@ -145,7 +145,7 @@ public class AdminController {
     public ResponseEntity<Void> reactivateUser(@PathVariable String id) {
         var userId = java.util.UUID.fromString(id);
         var user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User", userId));
 
         user.reactivate();
         userRepository.save(user);

@@ -188,12 +188,19 @@ public class AdoptionService {
 
     private void rejectOtherApplications(UUID petId, UUID excludeApplicationId) {
         List<AdoptionApplication> activeApplications = applicationRepository.findActiveByPetId(petId);
+
+        if (activeApplications.isEmpty()) {
+            return;
+        }
+
+        // Fetch pet once outside the loop to avoid N+1
+        Pet pet = findPetOrThrow(petId);
+
         for (AdoptionApplication app : activeApplications) {
             if (!app.getId().equals(excludeApplicationId)) {
                 app.reject();
                 applicationRepository.save(app);
 
-                Pet pet = findPetOrThrow(petId);
                 notificationService.notifyApplicationStatusChange(
                         app.getAdopterId(), pet.getName(), "Rejected - Another applicant was selected"
                 );
