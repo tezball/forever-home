@@ -15,6 +15,8 @@ BACKEND_PORT=8080
 FRONTEND_PORT=5173
 POSTGRES_PORT=5432
 LOCALSTACK_PORT=4566
+LOKI_PORT=3100
+GRAFANA_PORT=3000
 
 # Check if a port is in use (for local processes)
 port_in_use() {
@@ -64,7 +66,7 @@ check_prereqs() {
 
 # Start Docker services
 start_docker() {
-    echo -e "${BLUE}[Docker] Starting PostgreSQL + LocalStack...${NC}"
+    echo -e "${BLUE}[Docker] Starting PostgreSQL, LocalStack, Loki, Grafana...${NC}"
     cd "$PROJECT_ROOT"
     docker compose up -d
 
@@ -72,6 +74,8 @@ start_docker() {
     echo -e "${YELLOW}[Docker] Waiting for services...${NC}"
     wait_for_port $POSTGRES_PORT "PostgreSQL" 30 || echo -e "${YELLOW}[PostgreSQL] May still be starting...${NC}"
     wait_for_port $LOCALSTACK_PORT "LocalStack" 30 || echo -e "${YELLOW}[LocalStack] May still be starting...${NC}"
+    wait_for_port $LOKI_PORT "Loki" 30 || echo -e "${YELLOW}[Loki] May still be starting...${NC}"
+    wait_for_port $GRAFANA_PORT "Grafana" 30 || echo -e "${YELLOW}[Grafana] May still be starting...${NC}"
 }
 
 # Stop Docker services
@@ -183,6 +187,18 @@ show_status() {
         echo -e "${GREEN}[LocalStack]  Running on port $LOCALSTACK_PORT${NC}"
     else
         echo -e "${RED}[LocalStack]  Not running${NC}"
+    fi
+
+    if nc -z localhost $LOKI_PORT 2>/dev/null; then
+        echo -e "${GREEN}[Loki]        Running on http://localhost:$LOKI_PORT${NC}"
+    else
+        echo -e "${RED}[Loki]        Not running${NC}"
+    fi
+
+    if nc -z localhost $GRAFANA_PORT 2>/dev/null; then
+        echo -e "${GREEN}[Grafana]     Running on http://localhost:$GRAFANA_PORT (admin/admin)${NC}"
+    else
+        echo -e "${RED}[Grafana]     Not running${NC}"
     fi
 
     if nc -z localhost $BACKEND_PORT 2>/dev/null; then

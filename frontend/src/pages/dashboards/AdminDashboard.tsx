@@ -11,34 +11,6 @@ interface Approval {
   submittedAt: string;
 }
 
-interface UserDistribution {
-  adopters: number;
-  fosters: number;
-  rescueOrgs: number;
-  vets: number;
-  admins: number;
-}
-
-interface PetStatistics {
-  available: number;
-  pendingRescue: number;
-  pendingVet: number;
-  inProgress: number;
-  adopted: number;
-  draft: number;
-  onHold: number;
-  withdrawn: number;
-}
-
-interface Analytics {
-  totalUsers: number;
-  totalPets: number;
-  totalAdoptions: number;
-  pendingApprovals: number;
-  userDistribution: UserDistribution;
-  petStatistics: PetStatistics;
-}
-
 interface UserItem {
   id: string;
   name: string;
@@ -52,9 +24,8 @@ export function AdminDashboard() {
   const { user } = useAuth();
   const [approvals, setApprovals] = useState<Approval[]>([]);
   const [users, setUsers] = useState<UserItem[]>([]);
-  const [analytics, setAnalytics] = useState<Analytics | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'approvals' | 'users' | 'analytics'>('approvals');
+  const [activeTab, setActiveTab] = useState<'approvals' | 'users'>('approvals');
 
   useEffect(() => {
     fetchData();
@@ -62,14 +33,12 @@ export function AdminDashboard() {
 
   const fetchData = async () => {
     try {
-      const [approvalsRes, usersRes, analyticsRes] = await Promise.all([
+      const [approvalsRes, usersRes] = await Promise.all([
         apiClient.get<Approval[]>('/admin/approvals'),
         apiClient.get<UserItem[]>('/admin/users'),
-        apiClient.get<Analytics>('/admin/analytics'),
       ]);
       setApprovals(approvalsRes.data);
       setUsers(usersRes.data);
-      setAnalytics(analyticsRes.data);
     } catch (err) {
       console.error('Failed to fetch admin data:', err);
     } finally {
@@ -117,32 +86,23 @@ export function AdminDashboard() {
 
   return (
     <div className="container-app py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-        <p className="text-gray-600">Welcome back, {user?.name}</p>
-      </div>
-
-      {/* Analytics Summary */}
-      {analytics && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <div className="card p-4 text-center">
-            <p className="text-3xl font-bold text-primary-500">{analytics.totalUsers}</p>
-            <p className="text-sm text-gray-600">Total Users</p>
-          </div>
-          <div className="card p-4 text-center">
-            <p className="text-3xl font-bold text-info-500">{analytics.totalPets}</p>
-            <p className="text-sm text-gray-600">Total Pets</p>
-          </div>
-          <div className="card p-4 text-center">
-            <p className="text-3xl font-bold text-success-500">{analytics.totalAdoptions}</p>
-            <p className="text-sm text-gray-600">Adoptions</p>
-          </div>
-          <div className="card p-4 text-center">
-            <p className="text-3xl font-bold text-warning-600">{analytics.pendingApprovals}</p>
-            <p className="text-sm text-gray-600">Pending</p>
-          </div>
+      <div className="mb-8 flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+          <p className="text-gray-600">Welcome back, {user?.name}</p>
         </div>
-      )}
+        <a
+          href="http://localhost:3000/d/forever-home-admin-analytics"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="btn btn-outline flex items-center gap-2"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
+          </svg>
+          View Analytics in Grafana
+        </a>
+      </div>
 
       {/* Tabs */}
       <div className="border-b border-secondary-200 mb-6">
@@ -166,16 +126,6 @@ export function AdminDashboard() {
             }`}
           >
             User Management
-          </button>
-          <button
-            onClick={() => setActiveTab('analytics')}
-            className={`pb-4 font-medium border-b-2 transition-colors ${
-              activeTab === 'analytics'
-                ? 'border-primary-500 text-primary-500'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Analytics
           </button>
         </nav>
       </div>
@@ -293,97 +243,6 @@ export function AdminDashboard() {
             </div>
           )}
 
-          {/* Analytics Tab */}
-          {activeTab === 'analytics' && analytics && (
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="card p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">User Distribution</h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Adopters</span>
-                    <span className="font-medium">{analytics.userDistribution.adopters}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Fosters</span>
-                    <span className="font-medium">{analytics.userDistribution.fosters}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Rescue Organizations</span>
-                    <span className="font-medium">{analytics.userDistribution.rescueOrgs}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Veterinarians</span>
-                    <span className="font-medium">{analytics.userDistribution.vets}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Admins</span>
-                    <span className="font-medium">{analytics.userDistribution.admins}</span>
-                  </div>
-                </div>
-              </div>
-              <div className="card p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Pet Statistics</h3>
-                <div className="space-y-4">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <span className="text-gray-900 font-medium">Available</span>
-                      <p className="text-xs text-gray-500">Passed all verifications, publicly listed for adoption</p>
-                    </div>
-                    <span className="font-medium text-success-500">{analytics.petStatistics.available}</span>
-                  </div>
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <span className="text-gray-900 font-medium">Pending Rescue Review</span>
-                      <p className="text-xs text-gray-500">Submitted by foster, awaiting rescue organization acceptance</p>
-                    </div>
-                    <span className="font-medium text-warning-600">{analytics.petStatistics.pendingRescue}</span>
-                  </div>
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <span className="text-gray-900 font-medium">Pending Vet Review</span>
-                      <p className="text-xs text-gray-500">Accepted by rescue, awaiting veterinary verification</p>
-                    </div>
-                    <span className="font-medium text-warning-600">{analytics.petStatistics.pendingVet}</span>
-                  </div>
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <span className="text-gray-900 font-medium">In Progress</span>
-                      <p className="text-xs text-gray-500">Adoption application approved, process underway</p>
-                    </div>
-                    <span className="font-medium text-info-500">{analytics.petStatistics.inProgress}</span>
-                  </div>
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <span className="text-gray-900 font-medium">Adopted</span>
-                      <p className="text-xs text-gray-500">Successfully adopted, found their forever home</p>
-                    </div>
-                    <span className="font-medium text-primary-500">{analytics.petStatistics.adopted}</span>
-                  </div>
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <span className="text-gray-900 font-medium">Draft</span>
-                      <p className="text-xs text-gray-500">Profile being created by foster, not yet submitted</p>
-                    </div>
-                    <span className="font-medium text-gray-400">{analytics.petStatistics.draft}</span>
-                  </div>
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <span className="text-gray-900 font-medium">On Hold</span>
-                      <p className="text-xs text-gray-500">Temporarily unavailable (medical, behavioral, or admin review)</p>
-                    </div>
-                    <span className="font-medium text-gray-500">{analytics.petStatistics.onHold}</span>
-                  </div>
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <span className="text-gray-900 font-medium">Withdrawn</span>
-                      <p className="text-xs text-gray-500">Removed from adoption process by foster</p>
-                    </div>
-                    <span className="font-medium text-gray-400">{analytics.petStatistics.withdrawn}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
         </>
       )}
     </div>

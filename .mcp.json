@@ -40,6 +40,19 @@
         "@modelcontextprotocol/server-filesystem",
         "/home/tezball/projects/forever-home"
       ]
+    },
+    "grafana": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "--network=host",
+        "-e", "GRAFANA_URL=http://localhost:3000",
+        "-e", "GRAFANA_SERVICE_ACCOUNT_TOKEN=glsa_buxpPbLu2Pxg5zZdEEcAxbuzVeUl56dz_77c25f5f",
+        "grafana/mcp-grafana:latest",
+        "-t", "stdio"
+      ]
     }
   }
 }
