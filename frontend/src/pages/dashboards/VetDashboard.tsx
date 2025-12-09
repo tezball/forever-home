@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { Button, Input, Modal } from '../../components';
 import type { Pet } from '../../types';
@@ -10,9 +11,20 @@ export function VetDashboard() {
   const [searching, setSearching] = useState(false);
   const [pet, setPet] = useState<Pet | null>(null);
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const [signOffModalOpen, setSignOffModalOpen] = useState(false);
+  const [declineModalOpen, setDeclineModalOpen] = useState(false);
   const [signOffNotes, setSignOffNotes] = useState('');
+  const [declineReason, setDeclineReason] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [isNeutered, setIsNeutered] = useState(false);
+  const [isVaccinated, setIsVaccinated] = useState(false);
+  const [isHealthy, setIsHealthy] = useState(false);
+
+  // Decline reason checkboxes
+  const [declineNotNeutered, setDeclineNotNeutered] = useState(false);
+  const [declineVaccinations, setDeclineVaccinations] = useState(false);
+  const [declineHealthConcerns, setDeclineHealthConcerns] = useState(false);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,82 +35,112 @@ export function VetDashboard() {
     setPet(null);
 
     try {
-      const response = await apiClient.get<Pet>(`/pets/lookup?microchip=${microchipId}`);
+      const response = await apiClient.get<Pet>(`/vet/pets/lookup?microchip=${microchipId}`);
       setPet(response.data);
-    } catch {
-      setError('No pet found with that microchip ID');
-      // Demo: Show mock pet
-      if (microchipId === 'MC123456') {
-        setPet({
-          id: '1',
-          name: 'Luna',
-          species: 'DOG',
-          breed: 'Siberian Husky',
-          age: 2,
-          ageUnit: 'YEARS',
-          sex: 'FEMALE',
-          size: 'MEDIUM',
-          microchipId: 'MC123456',
-          description: 'Luna is a friendly and energetic husky.',
-          healthNotes: null,
-          status: 'PENDING_VET',
-          fosterId: 'f1',
-          rescueOrgId: 'r1',
-          createdAt: new Date().toISOString(),
-          imageUrls: [],
-        });
-        setError('');
-      }
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'No pet found with that microchip ID';
+      setError(errorMessage);
     } finally {
       setSearching(false);
     }
   };
 
+  const resetSignOffForm = () => {
+    setIsNeutered(false);
+    setIsVaccinated(false);
+    setIsHealthy(false);
+    setSignOffNotes('');
+  };
+
+  const openSignOffModal = () => {
+    resetSignOffForm();
+    setSignOffModalOpen(true);
+  };
+
+  const openDeclineModal = () => {
+    setDeclineReason('');
+    setDeclineNotNeutered(false);
+    setDeclineVaccinations(false);
+    setDeclineHealthConcerns(false);
+    setDeclineModalOpen(true);
+  };
+
+  const buildDeclineReason = () => {
+    const reasons: string[] = [];
+    if (declineNotNeutered) reasons.push('Not neutered/spayed');
+    if (declineVaccinations) reasons.push('Vaccinations incomplete');
+    if (declineHealthConcerns) reasons.push('Health concerns requiring treatment');
+    if (declineReason.trim()) reasons.push(declineReason.trim());
+    return reasons.join('; ');
+  };
+
+  const hasDeclineReason = declineNotNeutered || declineVaccinations || declineHealthConcerns || declineReason.trim();
+
   const handleSignOff = async () => {
-    if (!pet) return;
+    if (!pet || !isNeutered || !isVaccinated || !isHealthy) return;
 
     setSubmitting(true);
+    setError('');
     try {
-      await apiClient.post('/vets/signoff', {
-        petId: pet.id,
-        notes: signOffNotes,
+      await apiClient.post(`/vet/pets/${pet.id}/sign-off`, {
+        isNeutered,
+        isVaccinated,
+        isHealthy,
+        healthNotes: signOffNotes || null,
       });
       setSignOffModalOpen(false);
       setPet({ ...pet, status: 'AVAILABLE' });
-      setSignOffNotes('');
-    } catch {
-      // Handle error
+      setSuccessMessage(`${pet.name} has been verified and is now available for adoption`);
+      resetSignOffForm();
+      setTimeout(() => setSuccessMessage(''), 5000);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to sign off on pet';
+      setError(errorMessage);
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleDecline = async () => {
-    if (!pet) return;
+    if (!pet || !hasDeclineReason) return;
 
     setSubmitting(true);
+    setError('');
     try {
-      await apiClient.post('/vets/decline', {
-        petId: pet.id,
-        reason: signOffNotes,
+      await apiClient.post(`/vet/pets/${pet.id}/decline`, {
+        reason: buildDeclineReason(),
       });
+      setDeclineModalOpen(false);
+      setSuccessMessage(`${pet.name} has been declined and returned to rescue org for review`);
       setPet(null);
       setMicrochipId('');
-      setSignOffNotes('');
-    } catch {
-      // Handle error
+      setDeclineReason('');
+      setDeclineNotNeutered(false);
+      setDeclineVaccinations(false);
+      setDeclineHealthConcerns(false);
+      setTimeout(() => setSuccessMessage(''), 5000);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to decline pet';
+      setError(errorMessage);
     } finally {
       setSubmitting(false);
     }
   };
 
+  const canApprove = isNeutered && isVaccinated && isHealthy;
+
   const canSignOff = pet?.status === 'PENDING_VET';
 
   return (
     <div className="container-app py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Veterinarian Dashboard</h1>
-        <p className="text-gray-600">Welcome back, {user?.name}</p>
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Veterinarian Dashboard</h1>
+          <p className="text-gray-600">Welcome back, {user?.name}</p>
+        </div>
+        <Link to="/vet/history">
+          <Button variant="outline">View Sign-Off History</Button>
+        </Link>
       </div>
 
       {/* Microchip Lookup */}
@@ -120,6 +162,13 @@ export function VetDashboard() {
           </Button>
         </form>
       </div>
+
+      {/* Success Message */}
+      {successMessage && (
+        <div className="bg-success-50 border border-success-200 text-success-700 px-4 py-3 rounded mb-8">
+          {successMessage}
+        </div>
+      )}
 
       {/* Error */}
       {error && (
@@ -174,10 +223,10 @@ export function VetDashboard() {
 
               {canSignOff && (
                 <div className="flex gap-4">
-                  <Button variant="outline" onClick={() => setSignOffModalOpen(true)}>
+                  <Button variant="outline" onClick={openDeclineModal}>
                     Decline
                   </Button>
-                  <Button variant="primary" onClick={() => setSignOffModalOpen(true)}>
+                  <Button variant="primary" onClick={openSignOffModal}>
                     Sign Off - Ready for Adoption
                   </Button>
                 </div>
@@ -201,30 +250,152 @@ export function VetDashboard() {
       >
         <div className="space-y-4">
           <p className="text-gray-600">
-            Please confirm that {pet?.name} meets all health requirements for adoption:
+            Please verify that {pet?.name} meets all health requirements for adoption:
           </p>
-          <ul className="list-disc list-inside text-gray-600 text-sm">
-            <li>Neutered/Spayed</li>
-            <li>Up-to-date on vaccinations</li>
-            <li>No major health concerns</li>
-          </ul>
+
+          <div className="space-y-3">
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={isNeutered}
+                onChange={(e) => setIsNeutered(e.target.checked)}
+                className="w-5 h-5 rounded border-gray-300 text-primary-500 focus:ring-primary-500"
+              />
+              <span className="text-gray-700">Neutered/Spayed</span>
+            </label>
+
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={isVaccinated}
+                onChange={(e) => setIsVaccinated(e.target.checked)}
+                className="w-5 h-5 rounded border-gray-300 text-primary-500 focus:ring-primary-500"
+              />
+              <span className="text-gray-700">Up-to-date on vaccinations</span>
+            </label>
+
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={isHealthy}
+                onChange={(e) => setIsHealthy(e.target.checked)}
+                className="w-5 h-5 rounded border-gray-300 text-primary-500 focus:ring-primary-500"
+              />
+              <span className="text-gray-700">No major health concerns</span>
+            </label>
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Notes (optional)
+              Health Notes (optional)
             </label>
             <textarea
               value={signOffNotes}
               onChange={(e) => setSignOffNotes(e.target.value)}
               className="input min-h-24"
-              placeholder="Any additional health notes..."
+              placeholder="Any additional health notes or observations..."
             />
           </div>
+
           <div className="flex gap-4 pt-4">
-            <Button variant="outline" onClick={handleDecline} loading={submitting} className="flex-1">
-              Decline
+            <Button
+              variant="outline"
+              onClick={() => setSignOffModalOpen(false)}
+              className="flex-1"
+            >
+              Cancel
             </Button>
-            <Button variant="primary" onClick={handleSignOff} loading={submitting} className="flex-1">
-              Approve
+            <Button
+              variant="primary"
+              onClick={handleSignOff}
+              loading={submitting}
+              disabled={!canApprove}
+              className="flex-1"
+            >
+              Approve for Adoption
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Decline Modal */}
+      <Modal
+        isOpen={declineModalOpen}
+        onClose={() => setDeclineModalOpen(false)}
+        title="Decline Pet"
+      >
+        <div className="space-y-4">
+          <p className="text-gray-600">
+            Please select the reasons for declining {pet?.name}. The pet will be returned to the rescue organization for further review.
+          </p>
+
+          <div className="space-y-3">
+            <p className="text-sm font-medium text-gray-700">Common Decline Reasons</p>
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={declineNotNeutered}
+                onChange={(e) => setDeclineNotNeutered(e.target.checked)}
+                className="w-5 h-5 rounded border-gray-300 text-error-600 focus:ring-error-500"
+              />
+              <span className="text-gray-700">Not neutered/spayed</span>
+            </label>
+
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={declineVaccinations}
+                onChange={(e) => setDeclineVaccinations(e.target.checked)}
+                className="w-5 h-5 rounded border-gray-300 text-error-600 focus:ring-error-500"
+              />
+              <span className="text-gray-700">Vaccinations incomplete</span>
+            </label>
+
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={declineHealthConcerns}
+                onChange={(e) => setDeclineHealthConcerns(e.target.checked)}
+                className="w-5 h-5 rounded border-gray-300 text-error-600 focus:ring-error-500"
+              />
+              <span className="text-gray-700">Health concerns requiring treatment</span>
+            </label>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Additional Notes (optional)
+            </label>
+            <textarea
+              value={declineReason}
+              onChange={(e) => setDeclineReason(e.target.value)}
+              className="input min-h-24"
+              placeholder="Provide any additional details about the decline reason..."
+            />
+          </div>
+
+          {!hasDeclineReason && (
+            <p className="text-sm text-error-600">
+              Please select at least one reason or provide additional notes.
+            </p>
+          )}
+
+          <div className="flex gap-4 pt-4">
+            <Button
+              variant="outline"
+              onClick={() => setDeclineModalOpen(false)}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              onClick={handleDecline}
+              loading={submitting}
+              disabled={!hasDeclineReason}
+              className="flex-1"
+            >
+              Decline Pet
             </Button>
           </div>
         </div>

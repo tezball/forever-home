@@ -3,9 +3,11 @@ package com.example.foreverhome.controller;
 import com.example.foreverhome.domain.adoption.AdoptionApplication;
 import com.example.foreverhome.domain.pet.Pet;
 import com.example.foreverhome.domain.pet.PetImage;
+import com.example.foreverhome.domain.profile.Adopter;
 import com.example.foreverhome.domain.profile.RescueOrganization;
 import com.example.foreverhome.dto.pet.PetDto;
 import com.example.foreverhome.exception.ResourceNotFoundException;
+import com.example.foreverhome.repository.AdopterRepository;
 import com.example.foreverhome.repository.AdoptionApplicationRepository;
 import com.example.foreverhome.repository.PetImageRepository;
 import com.example.foreverhome.repository.PetRepository;
@@ -18,7 +20,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Controller for rescue organization dashboard operations.
@@ -33,15 +37,18 @@ public class RescueDashboardController {
     private final PetImageRepository petImageRepository;
     private final AdoptionApplicationRepository applicationRepository;
     private final RescueOrganizationRepository rescueOrganizationRepository;
+    private final AdopterRepository adopterRepository;
 
     public RescueDashboardController(PetRepository petRepository,
                                       PetImageRepository petImageRepository,
                                       AdoptionApplicationRepository applicationRepository,
-                                      RescueOrganizationRepository rescueOrganizationRepository) {
+                                      RescueOrganizationRepository rescueOrganizationRepository,
+                                      AdopterRepository adopterRepository) {
         this.petRepository = petRepository;
         this.petImageRepository = petImageRepository;
         this.applicationRepository = applicationRepository;
         this.rescueOrganizationRepository = rescueOrganizationRepository;
+        this.adopterRepository = adopterRepository;
     }
 
     /**
@@ -98,6 +105,7 @@ public class RescueDashboardController {
 
         // Get all pets for this rescue org
         List<Pet> pets = petRepository.findByRescueOrgId(rescueOrg.getId());
+        Map<UUID, Pet> petMap = pets.stream().collect(Collectors.toMap(Pet::getId, p -> p));
         List<UUID> petIds = pets.stream().map(Pet::getId).toList();
 
         // Get all applications for these pets
@@ -105,8 +113,16 @@ public class RescueDashboardController {
                 .flatMap(petId -> applicationRepository.findByPetId(petId).stream())
                 .toList();
 
+        // Get all adopters for these applications
+        List<UUID> adopterIds = allApplications.stream().map(AdoptionApplication::getAdopterId).distinct().toList();
+        Map<UUID, Adopter> adopterMap = adopterIds.stream()
+                .map(adopterRepository::findById)
+                .filter(java.util.Optional::isPresent)
+                .map(java.util.Optional::get)
+                .collect(Collectors.toMap(Adopter::getId, a -> a));
+
         List<ApplicationResponse> responses = allApplications.stream()
-                .map(ApplicationResponse::from)
+                .map(app -> ApplicationResponse.from(app, petMap.get(app.getPetId()), adopterMap.get(app.getAdopterId())))
                 .toList();
 
         return ResponseEntity.ok(responses);
@@ -118,7 +134,11 @@ public class RescueDashboardController {
     record ApplicationResponse(
             UUID id,
             UUID petId,
+            String petName,
+            String petImageUrl,
             UUID adopterId,
+            String adopterName,
+            String adopterPhone,
             String status,
             String livingSituation,
             String petExperience,
@@ -126,11 +146,15 @@ public class RescueDashboardController {
             Instant submittedAt,
             Instant reviewedAt
     ) {
-        static ApplicationResponse from(AdoptionApplication app) {
+        static ApplicationResponse from(AdoptionApplication app, Pet pet, Adopter adopter) {
             return new ApplicationResponse(
                     app.getId(),
                     app.getPetId(),
+                    pet != null ? pet.getName() : "Unknown",
+                    null, // Image URL - can be fetched separately if needed
                     app.getAdopterId(),
+                    adopter != null ? adopter.getFullName() : "Unknown",
+                    adopter != null ? adopter.getPhone() : null,
                     app.getStatus().name(),
                     app.getLivingSituation(),
                     app.getPetExperience(),

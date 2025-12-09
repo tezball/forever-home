@@ -1,7 +1,14 @@
 package com.example.foreverhome.controller;
 
+import com.example.foreverhome.domain.pet.Pet;
 import com.example.foreverhome.domain.profile.RescueOrganization;
+import com.example.foreverhome.domain.profile.Vet;
+import com.example.foreverhome.domain.verification.VetSignOff;
 import com.example.foreverhome.dto.pet.PetDto;
+import com.example.foreverhome.exception.ResourceNotFoundException;
+import com.example.foreverhome.repository.PetRepository;
+import com.example.foreverhome.repository.VetRepository;
+import com.example.foreverhome.repository.VetSignOffRepository;
 import com.example.foreverhome.security.UserPrincipal;
 import com.example.foreverhome.service.PetService;
 import com.example.foreverhome.service.VetApprovalService;
@@ -13,6 +20,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -26,10 +34,18 @@ public class VetController {
 
     private final PetService petService;
     private final VetApprovalService vetApprovalService;
+    private final VetRepository vetRepository;
+    private final VetSignOffRepository vetSignOffRepository;
+    private final PetRepository petRepository;
 
-    public VetController(PetService petService, VetApprovalService vetApprovalService) {
+    public VetController(PetService petService, VetApprovalService vetApprovalService,
+                         VetRepository vetRepository, VetSignOffRepository vetSignOffRepository,
+                         PetRepository petRepository) {
         this.petService = petService;
         this.vetApprovalService = vetApprovalService;
+        this.vetRepository = vetRepository;
+        this.vetSignOffRepository = vetSignOffRepository;
+        this.petRepository = petRepository;
     }
 
     /**
@@ -83,6 +99,44 @@ public class VetController {
         return ResponseEntity.ok(summaries);
     }
 
+    /**
+     * Get the sign-off history for this vet.
+     * Returns all pets that this vet has signed off on.
+     */
+    @GetMapping("/sign-offs")
+    public ResponseEntity<List<SignOffHistoryItem>> getSignOffHistory(
+            @AuthenticationPrincipal UserPrincipal principal) {
+        // Get the vet profile for this user
+        Vet vet = vetRepository.findByUserId(principal.userId())
+                .orElseThrow(() -> new ResourceNotFoundException("Vet profile", "userId: " + principal.userId()));
+
+        // Get all sign-offs by this vet
+        List<VetSignOff> signOffs = vetSignOffRepository.findByVetIdOrderBySignedOffAtDesc(vet.getId());
+
+        // Enrich with pet details
+        List<SignOffHistoryItem> history = signOffs.stream()
+                .map(signOff -> {
+                    Pet pet = petRepository.findById(signOff.getPetId()).orElse(null);
+                    return SignOffHistoryItem.from(signOff, pet);
+                })
+                .toList();
+
+        return ResponseEntity.ok(history);
+    }
+
+    /**
+     * Get the count of sign-offs for this vet.
+     */
+    @GetMapping("/sign-offs/count")
+    public ResponseEntity<SignOffCountResponse> getSignOffCount(
+            @AuthenticationPrincipal UserPrincipal principal) {
+        Vet vet = vetRepository.findByUserId(principal.userId())
+                .orElseThrow(() -> new ResourceNotFoundException("Vet profile", "userId: " + principal.userId()));
+
+        long count = vetSignOffRepository.countByVetId(vet.getId());
+        return ResponseEntity.ok(new SignOffCountResponse(count));
+    }
+
     // Request DTOs
     public record VetSignOffRequest(
             @NotNull(message = "Neutered confirmation is required")
@@ -122,4 +176,34 @@ public class VetController {
             );
         }
     }
+
+    record SignOffHistoryItem(
+            UUID id,
+            UUID petId,
+            String petName,
+            String petSpecies,
+            String petBreed,
+            String petMicrochipId,
+            String petImageUrl,
+            String healthStatus,
+            String healthNotes,
+            Instant signedOffAt
+    ) {
+        static SignOffHistoryItem from(VetSignOff signOff, Pet pet) {
+            return new SignOffHistoryItem(
+                    signOff.getId(),
+                    signOff.getPetId(),
+                    pet != null ? pet.getName() : "Unknown",
+                    pet != null ? pet.getSpecies().name() : null,
+                    pet != null ? pet.getBreed() : null,
+                    pet != null ? pet.getMicrochipId() : null,
+                    null, // Pet image URL - would need to fetch from images table
+                    signOff.getHealthStatus().name(),
+                    signOff.getHealthNotes(),
+                    signOff.getSignedOffAt()
+            );
+        }
+    }
+
+    record SignOffCountResponse(long count) {}
 }

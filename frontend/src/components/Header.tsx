@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useState } from 'react';
+import { NotificationBell } from './NotificationBell';
 
 export function Header() {
   const { user, isAuthenticated, logout } = useAuth();
@@ -48,6 +49,7 @@ export function Header() {
                 <Link to={getDashboardLink()} className="text-gray-600 hover:text-primary-500 transition-colors">
                   Dashboard
                 </Link>
+                <NotificationBell />
                 <div className="relative">
                   <button
                     onClick={() => setUserDropdownOpen(!userDropdownOpen)}
@@ -78,6 +80,13 @@ export function Header() {
                         onClick={() => setUserDropdownOpen(false)}
                       >
                         Notifications
+                      </Link>
+                      <Link
+                        to="/settings"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-secondary-100"
+                        onClick={() => setUserDropdownOpen(false)}
+                      >
+                        Settings
                       </Link>
                       <button
                         onClick={handleLogout}
@@ -153,6 +162,13 @@ export function Header() {
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     Profile
+                  </Link>
+                  <Link
+                    to="/settings"
+                    className="px-4 py-2 text-gray-600 hover:bg-secondary-100 rounded"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Settings
                   </Link>
                   <button
                     onClick={() => { handleLogout(); setMobileMenuOpen(false); }}

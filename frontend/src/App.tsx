@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Header } from './components';
-import { HomePage, LoginPage, RegisterPage, PetListPage, PetDetailPage, PetFormPage, RescuesPage, ForgotPasswordPage, HelpCenterPage, ContactPage, PrivacyPolicyPage } from './pages';
+import { HomePage, LoginPage, RegisterPage, PetListPage, PetDetailPage, PetFormPage, PetSubmitPage, RescuesPage, RescueVetManagement, ForgotPasswordPage, ResetPasswordPage, HelpCenterPage, ContactPage, PrivacyPolicyPage, VetSignOffHistoryPage, SettingsPage, NotificationsPage, RescueOrgProfilePage, VetsPage, VetProfilePage, RescueOrgSettingsPage, VetSettingsPage, AdminAnalyticsPage, AdminModerationPage } from './pages';
 import {
   FosterDashboard,
   AdopterDashboard,
@@ -51,7 +51,11 @@ function AppRoutes() {
           <Route path="/pets" element={<PetListPage />} />
           <Route path="/pets/:id" element={<PetDetailPage />} />
           <Route path="/rescues" element={<RescuesPage />} />
+          <Route path="/rescues/:id" element={<RescueOrgProfilePage />} />
+          <Route path="/vets" element={<VetsPage />} />
+          <Route path="/vets/:id" element={<VetProfilePage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/help" element={<HelpCenterPage />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/privacy" element={<PrivacyPolicyPage />} />
@@ -81,6 +85,14 @@ function AppRoutes() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/foster/pets/:id/submit"
+            element={
+              <ProtectedRoute allowedRoles={['FOSTER']}>
+                <PetSubmitPage />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Adopter Routes */}
           <Route
@@ -101,6 +113,22 @@ function AppRoutes() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/rescue/vets"
+            element={
+              <ProtectedRoute allowedRoles={['RESCUE_ORG']}>
+                <RescueVetManagement />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/rescue/settings"
+            element={
+              <ProtectedRoute allowedRoles={['RESCUE_ORG']}>
+                <RescueOrgSettingsPage />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Vet Routes */}
           <Route
@@ -111,6 +139,22 @@ function AppRoutes() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/vet/history"
+            element={
+              <ProtectedRoute allowedRoles={['VET']}>
+                <VetSignOffHistoryPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/vet/settings"
+            element={
+              <ProtectedRoute allowedRoles={['VET']}>
+                <VetSettingsPage />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Admin Routes */}
           <Route
@@ -118,6 +162,42 @@ function AppRoutes() {
             element={
               <ProtectedRoute allowedRoles={['ADMIN']}>
                 <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/analytics"
+            element={
+              <ProtectedRoute allowedRoles={['ADMIN']}>
+                <AdminAnalyticsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/moderation"
+            element={
+              <ProtectedRoute allowedRoles={['ADMIN']}>
+                <AdminModerationPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Settings Route - Available to all authenticated users */}
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute>
+                <SettingsPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Notifications Route - Available to all authenticated users */}
+          <Route
+            path="/notifications"
+            element={
+              <ProtectedRoute>
+                <NotificationsPage />
               </ProtectedRoute>
             }
           />

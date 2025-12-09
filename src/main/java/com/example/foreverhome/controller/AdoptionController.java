@@ -51,6 +51,18 @@ public class AdoptionController {
         return ResponseEntity.ok(adoptionService.getApplicationsForAdopter(principal.userId()));
     }
 
+    @GetMapping("/applications/check/{petId}")
+    @PreAuthorize("hasRole('ADOPTER')")
+    public ResponseEntity<ApplicationCheckResponse> checkApplicationStatus(
+            @PathVariable UUID petId,
+            @AuthenticationPrincipal UserPrincipal principal) {
+        boolean hasApplied = adoptionService.hasActiveApplicationForPet(principal.userId(), petId);
+        int activeCount = adoptionService.getActiveApplicationCount(principal.userId());
+        return ResponseEntity.ok(new ApplicationCheckResponse(hasApplied, activeCount));
+    }
+
+    public record ApplicationCheckResponse(boolean hasApplied, int activeApplicationCount) {}
+
     @GetMapping("/pets/{petId}/applications")
     @PreAuthorize("hasRole('RESCUE_ORG') or hasRole('ADMIN')")
     public ResponseEntity<List<AdoptionApplication>> getApplicationsForPet(@PathVariable UUID petId) {

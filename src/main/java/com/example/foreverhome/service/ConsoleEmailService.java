@@ -57,6 +57,23 @@ public class ConsoleEmailService implements EmailService {
     }
 
     @Override
+    public void sendPasswordResetByAdmin(String to, String temporaryPassword) {
+        logger.info("""
+
+            ╔══════════════════════════════════════════════════════════════════╗
+            ║                  ADMIN PASSWORD RESET                            ║
+            ╠══════════════════════════════════════════════════════════════════╣
+            ║  To: {}
+            ║
+            ║  Your password has been reset by an administrator.
+            ║  Temporary Password: {}
+            ║
+            ║  Please log in and change your password immediately.
+            ╚══════════════════════════════════════════════════════════════════╝
+            """, to, temporaryPassword);
+    }
+
+    @Override
     public void sendNotificationEmail(String to, String subject, String body) {
         logger.info("""
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { PetCard, Select, Input } from '../components';
-import type { Pet, Species, PetSize, PetStatus } from '../types';
+import type { Pet, Species, PetSize, PetSex } from '../types';
 import apiClient from '../api/client';
 
 const speciesOptions = [
@@ -16,6 +16,12 @@ const sizeOptions = [
   { value: 'LARGE', label: 'Large' },
 ];
 
+const sexOptions = [
+  { value: '', label: 'All' },
+  { value: 'MALE', label: 'Male' },
+  { value: 'FEMALE', label: 'Female' },
+];
+
 export function PetListPage() {
   const [pets, setPets] = useState<Pet[]>([]);
   const [loading, setLoading] = useState(true);
@@ -23,12 +29,13 @@ export function PetListPage() {
   const [filters, setFilters] = useState({
     species: '' as Species | '',
     size: '' as PetSize | '',
+    sex: '' as PetSex | '',
     search: '',
   });
 
   useEffect(() => {
     fetchPets();
-  }, [filters.species, filters.size]);
+  }, [filters.species, filters.size, filters.sex]);
 
   const fetchPets = async () => {
     setLoading(true);
@@ -37,17 +44,12 @@ export function PetListPage() {
       const params = new URLSearchParams();
       if (filters.species) params.append('species', filters.species);
       if (filters.size) params.append('size', filters.size);
+      if (filters.sex) params.append('sex', filters.sex);
 
       const response = await apiClient.get<Pet[]>(`/pets?${params.toString()}`);
-      // Use mock data if API returns empty (for demo purposes)
-      if (response.data.length === 0) {
-        setPets(getMockPets());
-      } else {
-        setPets(response.data);
-      }
+      setPets(response.data);
     } catch {
-      // Use mock data for demo when API fails
-      setPets(getMockPets());
+      setError('Failed to load pets. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -74,7 +76,7 @@ export function PetListPage() {
 
       {/* Filters */}
       <div className="bg-secondary-50 rounded-lg p-4 mb-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           <Input
             placeholder="Search by name or breed..."
             value={filters.search}
@@ -90,8 +92,13 @@ export function PetListPage() {
             value={filters.size}
             onChange={(e) => setFilters({ ...filters, size: e.target.value as PetSize })}
           />
+          <Select
+            options={sexOptions}
+            value={filters.sex}
+            onChange={(e) => setFilters({ ...filters, sex: e.target.value as PetSex })}
+          />
           <button
-            onClick={() => setFilters({ species: '', size: '', search: '' })}
+            onClick={() => setFilters({ species: '', size: '', sex: '', search: '' })}
             className="text-primary-500 hover:underline text-sm"
           >
             Clear filters
@@ -128,118 +135,4 @@ export function PetListPage() {
       )}
     </div>
   );
-}
-
-// Mock data for demo purposes
-function getMockPets(): Pet[] {
-  return [
-    {
-      id: '1',
-      name: 'Luna',
-      species: 'DOG',
-      breed: 'Siberian Husky',
-      age: 2,
-      ageUnit: 'YEARS',
-      sex: 'FEMALE',
-      size: 'MEDIUM',
-      microchipId: 'MC123456',
-      description: 'Luna is a friendly and energetic husky who loves long walks and playing in the snow.',
-      healthNotes: null,
-      status: 'AVAILABLE' as PetStatus,
-      fosterId: 'f1',
-      rescueOrgId: 'r1',
-      createdAt: new Date().toISOString(),
-      imageUrls: [],
-    },
-    {
-      id: '2',
-      name: 'Max',
-      species: 'DOG',
-      breed: 'Golden Retriever',
-      age: 4,
-      ageUnit: 'YEARS',
-      sex: 'MALE',
-      size: 'LARGE',
-      microchipId: 'MC123457',
-      description: 'Max is a gentle giant who loves everyone he meets. Great with kids and other pets.',
-      healthNotes: null,
-      status: 'AVAILABLE' as PetStatus,
-      fosterId: 'f2',
-      rescueOrgId: 'r1',
-      createdAt: new Date().toISOString(),
-      imageUrls: [],
-    },
-    {
-      id: '3',
-      name: 'Whiskers',
-      species: 'CAT',
-      breed: 'Maine Coon',
-      age: 3,
-      ageUnit: 'YEARS',
-      sex: 'MALE',
-      size: 'LARGE',
-      microchipId: 'MC123458',
-      description: 'Whiskers is a majestic Maine Coon who loves to cuddle and play with feather toys.',
-      healthNotes: null,
-      status: 'AVAILABLE' as PetStatus,
-      fosterId: 'f3',
-      rescueOrgId: 'r2',
-      createdAt: new Date().toISOString(),
-      imageUrls: [],
-    },
-    {
-      id: '4',
-      name: 'Bella',
-      species: 'DOG',
-      breed: 'French Bulldog',
-      age: 1,
-      ageUnit: 'YEARS',
-      sex: 'FEMALE',
-      size: 'SMALL',
-      microchipId: 'MC123459',
-      description: 'Bella is a playful and affectionate Frenchie who will steal your heart.',
-      healthNotes: null,
-      status: 'AVAILABLE' as PetStatus,
-      fosterId: 'f4',
-      rescueOrgId: 'r2',
-      createdAt: new Date().toISOString(),
-      imageUrls: [],
-    },
-    {
-      id: '5',
-      name: 'Milo',
-      species: 'CAT',
-      breed: 'Tabby',
-      age: 6,
-      ageUnit: 'MONTHS',
-      sex: 'MALE',
-      size: 'SMALL',
-      microchipId: 'MC123460',
-      description: 'Milo is a curious kitten who loves to explore and chase toys.',
-      healthNotes: null,
-      status: 'AVAILABLE' as PetStatus,
-      fosterId: 'f5',
-      rescueOrgId: 'r1',
-      createdAt: new Date().toISOString(),
-      imageUrls: [],
-    },
-    {
-      id: '6',
-      name: 'Shadow',
-      species: 'CAT',
-      breed: 'Russian Blue',
-      age: 2,
-      ageUnit: 'YEARS',
-      sex: 'FEMALE',
-      size: 'MEDIUM',
-      microchipId: 'MC123461',
-      description: 'Shadow is a graceful and elegant cat who loves quiet afternoons and gentle pets.',
-      healthNotes: null,
-      status: 'AVAILABLE' as PetStatus,
-      fosterId: 'f6',
-      rescueOrgId: 'r3',
-      createdAt: new Date().toISOString(),
-      imageUrls: [],
-    },
-  ];
 }

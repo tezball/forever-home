@@ -1,38 +1,144 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Button } from '../components';
+import { Button, PetCard } from '../components';
+import type { Pet } from '../types';
+
+interface PlatformStats {
+  petsAvailable: number;
+  totalAdoptions: number;
+  totalRescues: number;
+}
 
 export function HomePage() {
   const { isAuthenticated } = useAuth();
+  const [featuredPets, setFeaturedPets] = useState<Pet[]>([]);
+  const [stats, setStats] = useState<PlatformStats | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchHomeData = async () => {
+      try {
+        const [petsRes, statsRes] = await Promise.all([
+          fetch('/api/pets/featured'),
+          fetch('/api/stats'),
+        ]);
+
+        if (petsRes.ok) {
+          const petsData = await petsRes.json();
+          setFeaturedPets(petsData);
+        }
+
+        if (statsRes.ok) {
+          const statsData = await statsRes.json();
+          setStats(statsData);
+        }
+      } catch (error) {
+        console.error('Failed to fetch home data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchHomeData();
+  }, []);
 
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="container-app py-16 md:py-24">
-        <div className="max-w-3xl mx-auto text-center">
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-            Find Your Forever Friend
-          </h1>
-          <p className="text-xl text-gray-600 mb-8">
-            Connect with loving pets waiting for their forever homes. Our trusted network of
-            rescue organizations and verified vets ensures every adoption is safe and successful.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/pets">
-              <Button variant="primary" size="lg">
-                Browse Pets
-              </Button>
-            </Link>
-            {!isAuthenticated && (
-              <Link to="/register">
-                <Button variant="outline" size="lg">
-                  Get Started
+      <section className="bg-gradient-to-br from-primary-50 to-secondary-50 py-16 md:py-24">
+        <div className="container-app">
+          <div className="max-w-3xl mx-auto text-center">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-6">
+              Find Your Forever Friend
+            </h1>
+            <p className="text-xl text-gray-600 mb-8">
+              Connect with loving pets waiting for their forever homes. Our trusted network of
+              rescue organizations and verified vets ensures every adoption is safe and successful.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link to="/pets">
+                <Button variant="primary" size="lg">
+                  Browse Pets
                 </Button>
               </Link>
-            )}
+              {!isAuthenticated && (
+                <Link to="/register">
+                  <Button variant="outline" size="lg">
+                    Get Started
+                  </Button>
+                </Link>
+              )}
+            </div>
           </div>
         </div>
       </section>
+
+      {/* Platform Stats */}
+      {stats && (
+        <section className="py-12 bg-white border-b">
+          <div className="container-app">
+            <div className="grid grid-cols-3 gap-8 max-w-3xl mx-auto">
+              <div className="text-center">
+                <div className="text-4xl md:text-5xl font-bold text-primary-600 mb-2">
+                  {stats.petsAvailable}
+                </div>
+                <div className="text-gray-600 text-sm md:text-base">Pets Available</div>
+              </div>
+              <div className="text-center">
+                <div className="text-4xl md:text-5xl font-bold text-success-600 mb-2">
+                  {stats.totalAdoptions}
+                </div>
+                <div className="text-gray-600 text-sm md:text-base">Happy Adoptions</div>
+              </div>
+              <div className="text-center">
+                <div className="text-4xl md:text-5xl font-bold text-secondary-600 mb-2">
+                  {stats.totalRescues}
+                </div>
+                <div className="text-gray-600 text-sm md:text-base">Rescue Partners</div>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Featured Pets */}
+      {featuredPets.length > 0 && (
+        <section className="py-16">
+          <div className="container-app">
+            <div className="flex justify-between items-center mb-8">
+              <h2 className="text-3xl font-bold text-gray-900">
+                Featured Pets
+              </h2>
+              <Link to="/pets" className="text-primary-500 font-medium hover:underline">
+                View All Pets →
+              </Link>
+            </div>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {featuredPets.slice(0, 6).map((pet) => (
+                <PetCard key={pet.id} pet={pet} />
+              ))}
+            </div>
+            {loading && (
+              <div className="flex justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-4 border-primary-500 border-t-transparent" />
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* Show loading state if no pets yet */}
+      {loading && featuredPets.length === 0 && (
+        <section className="py-16">
+          <div className="container-app">
+            <h2 className="text-3xl font-bold text-gray-900 mb-8">Featured Pets</h2>
+            <div className="flex justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-4 border-primary-500 border-t-transparent" />
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* How It Works */}
       <section className="bg-secondary-50 py-16">

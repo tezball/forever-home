@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 interface PetCardProps {
   pet: Pet;
   showEditButton?: boolean;
+  onWithdraw?: (pet: Pet) => void;
 }
 
 const statusColors: Record<PetStatus, string> = {
@@ -28,9 +29,11 @@ const statusLabels: Record<PetStatus, string> = {
   ON_HOLD: 'On Hold',
 };
 
-export function PetCard({ pet, showEditButton = false }: PetCardProps) {
+export function PetCard({ pet, showEditButton = false, onWithdraw }: PetCardProps) {
   const placeholderImage = `https://placedog.net/400/300?id=${pet.id.slice(0, 8)}`;
   const canEdit = showEditButton && ['DRAFT', 'PENDING_RESCUE', 'PENDING_VET', 'AVAILABLE'].includes(pet.status);
+  const canSubmit = showEditButton && pet.status === 'DRAFT';
+  const canWithdraw = onWithdraw && !['ADOPTED', 'WITHDRAWN'].includes(pet.status);
 
   return (
     <div className="card hover:shadow-lg transition-shadow">
@@ -62,18 +65,47 @@ export function PetCard({ pet, showEditButton = false }: PetCardProps) {
           )}
         </div>
       </Link>
-      {canEdit && (
-        <div className="px-4 pb-4 pt-0">
-          <Link
-            to={`/foster/pets/${pet.id}/edit`}
-            className="inline-flex items-center text-sm text-primary-500 hover:text-primary-600"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-            </svg>
-            Edit & Add Photos
-          </Link>
+      {(canEdit || canSubmit || canWithdraw) && (
+        <div className="px-4 pb-4 pt-0 flex flex-wrap gap-3">
+          {canEdit && (
+            <Link
+              to={`/foster/pets/${pet.id}/edit`}
+              className="inline-flex items-center text-sm text-primary-500 hover:text-primary-600"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+              Edit
+            </Link>
+          )}
+          {canSubmit && (
+            <Link
+              to={`/foster/pets/${pet.id}/submit`}
+              className="inline-flex items-center text-sm text-success-600 hover:text-success-700"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Submit for Review
+            </Link>
+          )}
+          {canWithdraw && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                onWithdraw(pet);
+              }}
+              className="inline-flex items-center text-sm text-error-600 hover:text-error-700"
+            >
+              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+              </svg>
+              Withdraw
+            </button>
+          )}
         </div>
       )}
     </div>

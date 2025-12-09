@@ -1,6 +1,8 @@
 package com.example.foreverhome.repository;
 
 import com.example.foreverhome.domain.pet.Pet;
+import com.example.foreverhome.domain.pet.PetSex;
+import com.example.foreverhome.domain.pet.PetSize;
 import com.example.foreverhome.domain.pet.PetStatus;
 import com.example.foreverhome.domain.pet.Species;
 import org.springframework.data.jdbc.repository.query.Query;
@@ -28,6 +30,24 @@ public interface PetRepository extends CrudRepository<Pet, UUID> {
     @Query("SELECT * FROM pets WHERE status = 'AVAILABLE' ORDER BY created_at DESC")
     List<Pet> findAllAvailable();
 
+    @Query("""
+        SELECT * FROM pets
+        WHERE status = 'AVAILABLE'
+          AND (:species IS NULL OR species = :species)
+          AND (:size IS NULL OR size = :size)
+          AND (:sex IS NULL OR sex = :sex)
+          AND (:minAge IS NULL OR age >= :minAge)
+          AND (:maxAge IS NULL OR age <= :maxAge)
+        ORDER BY created_at DESC
+        """)
+    List<Pet> findAvailableWithFilters(
+            @Param("species") String species,
+            @Param("size") String size,
+            @Param("sex") String sex,
+            @Param("minAge") Integer minAge,
+            @Param("maxAge") Integer maxAge
+    );
+
     @Query("SELECT * FROM pets WHERE status IN ('AVAILABLE', 'IN_PROGRESS', 'ON_HOLD') ORDER BY created_at DESC")
     List<Pet> findAllPubliclyVisible();
 
@@ -45,4 +65,10 @@ public interface PetRepository extends CrudRepository<Pet, UUID> {
 
     @Query("SELECT * FROM pets WHERE id IN (:ids)")
     List<Pet> findByIdIn(@Param("ids") List<UUID> ids);
+
+    @Query("SELECT COUNT(*) FROM pets WHERE rescue_org_id = :rescueOrgId AND status = :status")
+    long countByRescueOrgIdAndStatus(@Param("rescueOrgId") UUID rescueOrgId, @Param("status") PetStatus status);
+
+    @Query("SELECT * FROM pets WHERE status = 'AVAILABLE' ORDER BY created_at DESC LIMIT :limit")
+    List<Pet> findFeaturedPets(@Param("limit") int limit);
 }

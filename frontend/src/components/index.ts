@@ -1,8 +1,11 @@
 export { Button } from './Button';
 export { Input } from './Input';
+export { Textarea } from './Textarea';
 export { Select } from './Select';
 export { PetCard } from './PetCard';
 export { Header } from './Header';
 export { Modal, BottomSheet } from './Modal';
 export { ImageUpload } from './ImageUpload';
 export { ImageCarousel } from './ImageCarousel';
+export { PetTimeline } from './PetTimeline';
+export { NotificationBell } from './NotificationBell';

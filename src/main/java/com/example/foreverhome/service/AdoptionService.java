@@ -74,6 +74,20 @@ public class AdoptionService {
     }
 
     @Transactional(readOnly = true)
+    public boolean hasActiveApplicationForPet(UUID adopterId, UUID petId) {
+        return applicationRepository.findByPetIdAndAdopterId(petId, adopterId)
+                .map(app -> app.getStatus() == ApplicationStatus.SUBMITTED ||
+                            app.getStatus() == ApplicationStatus.UNDER_REVIEW ||
+                            app.getStatus() == ApplicationStatus.APPROVED)
+                .orElse(false);
+    }
+
+    @Transactional(readOnly = true)
+    public int getActiveApplicationCount(UUID adopterId) {
+        return applicationRepository.countActiveByAdopterId(adopterId);
+    }
+
+    @Transactional(readOnly = true)
     public List<AdoptionApplication> getActiveApplicationsForPet(UUID petId) {
         return applicationRepository.findActiveByPetId(petId);
     }

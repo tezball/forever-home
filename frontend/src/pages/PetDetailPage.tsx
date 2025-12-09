@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Button, Modal, ImageCarousel } from '../components';
+import { Button, Modal, ImageCarousel, PetTimeline, Textarea } from '../components';
 import type { Pet, PetStatus } from '../types';
 import apiClient from '../api/client';
 
@@ -27,6 +27,13 @@ const statusClasses: Record<PetStatus, string> = {
   ON_HOLD: 'status-onhold',
 };
 
+interface ApplicationCheckResponse {
+  hasApplied: boolean;
+  activeApplicationCount: number;
+}
+
+const MAX_ACTIVE_APPLICATIONS = 3;
+
 export function PetDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { isAuthenticated, user } = useAuth();
@@ -36,11 +43,16 @@ export function PetDetailPage() {
   const [favorite, setFavorite] = useState(false);
   const [applyModalOpen, setApplyModalOpen] = useState(false);
   const [applying, setApplying] = useState(false);
+  const [applicationMessage, setApplicationMessage] = useState('');
+  const [hasApplied, setHasApplied] = useState(false);
+  const [activeApplicationCount, setActiveApplicationCount] = useState(0);
+  const [applicationSuccess, setApplicationSuccess] = useState(false);
 
   useEffect(() => {
     fetchPet();
     if (isAuthenticated && user?.role === 'ADOPTER') {
       fetchFavoriteStatus();
+      checkApplicationStatus();
     }
   }, [id, isAuthenticated, user?.role]);
 
@@ -52,8 +64,6 @@ export function PetDetailPage() {
       setPet(response.data);
     } catch {
       setError('Failed to load pet details');
-      // Use mock data for demo
-      setPet(getMockPet(id!));
     } finally {
       setLoading(false);
     }
@@ -65,6 +75,16 @@ export function PetDetailPage() {
       setFavorite(response.data);
     } catch {
       // Ignore errors - user might not have favorited this pet
+    }
+  };
+
+  const checkApplicationStatus = async () => {
+    try {
+      const response = await apiClient.get<ApplicationCheckResponse>(`/applications/check/${id}`);
+      setHasApplied(response.data.hasApplied);
+      setActiveApplicationCount(response.data.activeApplicationCount);
+    } catch {
+      // Ignore errors - endpoint might not be available
     }
   };
 
@@ -86,11 +106,14 @@ export function PetDetailPage() {
   const handleApply = async () => {
     setApplying(true);
     try {
-      await apiClient.post('/applications', { petId: id });
+      await apiClient.post('/applications', { petId: id, message: applicationMessage });
       setApplyModalOpen(false);
-      // Show success message or redirect
+      setHasApplied(true);
+      setActiveApplicationCount(prev => prev + 1);
+      setApplicationSuccess(true);
+      setApplicationMessage('');
     } catch {
-      // Handle error
+      setError('Failed to submit application. Please try again.');
     } finally {
       setApplying(false);
     }
@@ -117,7 +140,9 @@ export function PetDetailPage() {
 
   if (!pet) return null;
 
-  const canApply = isAuthenticated && user?.role === 'ADOPTER' && pet.status === 'AVAILABLE';
+  const isAdopter = isAuthenticated && user?.role === 'ADOPTER';
+  const canApply = isAdopter && pet.status === 'AVAILABLE' && !hasApplied && activeApplicationCount < MAX_ACTIVE_APPLICATIONS;
+  const atApplicationLimit = isAdopter && activeApplicationCount >= MAX_ACTIVE_APPLICATIONS;
 
   return (
     <div className="container-app py-8">
@@ -207,13 +232,72 @@ export function PetDetailPage() {
             </div>
           )}
 
+          {/* Status Timeline - only show to authenticated users with relevant roles */}
+          {isAuthenticated && user && ['FOSTER', 'RESCUE_ORG', 'VET', 'ADMIN'].includes(user.role) && (
+            <div className="mb-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Status History</h2>
+              <div className="bg-white border border-gray-200 rounded-lg p-4">
+                <PetTimeline petId={pet.id} />
+              </div>
+            </div>
+          )}
+
           {/* Action Button */}
           <div className="mt-8">
-            {canApply ? (
+            {/* Success message after applying */}
+            {applicationSuccess && (
+              <div className="p-4 bg-success-50 border border-success-200 rounded-lg mb-4">
+                <div className="flex items-center gap-2 text-success-700">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span className="font-medium">Application submitted successfully!</span>
+                </div>
+                <p className="text-success-600 text-sm mt-1">
+                  The rescue organization will review your application and contact you.
+                </p>
+              </div>
+            )}
+
+            {/* Already applied state */}
+            {isAdopter && hasApplied && !applicationSuccess && (
+              <div className="text-center p-4 bg-primary-50 border border-primary-200 rounded-lg">
+                <div className="flex items-center justify-center gap-2 text-primary-700 mb-2">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span className="font-medium">You've already applied for {pet.name}</span>
+                </div>
+                <p className="text-primary-600 text-sm">
+                  Check your <Link to="/adopter" className="underline hover:no-underline">dashboard</Link> to track your application status.
+                </p>
+              </div>
+            )}
+
+            {/* At application limit */}
+            {isAdopter && !hasApplied && atApplicationLimit && pet.status === 'AVAILABLE' && (
+              <div className="text-center p-4 bg-warning-50 border border-warning-200 rounded-lg">
+                <div className="flex items-center justify-center gap-2 text-warning-700 mb-2">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  <span className="font-medium">Application Limit Reached</span>
+                </div>
+                <p className="text-warning-600 text-sm">
+                  You already have {MAX_ACTIVE_APPLICATIONS} active applications. Please wait for a response or withdraw an existing application.
+                </p>
+              </div>
+            )}
+
+            {/* Can apply */}
+            {canApply && (
               <Button variant="primary" size="lg" className="w-full" onClick={() => setApplyModalOpen(true)}>
                 Apply to Adopt {pet.name}
               </Button>
-            ) : pet.status === 'AVAILABLE' && !isAuthenticated ? (
+            )}
+
+            {/* Not authenticated */}
+            {pet.status === 'AVAILABLE' && !isAuthenticated && (
               <div className="text-center">
                 <p className="text-gray-600 mb-4">Sign in to apply for adoption</p>
                 <Link to="/login">
@@ -222,13 +306,16 @@ export function PetDetailPage() {
                   </Button>
                 </Link>
               </div>
-            ) : pet.status !== 'AVAILABLE' ? (
+            )}
+
+            {/* Pet not available */}
+            {pet.status !== 'AVAILABLE' && (
               <div className="text-center p-4 bg-secondary-100 rounded-lg">
                 <p className="text-gray-600">
                   This pet is currently not available for adoption.
                 </p>
               </div>
-            ) : null}
+            )}
           </div>
         </div>
       </div>
@@ -244,6 +331,29 @@ export function PetDetailPage() {
             You're about to submit an adoption application for {pet?.name}. The rescue organization
             will review your application and contact you with next steps.
           </p>
+
+          <div>
+            <label htmlFor="applicationMessage" className="block text-sm font-medium text-gray-700 mb-1">
+              Tell us why you'd like to adopt {pet?.name} (optional)
+            </label>
+            <Textarea
+              id="applicationMessage"
+              value={applicationMessage}
+              onChange={(e) => setApplicationMessage(e.target.value)}
+              placeholder="Share a bit about yourself, your living situation, and why you think you'd be a great match..."
+              rows={4}
+            />
+          </div>
+
+          {activeApplicationCount > 0 && (
+            <p className="text-sm text-gray-500">
+              You currently have {activeApplicationCount} active application{activeApplicationCount !== 1 ? 's' : ''}.
+              {activeApplicationCount >= MAX_ACTIVE_APPLICATIONS - 1 && activeApplicationCount < MAX_ACTIVE_APPLICATIONS && (
+                <span className="text-warning-600"> This will be your last allowed application.</span>
+              )}
+            </p>
+          )}
+
           <div className="flex gap-4 pt-4">
             <Button variant="outline" onClick={() => setApplyModalOpen(false)} className="flex-1">
               Cancel
@@ -256,47 +366,4 @@ export function PetDetailPage() {
       </Modal>
     </div>
   );
-}
-
-// Mock data for demo
-function getMockPet(id: string): Pet {
-  const pets: Record<string, Pet> = {
-    '1': {
-      id: '1',
-      name: 'Luna',
-      species: 'DOG',
-      breed: 'Siberian Husky',
-      age: 2,
-      ageUnit: 'YEARS',
-      sex: 'FEMALE',
-      size: 'MEDIUM',
-      microchipId: 'MC123456',
-      description: 'Luna is a friendly and energetic husky who loves long walks and playing in the snow. She gets along well with other dogs and is great with children. Luna is fully trained and knows basic commands. She would thrive in an active household with a yard.',
-      healthNotes: 'Up to date on all vaccinations. Spayed. No known health issues.',
-      status: 'AVAILABLE',
-      fosterId: 'f1',
-      rescueOrgId: 'r1',
-      createdAt: new Date().toISOString(),
-      imageUrls: [],
-    },
-  };
-
-  return pets[id] || {
-    id,
-    name: 'Unknown Pet',
-    species: 'DOG',
-    breed: null,
-    age: 1,
-    ageUnit: 'YEARS',
-    sex: 'MALE',
-    size: 'MEDIUM',
-    microchipId: 'UNKNOWN',
-    description: 'Pet information not available.',
-    healthNotes: null,
-    status: 'AVAILABLE',
-    fosterId: '',
-    rescueOrgId: null,
-    createdAt: new Date().toISOString(),
-    imageUrls: [],
-  };
 }

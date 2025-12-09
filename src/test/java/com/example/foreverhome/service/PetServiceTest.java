@@ -13,6 +13,7 @@ import com.example.foreverhome.exception.ResourceNotFoundException;
 import com.example.foreverhome.repository.FosterRepository;
 import com.example.foreverhome.repository.PetImageRepository;
 import com.example.foreverhome.repository.PetRepository;
+import com.example.foreverhome.repository.PetStatusHistoryRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -50,11 +51,14 @@ class PetServiceTest {
     @Mock
     private VetApprovalService vetApprovalService;
 
+    @Mock
+    private PetStatusHistoryRepository statusHistoryRepository;
+
     private PetService petService;
 
     @BeforeEach
     void setUp() {
-        petService = new PetService(petRepository, petImageRepository, fosterRepository, notificationService, vetApprovalService);
+        petService = new PetService(petRepository, petImageRepository, fosterRepository, notificationService, vetApprovalService, statusHistoryRepository);
     }
 
     @Nested
@@ -303,13 +307,14 @@ class PetServiceTest {
             // Given
             UUID petId = UUID.randomUUID();
             UUID rescueOrgId = UUID.randomUUID();
+            UUID rescueUserId = UUID.randomUUID();
             Pet pet = createTestPet();
             pet.submitForReview(rescueOrgId);
             when(petRepository.findById(petId)).thenReturn(Optional.of(pet));
             when(petRepository.save(any(Pet.class))).thenAnswer(inv -> inv.getArgument(0));
 
             // When
-            PetDto result = petService.acceptByRescue(petId, rescueOrgId);
+            PetDto result = petService.acceptByRescue(petId, rescueOrgId, rescueUserId);
 
             // Then
             assertThat(result.status()).isEqualTo(PetStatus.PENDING_VET);
@@ -326,13 +331,14 @@ class PetServiceTest {
             // Given
             UUID petId = UUID.randomUUID();
             UUID rescueOrgId = UUID.randomUUID();
+            UUID rescueUserId = UUID.randomUUID();
             Pet pet = createTestPet();
             pet.submitForReview(rescueOrgId);
             when(petRepository.findById(petId)).thenReturn(Optional.of(pet));
             when(petRepository.save(any(Pet.class))).thenAnswer(inv -> inv.getArgument(0));
 
             // When
-            PetDto result = petService.declineByRescue(petId, rescueOrgId, "Not suitable");
+            PetDto result = petService.declineByRescue(petId, rescueOrgId, rescueUserId, "Not suitable");
 
             // Then
             assertThat(result.status()).isEqualTo(PetStatus.DRAFT);

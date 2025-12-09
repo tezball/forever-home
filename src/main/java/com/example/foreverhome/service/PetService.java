@@ -4,6 +4,7 @@ import com.example.foreverhome.controller.VetController.VetSignOffRequest;
 import com.example.foreverhome.domain.pet.Pet;
 import com.example.foreverhome.domain.pet.PetImage;
 import com.example.foreverhome.domain.pet.PetStatus;
+import com.example.foreverhome.domain.pet.PetStatusHistory;
 import com.example.foreverhome.domain.profile.Foster;
 import com.example.foreverhome.dto.pet.CreatePetRequest;
 import com.example.foreverhome.dto.pet.PetDto;
@@ -15,6 +16,7 @@ import com.example.foreverhome.exception.ResourceNotFoundException;
 import com.example.foreverhome.repository.FosterRepository;
 import com.example.foreverhome.repository.PetImageRepository;
 import com.example.foreverhome.repository.PetRepository;
+import com.example.foreverhome.repository.PetStatusHistoryRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,17 +32,25 @@ public class PetService {
     private final FosterRepository fosterRepository;
     private final NotificationService notificationService;
     private final VetApprovalService vetApprovalService;
+    private final PetStatusHistoryRepository statusHistoryRepository;
 
     public PetService(PetRepository petRepository,
                       PetImageRepository petImageRepository,
                       FosterRepository fosterRepository,
                       NotificationService notificationService,
-                      VetApprovalService vetApprovalService) {
+                      VetApprovalService vetApprovalService,
+                      PetStatusHistoryRepository statusHistoryRepository) {
         this.petRepository = petRepository;
         this.petImageRepository = petImageRepository;
         this.fosterRepository = fosterRepository;
         this.notificationService = notificationService;
         this.vetApprovalService = vetApprovalService;
+        this.statusHistoryRepository = statusHistoryRepository;
+    }
+
+    private void recordStatusChange(UUID petId, PetStatus fromStatus, PetStatus toStatus, UUID changedBy, String notes) {
+        PetStatusHistory history = PetStatusHistory.create(petId, fromStatus, toStatus, changedBy, notes);
+        statusHistoryRepository.save(history);
     }
 
     private PetDto toPetDtoWithImages(Pet pet) {
@@ -87,6 +97,22 @@ public class PetService {
     @Transactional(readOnly = true)
     public List<PetDto> getAvailablePets() {
         return petRepository.findByStatus(PetStatus.AVAILABLE).stream()
+                .map(this::toPetDtoWithImages)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<PetDto> getAvailablePetsWithFilters(String species, String size, String sex,
+                                                     Integer minAge, Integer maxAge) {
+        return petRepository.findAvailableWithFilters(species, size, sex, minAge, maxAge).stream()
+                .map(this::toPetDtoWithImages)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<PetDto> getFeaturedPets() {
+        // Return up to 6 most recently available pets for the homepage
+        return petRepository.findFeaturedPets(6).stream()
                 .map(this::toPetDtoWithImages)
                 .toList();
     }
@@ -146,15 +172,21 @@ public class PetService {
             );
         }
 
+        PetStatus fromStatus = pet.getStatus();
         pet.submitForReview(rescueOrgId);
         Pet savedPet = petRepository.save(pet);
+
+        // Look up the user ID for the foster to record in history
+        Foster foster = fosterRepository.findById(fosterId).orElse(null);
+        UUID userId = foster != null ? foster.getUserId() : null;
+        recordStatusChange(petId, fromStatus, PetStatus.PENDING_RESCUE, userId, "Submitted for rescue review");
 
         notificationService.notifyRescueOrgPetSubmitted(rescueOrgId, pet);
 
         return PetDto.from(savedPet);
     }
 
-    public PetDto acceptByRescue(UUID petId, UUID rescueOrgId) {
+    public PetDto acceptByRescue(UUID petId, UUID rescueOrgId, UUID rescueUserId) {
         Pet pet = findPetOrThrow(petId);
         verifyRescueOrgOwnership(pet, rescueOrgId);
 
@@ -164,15 +196,18 @@ public class PetService {
             );
         }
 
+        PetStatus fromStatus = pet.getStatus();
         pet.acceptByRescue();
         Pet savedPet = petRepository.save(pet);
+
+        recordStatusChange(petId, fromStatus, PetStatus.PENDING_VET, rescueUserId, "Accepted by rescue organization");
 
         notificationService.notifyFosterPetAccepted(pet.getFosterId(), pet);
 
         return PetDto.from(savedPet);
     }
 
-    public PetDto declineByRescue(UUID petId, UUID rescueOrgId, String reason) {
+    public PetDto declineByRescue(UUID petId, UUID rescueOrgId, UUID rescueUserId, String reason) {
         Pet pet = findPetOrThrow(petId);
         verifyRescueOrgOwnership(pet, rescueOrgId);
 
@@ -182,15 +217,18 @@ public class PetService {
             );
         }
 
+        PetStatus fromStatus = pet.getStatus();
         pet.declineByRescue();
         Pet savedPet = petRepository.save(pet);
+
+        recordStatusChange(petId, fromStatus, PetStatus.DRAFT, rescueUserId, "Declined by rescue organization: " + reason);
 
         notificationService.notifyFosterPetDeclined(pet.getFosterId(), pet, reason);
 
         return PetDto.from(savedPet);
     }
 
-    public PetDto signOffByVet(UUID petId) {
+    public PetDto signOffByVet(UUID petId, UUID vetUserId) {
         Pet pet = findPetOrThrow(petId);
 
         if (!pet.canTransitionTo(PetStatus.AVAILABLE)) {
@@ -199,15 +237,18 @@ public class PetService {
             );
         }
 
+        PetStatus fromStatus = pet.getStatus();
         pet.signOffByVet();
         Pet savedPet = petRepository.save(pet);
+
+        recordStatusChange(petId, fromStatus, PetStatus.AVAILABLE, vetUserId, "Signed off by vet");
 
         notificationService.notifyFosterPetAvailable(pet.getFosterId(), pet);
 
         return PetDto.from(savedPet);
     }
 
-    public PetDto declineByVet(UUID petId, String reason) {
+    public PetDto declineByVet(UUID petId, UUID vetUserId, String reason) {
         Pet pet = findPetOrThrow(petId);
 
         if (!pet.canTransitionTo(PetStatus.PENDING_RESCUE)) {
@@ -216,8 +257,11 @@ public class PetService {
             );
         }
 
+        PetStatus fromStatus = pet.getStatus();
         pet.declineByVet();
         Pet savedPet = petRepository.save(pet);
+
+        recordStatusChange(petId, fromStatus, PetStatus.PENDING_RESCUE, vetUserId, "Declined by vet: " + reason);
 
         notificationService.notifyFosterPetDeclined(pet.getFosterId(), pet, reason);
 
@@ -232,8 +276,15 @@ public class PetService {
             throw new InvalidStatusTransitionException("Cannot withdraw pet in terminal status: " + pet.getStatus());
         }
 
+        PetStatus fromStatus = pet.getStatus();
         pet.withdraw();
         Pet savedPet = petRepository.save(pet);
+
+        // Look up the user ID for the foster to record in history
+        Foster foster = fosterRepository.findById(fosterId).orElse(null);
+        UUID userId = foster != null ? foster.getUserId() : null;
+        recordStatusChange(petId, fromStatus, PetStatus.WITHDRAWN, userId, "Withdrawn by foster");
+
         return PetDto.from(savedPet);
     }
 
@@ -321,7 +372,7 @@ public class PetService {
             throw new InvalidStatusTransitionException("Pet must be healthy before sign-off");
         }
 
-        return signOffByVet(petId);
+        return signOffByVet(petId, vetUserId);
     }
 
     /**
@@ -340,6 +391,16 @@ public class PetService {
             }
         }
 
-        return declineByVet(petId, reason);
+        return declineByVet(petId, vetUserId, reason);
+    }
+
+    /**
+     * Get the status history for a pet.
+     */
+    @Transactional(readOnly = true)
+    public List<PetStatusHistory> getStatusHistory(UUID petId) {
+        // Verify pet exists
+        findPetOrThrow(petId);
+        return statusHistoryRepository.findByPetIdOrderByChangedAtDesc(petId);
     }
 }

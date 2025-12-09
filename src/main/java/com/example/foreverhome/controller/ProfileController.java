@@ -1,6 +1,7 @@
 package com.example.foreverhome.controller;
 
 import com.example.foreverhome.domain.profile.*;
+import com.example.foreverhome.domain.user.NotificationPreferences;
 import com.example.foreverhome.exception.ResourceNotFoundException;
 import com.example.foreverhome.repository.*;
 import com.example.foreverhome.security.UserPrincipal;
@@ -211,6 +212,52 @@ public class ProfileController {
         return ResponseEntity.status(HttpStatus.CREATED).body(RescueOrgProfileResponse.from(saved));
     }
 
+    // ==================== NOTIFICATION PREFERENCES ====================
+
+    @GetMapping("/notifications")
+    public ResponseEntity<NotificationPreferencesResponse> getNotificationPreferences(
+            @AuthenticationPrincipal UserPrincipal principal) {
+        var user = userRepository.findById(principal.userId())
+                .orElseThrow(() -> new ResourceNotFoundException("User", principal.userId()));
+
+        NotificationPreferences prefs = user.getNotificationPreferences();
+        if (prefs == null) {
+            prefs = NotificationPreferences.defaults();
+        }
+
+        return ResponseEntity.ok(new NotificationPreferencesResponse(
+                prefs.emailStatusChanges(),
+                prefs.emailNewApplications(),
+                prefs.emailFavoriteUpdates(),
+                prefs.inAppEnabled()
+        ));
+    }
+
+    @PutMapping("/notifications")
+    public ResponseEntity<NotificationPreferencesResponse> updateNotificationPreferences(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @Valid @RequestBody NotificationPreferencesRequest request) {
+        var user = userRepository.findById(principal.userId())
+                .orElseThrow(() -> new ResourceNotFoundException("User", principal.userId()));
+
+        NotificationPreferences prefs = new NotificationPreferences(
+                request.emailStatusChanges(),
+                request.emailNewApplications(),
+                request.emailFavoriteUpdates(),
+                request.inAppEnabled()
+        );
+
+        user.updateNotificationPreferences(prefs);
+        userRepository.save(user);
+
+        return ResponseEntity.ok(new NotificationPreferencesResponse(
+                prefs.emailStatusChanges(),
+                prefs.emailNewApplications(),
+                prefs.emailFavoriteUpdates(),
+                prefs.inAppEnabled()
+        ));
+    }
+
     // ==================== HELPER METHODS ====================
 
     private void markProfileComplete(UUID userId) {
@@ -406,4 +453,18 @@ public class ProfileController {
             );
         }
     }
+
+    public record NotificationPreferencesRequest(
+            boolean emailStatusChanges,
+            boolean emailNewApplications,
+            boolean emailFavoriteUpdates,
+            boolean inAppEnabled
+    ) {}
+
+    public record NotificationPreferencesResponse(
+            boolean emailStatusChanges,
+            boolean emailNewApplications,
+            boolean emailFavoriteUpdates,
+            boolean inAppEnabled
+    ) {}
 }

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { Button, PetCard } from '../../components';
+import { Button, PetCard, Modal } from '../../components';
 import type { Pet, AdoptionApplication } from '../../types';
 import apiClient from '../../api/client';
 
@@ -10,6 +10,11 @@ export function AdopterDashboard() {
   const [favorites, setFavorites] = useState<Pet[]>([]);
   const [applications, setApplications] = useState<AdoptionApplication[]>([]);
   const [loading, setLoading] = useState(true);
+  const [withdrawModalOpen, setWithdrawModalOpen] = useState(false);
+  const [selectedApplication, setSelectedApplication] = useState<AdoptionApplication | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [error, setError] = useState('');
 
   useEffect(() => {
     fetchData();
@@ -32,6 +37,42 @@ export function AdopterDashboard() {
     }
   };
 
+  const openWithdrawModal = (app: AdoptionApplication, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setSelectedApplication(app);
+    setWithdrawModalOpen(true);
+    setError('');
+  };
+
+  const handleWithdrawApplication = async () => {
+    if (!selectedApplication) return;
+
+    setActionLoading(true);
+    setError('');
+
+    try {
+      await apiClient.delete(`/applications/${selectedApplication.id}`);
+      setSuccessMessage(`Your application for ${selectedApplication.petName} has been withdrawn.`);
+      setWithdrawModalOpen(false);
+      setSelectedApplication(null);
+      fetchData(); // Refresh data
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'response' in err) {
+        const response = (err as { response?: { data?: { message?: string } } }).response;
+        setError(response?.data?.message || 'Failed to withdraw application');
+      } else {
+        setError('Failed to withdraw application');
+      }
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const canWithdraw = (status: string) => {
+    return ['SUBMITTED', 'UNDER_REVIEW'].includes(status);
+  };
+
   const pendingApplications = applications.filter((a) => a.status === 'SUBMITTED' || a.status === 'UNDER_REVIEW');
   const approvedApplications = applications.filter((a) => a.status === 'APPROVED');
   const rejectedApplications = applications.filter((a) => a.status === 'REJECTED');
@@ -39,13 +80,15 @@ export function AdopterDashboard() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'SUBMITTED':
-        return <span className="status-badge status-pending">Submitted</span>;
+        return <span className="px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Submitted</span>;
       case 'UNDER_REVIEW':
-        return <span className="status-badge status-pending">Under Review</span>;
+        return <span className="px-3 py-1 text-xs font-semibold rounded-full bg-warning-100 text-warning-800">Under Review</span>;
       case 'APPROVED':
-        return <span className="status-badge status-available">Approved</span>;
+        return <span className="px-3 py-1 text-xs font-semibold rounded-full bg-success-100 text-success-800">Approved</span>;
       case 'REJECTED':
-        return <span className="status-badge status-withdrawn">Rejected</span>;
+        return <span className="px-3 py-1 text-xs font-semibold rounded-full bg-error-100 text-error-800">Rejected</span>;
+      case 'WITHDRAWN':
+        return <span className="px-3 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">Withdrawn</span>;
       default:
         return null;
     }
@@ -62,6 +105,18 @@ export function AdopterDashboard() {
           <Button variant="primary">Browse Pets</Button>
         </Link>
       </div>
+
+      {/* Success Message */}
+      {successMessage && (
+        <div className="mb-6 bg-success-50 border border-success-200 text-success-700 px-4 py-3 rounded flex justify-between items-center">
+          <span>{successMessage}</span>
+          <button onClick={() => setSuccessMessage('')} className="text-success-700 hover:text-success-900">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
@@ -95,19 +150,35 @@ export function AdopterDashboard() {
               <h2 className="text-xl font-semibold text-gray-900 mb-4">My Applications</h2>
               <div className="card divide-y divide-secondary-200">
                 {applications.map((app) => (
-                  <Link
+                  <div
                     key={app.id}
-                    to={`/pets/${app.petId}`}
                     className="flex items-center justify-between p-4 hover:bg-secondary-50"
                   >
-                    <div>
-                      <p className="font-medium text-gray-900">Pet Application</p>
-                      <p className="text-sm text-gray-500">
-                        Submitted {new Date(app.submittedAt).toLocaleDateString()}
-                      </p>
+                    <Link to={`/pets/${app.petId}`} className="flex items-center gap-4 flex-1">
+                      <img
+                        src={app.petImageUrl || `https://placedog.net/60/60?id=${app.petId.slice(0, 8)}`}
+                        alt={app.petName}
+                        className="w-14 h-14 rounded-lg object-cover flex-shrink-0"
+                      />
+                      <div>
+                        <p className="font-medium text-gray-900">{app.petName}</p>
+                        <p className="text-sm text-gray-500">
+                          Applied {new Date(app.submittedAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </Link>
+                    <div className="flex items-center gap-3">
+                      {getStatusBadge(app.status)}
+                      {canWithdraw(app.status) && (
+                        <button
+                          onClick={(e) => openWithdrawModal(app, e)}
+                          className="text-sm text-error-600 hover:text-error-700 font-medium"
+                        >
+                          Withdraw
+                        </button>
+                      )}
                     </div>
-                    {getStatusBadge(app.status)}
-                  </Link>
+                  </div>
                 ))}
               </div>
             </section>
@@ -137,6 +208,80 @@ export function AdopterDashboard() {
           </section>
         </div>
       )}
+
+      {/* Withdraw Application Modal */}
+      <Modal
+        isOpen={withdrawModalOpen}
+        onClose={() => {
+          setWithdrawModalOpen(false);
+          setSelectedApplication(null);
+          setError('');
+        }}
+        title="Withdraw Application"
+      >
+        <div className="space-y-4">
+          {selectedApplication && (
+            <>
+              <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
+                <img
+                  src={selectedApplication.petImageUrl || `https://placedog.net/60/60?id=${selectedApplication.petId.slice(0, 8)}`}
+                  alt={selectedApplication.petName}
+                  className="w-14 h-14 rounded-lg object-cover"
+                />
+                <div>
+                  <h4 className="font-semibold text-gray-900">{selectedApplication.petName}</h4>
+                  <p className="text-sm text-gray-600">
+                    Applied {new Date(selectedApplication.submittedAt).toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-warning-50 border border-warning-200 rounded-lg p-4">
+                <div className="flex gap-3">
+                  <svg className="w-5 h-5 text-warning-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  <div>
+                    <h4 className="font-medium text-warning-800">Are you sure?</h4>
+                    <p className="text-sm text-warning-700 mt-1">
+                      Withdrawing your application will remove you from consideration for adopting {selectedApplication.petName}.
+                      You can submit a new application later if the pet is still available.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {error && (
+                <div className="bg-error-50 border border-error-200 text-error-700 px-4 py-3 rounded">
+                  {error}
+                </div>
+              )}
+
+              <div className="flex gap-3 pt-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setWithdrawModalOpen(false);
+                    setSelectedApplication(null);
+                    setError('');
+                  }}
+                  className="flex-1"
+                >
+                  Keep Application
+                </Button>
+                <Button
+                  variant="danger"
+                  onClick={handleWithdrawApplication}
+                  loading={actionLoading}
+                  className="flex-1"
+                >
+                  Withdraw Application
+                </Button>
+              </div>
+            </>
+          )}
+        </div>
+      </Modal>
     </div>
   );
 }

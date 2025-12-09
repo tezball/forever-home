@@ -1,10 +1,15 @@
 package com.example.foreverhome.controller;
 
+import com.example.foreverhome.domain.pet.PetStatusHistory;
+import com.example.foreverhome.domain.profile.RescueOrganization;
 import com.example.foreverhome.dto.pet.CreatePetRequest;
 import com.example.foreverhome.dto.pet.DeclinePetRequest;
 import com.example.foreverhome.dto.pet.PetDto;
+import com.example.foreverhome.dto.pet.PetStatusHistoryDto;
 import com.example.foreverhome.dto.pet.SubmitForReviewRequest;
 import com.example.foreverhome.dto.pet.UpdatePetRequest;
+import com.example.foreverhome.exception.ResourceNotFoundException;
+import com.example.foreverhome.repository.RescueOrganizationRepository;
 import com.example.foreverhome.security.UserPrincipal;
 import com.example.foreverhome.service.PetService;
 import jakarta.validation.Valid;
@@ -22,14 +27,38 @@ import java.util.UUID;
 public class PetController {
 
     private final PetService petService;
+    private final RescueOrganizationRepository rescueOrganizationRepository;
 
-    public PetController(PetService petService) {
+    public PetController(PetService petService, RescueOrganizationRepository rescueOrganizationRepository) {
         this.petService = petService;
+        this.rescueOrganizationRepository = rescueOrganizationRepository;
+    }
+
+    /**
+     * Helper to get the rescue organization for a user.
+     */
+    private RescueOrganization getRescueOrgForUser(java.util.UUID userId) {
+        return rescueOrganizationRepository.findByUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Rescue organization profile not found for user"));
     }
 
     @GetMapping
-    public ResponseEntity<List<PetDto>> getAvailablePets() {
+    public ResponseEntity<List<PetDto>> getAvailablePets(
+            @RequestParam(required = false) String species,
+            @RequestParam(required = false) String size,
+            @RequestParam(required = false) String sex,
+            @RequestParam(required = false) Integer minAge,
+            @RequestParam(required = false) Integer maxAge) {
+        // If any filters are provided, use the filtered query
+        if (species != null || size != null || sex != null || minAge != null || maxAge != null) {
+            return ResponseEntity.ok(petService.getAvailablePetsWithFilters(species, size, sex, minAge, maxAge));
+        }
         return ResponseEntity.ok(petService.getAvailablePets());
+    }
+
+    @GetMapping("/featured")
+    public ResponseEntity<List<PetDto>> getFeaturedPets() {
+        return ResponseEntity.ok(petService.getFeaturedPets());
     }
 
     @GetMapping("/{id}")
@@ -71,7 +100,8 @@ public class PetController {
     public ResponseEntity<PetDto> acceptByRescue(
             @PathVariable UUID id,
             @AuthenticationPrincipal UserPrincipal principal) {
-        PetDto pet = petService.acceptByRescue(id, principal.userId());
+        RescueOrganization rescueOrg = getRescueOrgForUser(principal.userId());
+        PetDto pet = petService.acceptByRescue(id, rescueOrg.getId(), principal.userId());
         return ResponseEntity.ok(pet);
     }
 
@@ -81,7 +111,8 @@ public class PetController {
             @PathVariable UUID id,
             @AuthenticationPrincipal UserPrincipal principal,
             @Valid @RequestBody DeclinePetRequest request) {
-        PetDto pet = petService.declineByRescue(id, principal.userId(), request.reason());
+        RescueOrganization rescueOrg = getRescueOrgForUser(principal.userId());
+        PetDto pet = petService.declineByRescue(id, rescueOrg.getId(), principal.userId(), request.reason());
         return ResponseEntity.ok(pet);
     }
 
@@ -118,5 +149,15 @@ public class PetController {
             @RequestParam String microchip,
             @AuthenticationPrincipal UserPrincipal principal) {
         return ResponseEntity.ok(petService.findByMicrochipForVet(microchip, principal.userId()));
+    }
+
+    @GetMapping("/{id}/history")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<PetStatusHistoryDto>> getStatusHistory(@PathVariable UUID id) {
+        List<PetStatusHistory> history = petService.getStatusHistory(id);
+        List<PetStatusHistoryDto> dtos = history.stream()
+                .map(PetStatusHistoryDto::from)
+                .toList();
+        return ResponseEntity.ok(dtos);
     }
 }

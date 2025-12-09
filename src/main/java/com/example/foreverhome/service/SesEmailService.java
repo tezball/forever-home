@@ -64,6 +64,22 @@ public class SesEmailService implements EmailService {
     }
 
     @Override
+    public void sendPasswordResetByAdmin(String to, String temporaryPassword) {
+        String subject = "Your Forever Home password has been reset";
+        String body = """
+            An administrator has reset your Forever Home account password.
+
+            Your temporary password is: %s
+
+            Please log in and change your password immediately for security.
+
+            If you didn't expect this reset, please contact support.
+            """.formatted(temporaryPassword);
+
+        sendEmail(to, subject, body);
+    }
+
+    @Override
     public void sendNotificationEmail(String to, String subject, String body) {
         sendEmail(to, subject, body);
     }

@@ -74,8 +74,15 @@ export interface CreatePetRequest {
 export interface AdoptionApplication {
   id: string;
   petId: string;
+  petName: string;
+  petImageUrl: string | null;
   adopterId: string;
+  adopterName: string;
+  adopterPhone: string | null;
   status: ApplicationStatus;
+  livingSituation: string | null;
+  petExperience: string | null;
+  whyAdopt: string | null;
   submittedAt: string;
   reviewedAt: string | null;
 }
@@ -98,4 +105,41 @@ export interface PetImage {
   isPrimary: boolean;
   displayOrder: number;
   uploadedAt: string;
+}
+
+export interface RescueOrganization {
+  id: string;
+  name: string;
+  description: string | null;
+  location: string | null;
+  website: string | null;
+  email: string | null;
+  phone: string | null;
+  logoUrl: string | null;
+  petCount: number;
+}
+
+export interface VetSignOffHistory {
+  id: string;
+  petId: string;
+  petName: string;
+  petSpecies: Species | null;
+  petBreed: string | null;
+  petMicrochipId: string | null;
+  petImageUrl: string | null;
+  healthStatus: string;
+  healthNotes: string | null;
+  signedOffAt: string;
+}
+
+export interface Vet {
+  id: string;
+  userId: string;
+  clinicName: string;
+  licenseNumber: string;
+  phone: string | null;
+  website: string | null;
+  description: string | null;
+  logoUrl: string | null;
+  verified: boolean;
 }
