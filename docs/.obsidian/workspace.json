@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "user-stories/index.md",
+                "file": "ui-style-guide.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "index"
+              "title": "ui-style-guide"
             }
           }
         ]
@@ -94,7 +94,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "user-stories/index.md",
+                "file": "ui-style-guide.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -104,7 +104,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Backlinks for index"
+              "title": "Backlinks for ui-style-guide"
             }
           },
           {
@@ -113,12 +113,12 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "user-stories/index.md",
+                "file": "ui-style-guide.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "Outgoing links from index"
+              "title": "Outgoing links from ui-style-guide"
             }
           },
           {
@@ -156,13 +156,13 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "user-stories/index.md",
+                "file": "ui-style-guide.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Outline of index"
+              "title": "Outline of ui-style-guide"
             }
           },
           {
@@ -197,6 +197,7 @@
   },
   "active": "07065cb54547aed8",
   "lastOpenFiles": [
+    "user-stories/index.md",
     "ui-style-guide.md.tmp.12457.1765292013984",
     "user-stories/notifications.md.tmp.12457.1765291882592",
     "user-stories/visitor.md.tmp.12457.1765291877377",
@@ -207,7 +208,6 @@
     "user-stories/foster.md.tmp.12457.1765291851570",
     "user-stories/index.md.tmp.12457.1765291825415",
     "user-stories/index.md.tmp.12457.1765291806698",
-    "e2e-review.md.tmp.12457.1765291788185",
     "Roadmap.md",
     "Home.md",
     "user-stories/notifications.md",
