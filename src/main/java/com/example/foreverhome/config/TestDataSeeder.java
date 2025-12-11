@@ -53,7 +53,23 @@ public class TestDataSeeder implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        logger.info("Test mode enabled - seeding test accounts");
+        logger.info("Test mode enabled - checking if database is ready for seeding");
+
+        // Check if the database schema is ready before seeding
+        try {
+            Integer tableCount = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'app_users'",
+                Integer.class);
+            if (tableCount == null || tableCount == 0) {
+                logger.warn("Database schema not ready (app_users table does not exist). Skipping test data seeding.");
+                return;
+            }
+        } catch (Exception e) {
+            logger.warn("Failed to check database schema readiness: {}. Skipping test data seeding.", e.getMessage());
+            return;
+        }
+
+        logger.info("Database schema ready - seeding test accounts");
 
         List<TestAccount> testAccounts = List.of(
             new TestAccount("admin@test.com", "Test Admin", UserRole.ADMIN),
@@ -102,10 +118,10 @@ public class TestDataSeeder implements CommandLineRunner {
 
         // Get the foster and rescue org IDs
         UUID fosterId = jdbcTemplate.queryForObject(
-            "SELECT f.id FROM fosters f JOIN users u ON f.user_id = u.id WHERE u.email = ?",
+            "SELECT f.id FROM fosters f JOIN app_users u ON f.user_id = u.id WHERE u.email = ?",
             UUID.class, "foster@test.com");
         UUID rescueOrgId = jdbcTemplate.queryForObject(
-            "SELECT r.id FROM rescue_organizations r JOIN users u ON r.user_id = u.id WHERE u.email = ?",
+            "SELECT r.id FROM rescue_organizations r JOIN app_users u ON r.user_id = u.id WHERE u.email = ?",
             UUID.class, "rescue@test.com");
 
         if (fosterId == null || rescueOrgId == null) {

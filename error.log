@@ -1,47 +1,299 @@
-Login Succeeded
-[Deploy] Building application image...
-[+] Building 3.0s (20/27)                                                                                                                                                                                                                                                                            docker:default
- => [internal] load build definition from Dockerfile                                                                                                                                                                                                                                                           0.0s
- => => transferring dockerfile: 1.69kB                                                                                                                                                                                                                                                                         0.0s
- => [internal] load metadata for docker.io/library/eclipse-temurin:25-jre-alpine                                                                                                                                                                                                                               0.7s 
- => [internal] load metadata for docker.io/library/node:22-alpine                                                                                                                                                                                                                                              0.7s
- => [internal] load metadata for docker.io/library/eclipse-temurin:25-jdk-alpine                                                                                                                                                                                                                               0.7s
- => [internal] load .dockerignore                                                                                                                                                                                                                                                                              0.0s
- => => transferring context: 2B                                                                                                                                                                                                                                                                                0.0s 
- => [frontend-builder 1/6] FROM docker.io/library/node:22-alpine@sha256:9632533eda8061fc1e9960cfb3f8762781c07a00ee7317f5dc0e13c05e15166f                                                                                                                                                                       0.0s 
- => [builder 1/9] FROM docker.io/library/eclipse-temurin:25-jdk-alpine@sha256:0c4c6300cc86efdf6454702336a0d60352e227f3a862e8ae9861f393f8f1ede9                                                                                                                                                                 0.0s 
- => [stage-2 1/6] FROM docker.io/library/eclipse-temurin:25-jre-alpine@sha256:b51543f89580c1ba70e441cfbc0cfc1635c3c16d2e2d77fec9d890342a3a8687                                                                                                                                                                 0.0s 
- => [internal] load build context                                                                                                                                                                                                                                                                              0.1s 
- => => transferring context: 711.42kB                                                                                                                                                                                                                                                                          0.1s
- => CACHED [frontend-builder 2/6] WORKDIR /frontend                                                                                                                                                                                                                                                            0.0s 
- => CACHED [frontend-builder 3/6] COPY frontend/package*.json ./                                                                                                                                                                                                                                               0.0s 
- => CACHED [frontend-builder 4/6] RUN npm ci                                                                                                                                                                                                                                                                   0.0s 
- => CACHED [frontend-builder 5/6] COPY frontend/ ./                                                                                                                                                                                                                                                            0.0s 
- => ERROR [frontend-builder 6/6] RUN npm run build                                                                                                                                                                                                                                                             2.1s 
- => CACHED [builder 2/9] WORKDIR /app                                                                                                                                                                                                                                                                          0.0s
- => CACHED [builder 3/9] COPY mvnw .                                                                                                                                                                                                                                                                           0.0s 
- => CACHED [builder 4/9] COPY .mvn .mvn                                                                                                                                                                                                                                                                        0.0s 
- => CACHED [builder 5/9] COPY pom.xml .                                                                                                                                                                                                                                                                        0.0s 
- => CACHED [builder 6/9] RUN chmod +x ./mvnw && ./mvnw dependency:go-offline -B                                                                                                                                                                                                                                0.0s 
- => CACHED [builder 7/9] COPY src src                                                                                                                                                                                                                                                                          0.0s 
-------                                                                                                                                                                                                                                                                                                              
- > [frontend-builder 6/6] RUN npm run build:                                                                                                                                                                                                                                                                        
-0.235                                                                                                                                                                                                                                                                                                               
-0.235 > frontend@0.0.0 build                                                                                                                                                                                                                                                                                        
-0.235 > tsc -b && vite build                                                                                                                                                                                                                                                                                        
-0.235                                                                                                                                                                                                                                                                                                               
-1.800 src/components/ErrorBoundary.tsx(1,21): error TS1484: 'ErrorInfo' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
-1.800 src/components/ErrorBoundary.tsx(1,32): error TS1484: 'ReactNode' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
-1.800 src/components/ErrorBoundary.tsx(89,16): error TS2591: Cannot find name 'process'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.
-1.800 src/pages/dashboards/VetDashboard.tsx(144,27): error TS2339: Property 'canSignOff' does not exist on type 'Pet'.
-------
-Dockerfile:10
---------------------
-   8 |     RUN npm ci
-   9 |     COPY frontend/ ./
-  10 | >>> RUN npm run build
-  11 |     
-  12 |     # Stage 2: Build backend
---------------------
-ERROR: failed to build: failed to solve: process "/bin/sh -c npm run build" did not complete successfully: exit code: 2
-[Deploy] Docker build failed
+December 11, 2025, 18:49
+2025-12-11 18:49:35.366 INFO [ ] o.s.boot.tomcat.GracefulShutdown : Graceful shutdown complete
+app
+December 11, 2025, 18:49
+2025-12-11 18:49:34.375 INFO [ ] o.s.boot.tomcat.GracefulShutdown : Commencing graceful shutdown. Waiting for active requests to complete
+app
+December 11, 2025, 18:49
+at org.springframework.jdbc.support.AbstractFallbackSQLExceptionTranslator.translate(AbstractFallbackSQLExceptionTranslator.java:102)
+app
+December 11, 2025, 18:49
+at org.springframework.jdbc.support.AbstractFallbackSQLExceptionTranslator.translate(AbstractFallbackSQLExceptionTranslator.java:111)
+app
+December 11, 2025, 18:49
+at org.springframework.jdbc.core.JdbcTemplate.translateException(JdbcTemplate.java:1548)
+app
+December 11, 2025, 18:49
+at org.springframework.jdbc.core.JdbcTemplate.execute(JdbcTemplate.java:688)
+app
+December 11, 2025, 18:49
+at org.springframework.jdbc.core.JdbcTemplate.query(JdbcTemplate.java:731)
+app
+December 11, 2025, 18:49
+at org.springframework.jdbc.core.JdbcTemplate.query(JdbcTemplate.java:751)
+app
+December 11, 2025, 18:49
+at org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate.query(NamedParameterJdbcTemplate.java:186)
+app
+December 11, 2025, 18:49
+at org.springframework.data.jdbc.repository.query.AbstractJdbcQuery.lambda$createSingleReadingQueryExecution$0(AbstractJdbcQuery.java:146)
+app
+December 11, 2025, 18:49
+at org.springframework.data.jdbc.repository.query.PartTreeJdbcQuery.execute(PartTreeJdbcQuery.java:181)
+app
+December 11, 2025, 18:49
+at org.springframework.data.repository.core.support.RepositoryMethodInvoker.doInvoke(RepositoryMethodInvoker.java:169)
+app
+December 11, 2025, 18:49
+at org.springframework.data.repository.core.support.RepositoryMethodInvoker.invoke(RepositoryMethodInvoker.java:158)
+app
+December 11, 2025, 18:49
+at org.springframework.data.repository.core.support.QueryExecutorMethodInterceptor.doInvoke(QueryExecutorMethodInterceptor.java:167)
+app
+December 11, 2025, 18:49
+at org.springframework.data.repository.core.support.QueryExecutorMethodInterceptor.invoke(QueryExecutorMethodInterceptor.java:146)
+app
+December 11, 2025, 18:49
+at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:179)
+app
+December 11, 2025, 18:49
+at org.springframework.transaction.interceptor.TransactionAspectSupport.invokeWithinTransaction(TransactionAspectSupport.java:370)
+app
+December 11, 2025, 18:49
+at org.springframework.transaction.interceptor.TransactionInterceptor.invoke(TransactionInterceptor.java:118)
+app
+December 11, 2025, 18:49
+at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:179)
+app
+December 11, 2025, 18:49
+at org.springframework.dao.support.PersistenceExceptionTranslationInterceptor.invoke(PersistenceExceptionTranslationInterceptor.java:135)
+app
+December 11, 2025, 18:49
+at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:179)
+app
+December 11, 2025, 18:49
+at org.springframework.aop.framework.JdkDynamicAopProxy.invoke(JdkDynamicAopProxy.java:222)
+app
+December 11, 2025, 18:49
+at jdk.proxy2/jdk.proxy2.$Proxy113.existsByEmail(Unknown Source)
+app
+December 11, 2025, 18:49
+at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source)
+app
+December 11, 2025, 18:49
+at java.base/java.lang.reflect.Method.invoke(Unknown Source)
+app
+December 11, 2025, 18:49
+at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:359)
+app
+December 11, 2025, 18:49
+at org.springframework.aop.framework.ReflectiveMethodInvocation.invokeJoinpoint(ReflectiveMethodInvocation.java:190)
+app
+December 11, 2025, 18:49
+at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:158)
+app
+December 11, 2025, 18:49
+at org.springframework.dao.support.PersistenceExceptionTranslationInterceptor.invoke(PersistenceExceptionTranslationInterceptor.java:135)
+app
+December 11, 2025, 18:49
+at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:179)
+app
+December 11, 2025, 18:49
+at org.springframework.aop.framework.JdkDynamicAopProxy.invoke(JdkDynamicAopProxy.java:222)
+app
+December 11, 2025, 18:49
+at jdk.proxy2/jdk.proxy2.$Proxy113.existsByEmail(Unknown Source)
+app
+December 11, 2025, 18:49
+at com.example.foreverhome.config.TestDataSeeder.run(TestDataSeeder.java:69)
+app
+December 11, 2025, 18:49
+at org.springframework.boot.SpringApplication.lambda$callRunner$1(SpringApplication.java:801)
+app
+December 11, 2025, 18:49
+at org.springframework.util.function.ThrowingConsumer$1.acceptWithException(ThrowingConsumer.java:82)
+app
+December 11, 2025, 18:49
+at org.springframework.util.function.ThrowingConsumer.accept(ThrowingConsumer.java:60)
+app
+December 11, 2025, 18:49
+at org.springframework.util.function.ThrowingConsumer$1.accept(ThrowingConsumer.java:86)
+app
+December 11, 2025, 18:49
+at org.springframework.boot.SpringApplication.callRunner(SpringApplication.java:809)
+app
+December 11, 2025, 18:49
+at org.springframework.boot.SpringApplication.callRunner(SpringApplication.java:800)
+app
+December 11, 2025, 18:49
+at org.springframework.boot.SpringApplication.lambda$callRunners$0(SpringApplication.java:785)
+app
+December 11, 2025, 18:49
+at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(Unknown Source)
+app
+December 11, 2025, 18:49
+at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(Unknown Source)
+app
+December 11, 2025, 18:49
+at java.base/java.util.stream.AbstractPipeline.copyInto(Unknown Source)
+app
+December 11, 2025, 18:49
+at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(Unknown Source)
+app
+December 11, 2025, 18:49
+at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(Unknown Source)
+app
+December 11, 2025, 18:49
+at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(Unknown Source)
+app
+December 11, 2025, 18:49
+at java.base/java.util.stream.AbstractPipeline.evaluate(Unknown Source)
+app
+December 11, 2025, 18:49
+at java.base/java.util.stream.ReferencePipeline.forEach(Unknown Source)
+app
+December 11, 2025, 18:49
+at org.springframework.boot.SpringApplication.callRunners(SpringApplication.java:785)
+app
+December 11, 2025, 18:49
+at org.springframework.boot.SpringApplication.run(SpringApplication.java:328)
+app
+December 11, 2025, 18:49
+at org.springframework.boot.SpringApplication.run(SpringApplication.java:1374)
+app
+December 11, 2025, 18:49
+at org.springframework.boot.SpringApplication.run(SpringApplication.java:1363)
+app
+December 11, 2025, 18:49
+at com.example.foreverhome.ForeverHomeApplication.main(ForeverHomeApplication.java:12)
+app
+December 11, 2025, 18:49
+at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source)
+app
+December 11, 2025, 18:49
+at java.base/java.lang.reflect.Method.invoke(Unknown Source)
+app
+December 11, 2025, 18:49
+at org.springframework.boot.loader.launch.Launcher.launch(Launcher.java:106)
+app
+December 11, 2025, 18:49
+at org.springframework.boot.loader.launch.Launcher.launch(Launcher.java:64)
+app
+December 11, 2025, 18:49
+at org.springframework.boot.loader.launch.JarLauncher.main(JarLauncher.java:40)
+app
+December 11, 2025, 18:49
+Caused by: org.postgresql.util.PSQLException: ERROR: relation "app_users" does not exist
+app
+December 11, 2025, 18:49
+Position: 30
+app
+December 11, 2025, 18:49
+at org.postgresql.core.v3.QueryExecutorImpl.receiveErrorResponse(QueryExecutorImpl.java:2736)
+app
+December 11, 2025, 18:49
+at org.postgresql.core.v3.QueryExecutorImpl.processResults(QueryExecutorImpl.java:2421)
+app
+December 11, 2025, 18:49
+at org.postgresql.core.v3.QueryExecutorImpl.execute(QueryExecutorImpl.java:372)
+app
+December 11, 2025, 18:49
+at org.postgresql.jdbc.PgStatement.executeInternal(PgStatement.java:525)
+app
+December 11, 2025, 18:49
+at org.postgresql.jdbc.PgStatement.execute(PgStatement.java:435)
+app
+December 11, 2025, 18:49
+at org.postgresql.jdbc.PgPreparedStatement.executeWithFlags(PgPreparedStatement.java:196)
+app
+December 11, 2025, 18:49
+at org.postgresql.jdbc.PgPreparedStatement.executeQuery(PgPreparedStatement.java:139)
+app
+December 11, 2025, 18:49
+at com.zaxxer.hikari.pool.ProxyPreparedStatement.executeQuery(ProxyPreparedStatement.java:52)
+app
+December 11, 2025, 18:49
+at com.zaxxer.hikari.pool.HikariProxyPreparedStatement.executeQuery(HikariProxyPreparedStatement.java)
+app
+December 11, 2025, 18:49
+at org.springframework.jdbc.core.JdbcTemplate.lambda$query$0(JdbcTemplate.java:737)
+app
+December 11, 2025, 18:49
+at org.springframework.jdbc.core.JdbcTemplate.execute(JdbcTemplate.java:669)
+app
+December 11, 2025, 18:49
+... 52 common frames omitted
+app
+December 11, 2025, 18:49
+2025-12-11 18:49:34.268 ERROR [ ] o.s.boot.SpringApplication : Application run failed
+app
+December 11, 2025, 18:49
+org.springframework.jdbc.BadSqlGrammarException: PreparedStatementCallback; bad SQL grammar [SELECT "app_users"."id" FROM "app_users" WHERE "app_users"."email" = ? LIMIT 1]
+app
+December 11, 2025, 18:49
+at org.springframework.jdbc.support.SQLStateSQLExceptionTranslator.doTranslate(SQLStateSQLExceptionTranslator.java:134)
+app
+December 11, 2025, 18:49
+2025-12-11 18:49:33.872 INFO [ ] .s.b.a.l.ConditionEvaluationReportLogger :
+app
+December 11, 2025, 18:49
+Error starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.
+app
+December 11, 2025, 18:49
+2025-12-11 18:49:32.567 INFO [ ] o.a.c.c.C.[Tomcat].[localhost].[/] : Initializing Spring DispatcherServlet 'dispatcherServlet'
+app
+December 11, 2025, 18:49
+2025-12-11 18:49:31.468 INFO [ ] c.e.foreverhome.config.TestDataSeeder : Test mode enabled - seeding test accounts
+app
+December 11, 2025, 18:49
+2025-12-11 18:49:29.966 INFO [ ] c.e.foreverhome.ForeverHomeApplication : Started ForeverHomeApplication in 81.4 seconds (process running for 89.037)
+app
+December 11, 2025, 18:49
+2025-12-11 18:49:29.774 INFO [ ] o.s.boot.tomcat.TomcatWebServer : Tomcat started on port 8080 (http) with context path '/'
+app
+December 11, 2025, 18:49
+2025-12-11 18:49:28.874 INFO [ ] o.s.b.a.e.web.EndpointLinksResolver : Exposing 4 endpoints beneath base path '/actuator'
+app
+December 11, 2025, 18:49
+2025-12-11 18:49:22.776 INFO [ ] o.s.b.w.a.WelcomePageHandlerMapping : Adding welcome page: class path resource [static/index.html]
+app
+December 11, 2025, 18:48
+2025-12-11 18:48:58.872 INFO [ ] com.zaxxer.hikari.HikariDataSource : HikariPool-1 - Start completed.
+app
+December 11, 2025, 18:48
+2025-12-11 18:48:58.870 INFO [ ] com.zaxxer.hikari.pool.HikariPool : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@259c6ab8
+app
+December 11, 2025, 18:48
+2025-12-11 18:48:52.974 INFO [ ] com.zaxxer.hikari.HikariDataSource : HikariPool-1 - Starting...
+app
+December 11, 2025, 18:48
+2025-12-11 18:48:48.668 INFO [ ] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 30193 ms
+app
+December 11, 2025, 18:48
+2025-12-11 18:48:48.178 INFO [ ] o.apache.catalina.core.StandardEngine : Starting Servlet engine: [Apache Tomcat/11.0.14]
+app
+December 11, 2025, 18:48
+2025-12-11 18:48:48.177 INFO [ ] o.apache.catalina.core.StandardService : Starting service [Tomcat]
+app
+December 11, 2025, 18:48
+2025-12-11 18:48:48.069 INFO [ ] o.s.boot.tomcat.TomcatWebServer : Tomcat initialized with port 8080 (http)
+app
+December 11, 2025, 18:48
+2025-12-11 18:48:38.169 INFO [ ] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 693 ms. Found 19 JDBC repository interfaces.
+app
+December 11, 2025, 18:48
+2025-12-11 18:48:37.380 INFO [ ] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JDBC repositories in DEFAULT mode.
+app
+December 11, 2025, 18:48
+2025-12-11 18:48:17.268 INFO [ ] c.e.foreverhome.ForeverHomeApplication : The following 1 profile is active: "dev"
+app
+December 11, 2025, 18:48
+2025-12-11 18:48:17.168 INFO [ ] c.e.foreverhome.ForeverHomeApplication : Starting ForeverHomeApplication v0.0.1-SNAPSHOT using Java 25.0.1 with PID 1 (/app/app.jar started by appuser in /app)
+app
+December 11, 2025, 18:48
+:: Spring Boot :: (v4.0.0)
+app
+December 11, 2025, 18:48
+. ____ _ __ _ _
+app
+December 11, 2025, 18:48
+/\\ / ___'_ __ _ _(_)_ __ __ _ \ \ \ \
+app
+December 11, 2025, 18:48
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+app
+December 11, 2025, 18:48
+\\/ ___)| |_)| | | | | || (_| | ) ) ) )
+app
+December 11, 2025, 18:48
+' |____| .__|_| |_|_| |_\__, | / / / /

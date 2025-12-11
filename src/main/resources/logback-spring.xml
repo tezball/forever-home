@@ -13,9 +13,9 @@
         </encoder>
     </appender>
 
-    <!-- Development profile -->
-    <springProfile name="default,dev">
-        <!-- Loki appender for log aggregation -->
+    <!-- Local development profile only (not AWS dev environment) -->
+    <springProfile name="default">
+        <!-- Loki appender for log aggregation - only for local development with Docker Compose -->
         <appender name="LOKI" class="com.github.loki4j.logback.Loki4jAppender">
             <http>
                 <url>${LOKI_URL}</url>
@@ -79,10 +79,17 @@
             </format>
         </appender>
 
-        <!-- Root logger for dev -->
+        <!-- Root logger for local dev -->
         <root level="INFO">
             <appender-ref ref="CONSOLE"/>
             <appender-ref ref="LOKI"/>
+        </root>
+    </springProfile>
+
+    <!-- AWS dev profile - console only, no Loki -->
+    <springProfile name="dev">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
         </root>
     </springProfile>
 
@@ -99,59 +106,33 @@
             </encoder>
         </appender>
 
-        <!-- Production Loki appender -->
-        <appender name="LOKI" class="com.github.loki4j.logback.Loki4jAppender">
-            <http>
-                <url>${LOKI_URL}</url>
-            </http>
-            <format>
-                <label>
-                    <pattern>app=${APP_NAME},env=prod,level=%level,host=${HOSTNAME:-unknown}</pattern>
-                </label>
-                <message>
-                    <pattern>
-                        {
-                            "timestamp": "%d{yyyy-MM-dd'T'HH:mm:ss.SSS'Z'}",
-                            "level": "%level",
-                            "logger": "%logger{36}",
-                            "thread": "%thread",
-                            "message": "%message",
-                            "traceId": "%X{traceId:-}",
-                            "userId": "%X{userId:-}",
-                            "userRole": "%X{userRole:-}",
-                            "clientIp": "%X{clientIp:-}",
-                            "requestMethod": "%X{requestMethod:-}",
-                            "requestPath": "%X{requestPath:-}",
-                            "responseStatus": "%X{responseStatus:-}",
-                            "durationMs": "%X{durationMs:-}",
-                            "action": "%X{action:-}",
-                            "resourceType": "%X{resourceType:-}",
-                            "resourceId": "%X{resourceId:-}",
-                            "exception": "%ex{full}"
-                        }
-                    </pattern>
-                </message>
-                <sortByTime>true</sortByTime>
-            </format>
-        </appender>
-
-        <!-- Root logger for prod - use JSON output -->
+        <!-- Root logger for prod - JSON console output for CloudWatch -->
         <root level="INFO">
             <appender-ref ref="JSON_CONSOLE"/>
-            <appender-ref ref="LOKI"/>
         </root>
     </springProfile>
 
-    <!-- Logger for user journey events (all profiles) -->
-    <logger name="com.example.foreverhome.logging.UserJourneyLogger" level="INFO" additivity="false">
-        <springProfile name="default,dev">
+    <!-- Logger for user journey events - local development -->
+    <springProfile name="default">
+        <logger name="com.example.foreverhome.logging.UserJourneyLogger" level="INFO" additivity="false">
             <appender-ref ref="USER_JOURNEY"/>
             <appender-ref ref="CONSOLE"/>
-        </springProfile>
-        <springProfile name="prod">
-            <appender-ref ref="LOKI"/>
-        </springProfile>
-    </logger>
+        </logger>
+    </springProfile>
+
+    <!-- Logger for user journey events - AWS dev -->
+    <springProfile name="dev">
+        <logger name="com.example.foreverhome.logging.UserJourneyLogger" level="INFO" additivity="false">
+            <appender-ref ref="CONSOLE"/>
+        </logger>
+    </springProfile>
+
+    <!-- Logger for user journey events - production -->
+    <springProfile name="prod">
+        <logger name="com.example.foreverhome.logging.UserJourneyLogger" level="INFO" additivity="false">
+            <appender-ref ref="CONSOLE"/>
+        </logger>
+    </springProfile>
 
     <!-- Logging filter -->
     <logger name="com.example.foreverhome.logging.LoggingFilter" level="INFO"/>
@@ -168,7 +149,8 @@
 
     <!-- SQL logging (disabled by default, enable for debugging) -->
     <logger name="org.springframework.jdbc" level="WARN"/>
-    <logger name="org.flywaydb" level="INFO"/>
+    <logger name="org.flywaydb" level="DEBUG"/>
+    <logger name="org.flywaydb.core" level="DEBUG"/>
 
     <!-- Reduce noise from libraries -->
     <logger name="org.springframework.web" level="WARN"/>

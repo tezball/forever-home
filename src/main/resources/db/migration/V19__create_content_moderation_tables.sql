@@ -3,11 +3,11 @@ CREATE TABLE IF NOT EXISTS content_flags (
     id UUID PRIMARY KEY,
     content_type VARCHAR(50) NOT NULL,
     content_id UUID NOT NULL,
-    reporter_id UUID REFERENCES users(id),
+    reporter_id UUID REFERENCES app_users(id),
     reason VARCHAR(50) NOT NULL,
     description TEXT,
     status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
-    reviewed_by UUID REFERENCES users(id),
+    reviewed_by UUID REFERENCES app_users(id),
     reviewed_at TIMESTAMP WITH TIME ZONE,
     resolution_notes TEXT,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     action VARCHAR(50) NOT NULL,
     entity_type VARCHAR(50),
     entity_id UUID,
-    actor_id UUID REFERENCES users(id),
+    actor_id UUID REFERENCES app_users(id),
     details TEXT,
     ip_address VARCHAR(45),
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()

@@ -1,7 +1,8 @@
--- V1: Create users table with embedded notification preferences
+-- V1: Create app_users table with embedded notification preferences
 -- This is the base identity table for all platform users
+-- Named "app_users" to avoid conflicts with PostgreSQL reserved words
 
-CREATE TABLE users (
+CREATE TABLE app_users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     email VARCHAR(255) NOT NULL UNIQUE,
     name VARCHAR(255),
@@ -28,16 +29,16 @@ CREATE TABLE users (
     notif_in_app_enabled BOOLEAN NOT NULL DEFAULT TRUE,
 
     -- Constraints
-    CONSTRAINT chk_users_role CHECK (role IN ('ADMIN', 'FOSTER', 'ADOPTER', 'VET', 'RESCUE_ORG')),
-    CONSTRAINT chk_users_status CHECK (status IN ('PENDING', 'ACTIVE', 'SUSPENDED'))
+    CONSTRAINT chk_app_users_role CHECK (role IN ('ADMIN', 'FOSTER', 'ADOPTER', 'VET', 'RESCUE_ORG')),
+    CONSTRAINT chk_app_users_status CHECK (status IN ('PENDING', 'ACTIVE', 'SUSPENDED'))
 );
 
 -- Indexes for common queries
-CREATE INDEX idx_users_email ON users(email);
-CREATE INDEX idx_users_role ON users(role);
-CREATE INDEX idx_users_status ON users(status);
+CREATE INDEX idx_app_users_email ON app_users(email);
+CREATE INDEX idx_app_users_role ON app_users(role);
+CREATE INDEX idx_app_users_status ON app_users(status);
 
-COMMENT ON TABLE users IS 'Base identity for all platform users';
-COMMENT ON COLUMN users.role IS 'Discriminator: ADMIN, FOSTER, ADOPTER, VET, RESCUE_ORG';
-COMMENT ON COLUMN users.status IS 'Account status: PENDING (unverified), ACTIVE, SUSPENDED';
-COMMENT ON COLUMN users.profile_complete IS 'True after role-specific profile is filled';
+COMMENT ON TABLE app_users IS 'Base identity for all platform users';
+COMMENT ON COLUMN app_users.role IS 'Discriminator: ADMIN, FOSTER, ADOPTER, VET, RESCUE_ORG';
+COMMENT ON COLUMN app_users.status IS 'Account status: PENDING (unverified), ACTIVE, SUSPENDED';
+COMMENT ON COLUMN app_users.profile_complete IS 'True after role-specific profile is filled';

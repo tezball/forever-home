@@ -6,7 +6,7 @@ CREATE TABLE vet_approvals (
     vet_id UUID NOT NULL REFERENCES vets(id) ON DELETE CASCADE,
     rescue_org_id UUID NOT NULL REFERENCES rescue_organizations(id) ON DELETE CASCADE,
     approved_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    approved_by UUID NOT NULL REFERENCES users(id),
+    approved_by UUID NOT NULL REFERENCES app_users(id),
 
     -- Each vet can only be approved once per rescue organization
     CONSTRAINT uq_vet_approval UNIQUE (vet_id, rescue_org_id)

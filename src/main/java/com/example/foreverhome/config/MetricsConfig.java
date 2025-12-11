@@ -6,6 +6,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.util.concurrent.atomic.AtomicLong;
@@ -13,8 +14,10 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * Custom application metrics for Prometheus monitoring.
  * These metrics track business-relevant events like adoptions, applications, and user registrations.
+ * Note: This config is excluded in static profile as it requires database access.
  */
 @Configuration
+@Profile("!static")
 public class MetricsConfig {
 
     private final AtomicLong activeApplications = new AtomicLong(0);
@@ -49,9 +52,8 @@ public class MetricsConfig {
 
     @Bean
     public Counter userRegistrationsCounter(MeterRegistry registry) {
-        return Counter.builder("foreverhome.users.registrations")
+        return Counter.builder("foreverhome.users.registrations.total")
                 .description("Total number of user registrations")
-                .tag("type", "all")
                 .register(registry);
     }
 
@@ -102,7 +104,7 @@ public class MetricsConfig {
         return Gauge.builder("foreverhome.users.active", () -> {
             try {
                 Integer count = jdbcTemplate.queryForObject(
-                        "SELECT COUNT(*) FROM users WHERE status = 'ACTIVE'",
+                        "SELECT COUNT(*) FROM app_users WHERE status = 'ACTIVE'",
                         Integer.class
                 );
                 return count != null ? count : 0;
@@ -205,7 +207,7 @@ public class MetricsConfig {
         return Gauge.builder("foreverhome.users.suspended", () -> {
             try {
                 Integer count = jdbcTemplate.queryForObject(
-                        "SELECT COUNT(*) FROM users WHERE status = 'SUSPENDED'",
+                        "SELECT COUNT(*) FROM app_users WHERE status = 'SUSPENDED'",
                         Integer.class
                 );
                 return count != null ? count : 0;

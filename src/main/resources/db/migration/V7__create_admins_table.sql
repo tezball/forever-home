@@ -3,7 +3,7 @@
 
 CREATE TABLE admins (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE
+    user_id UUID NOT NULL UNIQUE REFERENCES app_users(id) ON DELETE CASCADE
 );
 
 -- Index for user lookup

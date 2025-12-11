@@ -16,7 +16,7 @@ import java.util.UUID;
  * All specific user types (Foster, Adopter, Vet, RescueOrg, Admin)
  * have a one-to-one relationship with this entity.
  */
-@Table("users")
+@Table("app_users")
 public class User implements Persistable<UUID> {
 
     @Id

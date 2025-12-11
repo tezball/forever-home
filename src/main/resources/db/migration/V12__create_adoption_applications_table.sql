@@ -11,7 +11,7 @@ CREATE TABLE adoption_applications (
     why_adopt TEXT NOT NULL,
     submitted_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     reviewed_at TIMESTAMP WITH TIME ZONE,
-    reviewed_by UUID REFERENCES users(id),
+    reviewed_by UUID REFERENCES app_users(id),
     rejection_reason TEXT,
 
     -- Constraints

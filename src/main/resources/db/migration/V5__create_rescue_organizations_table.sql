@@ -3,7 +3,7 @@
 
 CREATE TABLE rescue_organizations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL UNIQUE REFERENCES app_users(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
     phone VARCHAR(50),
     website VARCHAR(255),

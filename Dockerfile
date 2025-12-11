@@ -7,6 +7,13 @@ WORKDIR /frontend
 COPY frontend/package*.json ./
 RUN npm ci
 COPY frontend/ ./
+
+# Set environment variables for the frontend build
+# VITE_API_URL is relative so it works with any host
+# VITE_TEST_MODE enables the quick login dropdown for testing
+ENV VITE_API_URL=/api
+ENV VITE_TEST_MODE=true
+
 RUN npm run build
 
 # Stage 2: Build backend

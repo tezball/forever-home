@@ -31,7 +31,7 @@ public class MetricsService {
         this.applicationsSubmitted = registry.counter("foreverhome.applications.submitted");
         this.applicationsApproved = registry.counter("foreverhome.applications.approved");
         this.applicationsRejected = registry.counter("foreverhome.applications.rejected");
-        this.userRegistrations = registry.counter("foreverhome.users.registrations");
+        this.userRegistrations = registry.counter("foreverhome.users.registrations.total");
         this.petRegistrations = registry.counter("foreverhome.pets.registrations");
         this.vetSignOffs = registry.counter("foreverhome.vet.signoffs");
         this.emailsSent = registry.counter("foreverhome.emails.sent");
