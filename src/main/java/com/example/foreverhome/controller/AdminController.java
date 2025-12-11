@@ -10,6 +10,7 @@ import com.example.foreverhome.domain.user.AccountStatus;
 import com.example.foreverhome.domain.user.User;
 import com.example.foreverhome.domain.user.UserRole;
 import com.example.foreverhome.exception.ResourceNotFoundException;
+import com.example.foreverhome.logging.UserJourneyLogger;
 import com.example.foreverhome.repository.AdoptionRepository;
 import com.example.foreverhome.repository.PetRepository;
 import com.example.foreverhome.repository.UserRepository;
@@ -35,16 +36,19 @@ public class AdminController {
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
     private final ModerationService moderationService;
+    private final UserJourneyLogger journeyLogger;
 
     public AdminController(UserRepository userRepository, PetRepository petRepository,
                           AdoptionRepository adoptionRepository, PasswordEncoder passwordEncoder,
-                          EmailService emailService, ModerationService moderationService) {
+                          EmailService emailService, ModerationService moderationService,
+                          UserJourneyLogger journeyLogger) {
         this.userRepository = userRepository;
         this.petRepository = petRepository;
         this.adoptionRepository = adoptionRepository;
         this.passwordEncoder = passwordEncoder;
         this.emailService = emailService;
         this.moderationService = moderationService;
+        this.journeyLogger = journeyLogger;
     }
 
     @GetMapping("/analytics")
@@ -131,6 +135,9 @@ public class AdminController {
         user.activate();
         userRepository.save(user);
 
+        journeyLogger.logAdminAction(UserJourneyLogger.ACTION_ADMIN_APPROVE_RESCUE, "USER", userId,
+                "Approved " + type + " account: " + user.getEmail());
+
         return ResponseEntity.ok().build();
     }
 
@@ -142,6 +149,9 @@ public class AdminController {
 
         user.suspend();
         userRepository.save(user);
+
+        journeyLogger.logAdminAction(UserJourneyLogger.ACTION_ADMIN_REJECT_RESCUE, "USER", userId,
+                "Rejected " + type + " account: " + user.getEmail());
 
         return ResponseEntity.ok().build();
     }
@@ -155,6 +165,9 @@ public class AdminController {
         user.suspend();
         userRepository.save(user);
 
+        journeyLogger.logAdminAction(UserJourneyLogger.ACTION_ADMIN_SUSPEND_USER, "USER", userId,
+                "Suspended user: " + user.getEmail());
+
         return ResponseEntity.ok().build();
     }
 
@@ -166,6 +179,9 @@ public class AdminController {
 
         user.reactivate();
         userRepository.save(user);
+
+        journeyLogger.logAdminAction(UserJourneyLogger.ACTION_ADMIN_REACTIVATE_USER, "USER", userId,
+                "Reactivated user: " + user.getEmail());
 
         return ResponseEntity.ok().build();
     }
@@ -255,6 +271,9 @@ public class AdminController {
 
         // Send the temporary password via email
         emailService.sendPasswordResetByAdmin(user.getEmail(), tempPassword);
+
+        journeyLogger.logAdminAction(UserJourneyLogger.ACTION_ADMIN_RESET_PASSWORD, "USER", userId,
+                "Password reset email sent to: " + user.getEmail());
 
         return ResponseEntity.ok(new ResetPasswordResponse("Password reset email sent to " + user.getEmail()));
     }

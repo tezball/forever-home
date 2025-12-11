@@ -55,6 +55,9 @@ export function AdminDashboard() {
   const [successMessage, setSuccessMessage] = useState('');
   const [error, setError] = useState('');
 
+  // Approval action state
+  const [processingApprovalId, setProcessingApprovalId] = useState<string | null>(null);
+
   const fetchApprovals = async () => {
     try {
       const res = await apiClient.get<Approval[]>('/admin/approvals');
@@ -97,22 +100,40 @@ export function AdminDashboard() {
   }, [searchQuery, roleFilter, statusFilter]);
 
   const handleApprove = async (type: string, id: string) => {
+    setProcessingApprovalId(id);
+    setError('');
     try {
       await apiClient.put(`/admin/approvals/${type}/${id}/approve`);
-      setApprovals(approvals.filter((a) => a.id !== id));
-      fetchApprovals();
-    } catch {
-      // Handle error
+      setSuccessMessage('Rescue organization approved successfully');
+      await fetchApprovals();
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'response' in err) {
+        const response = (err as { response?: { data?: { message?: string } } }).response;
+        setError(response?.data?.message || 'Failed to approve rescue organization');
+      } else {
+        setError('Failed to approve rescue organization');
+      }
+    } finally {
+      setProcessingApprovalId(null);
     }
   };
 
   const handleReject = async (type: string, id: string) => {
+    setProcessingApprovalId(id);
+    setError('');
     try {
       await apiClient.put(`/admin/approvals/${type}/${id}/reject`);
-      setApprovals(approvals.filter((a) => a.id !== id));
-      fetchApprovals();
-    } catch {
-      // Handle error
+      setSuccessMessage('Rescue organization rejected');
+      await fetchApprovals();
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'response' in err) {
+        const response = (err as { response?: { data?: { message?: string } } }).response;
+        setError(response?.data?.message || 'Failed to reject rescue organization');
+      } else {
+        setError('Failed to reject rescue organization');
+      }
+    } finally {
+      setProcessingApprovalId(null);
     }
   };
 
@@ -222,6 +243,18 @@ export function AdminDashboard() {
         </div>
       )}
 
+      {/* Error Message */}
+      {error && (
+        <div className="mb-6 bg-error-50 border border-error-200 text-error-700 px-4 py-3 rounded flex justify-between items-center">
+          <span>{error}</span>
+          <button onClick={() => setError('')} className="text-error-700 hover:text-error-900">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      )}
+
       {/* Tabs */}
       <div className="border-b border-secondary-200 mb-6">
         <nav className="flex gap-8">
@@ -278,15 +311,17 @@ export function AdminDashboard() {
                           variant="outline"
                           size="sm"
                           onClick={() => handleReject(approval.type, approval.id)}
+                          disabled={processingApprovalId === approval.id}
                         >
-                          Reject
+                          {processingApprovalId === approval.id ? 'Processing...' : 'Reject'}
                         </Button>
                         <Button
                           variant="primary"
                           size="sm"
                           onClick={() => handleApprove(approval.type, approval.id)}
+                          disabled={processingApprovalId === approval.id}
                         >
-                          Approve
+                          {processingApprovalId === approval.id ? 'Processing...' : 'Approve'}
                         </Button>
                       </div>
                     </div>

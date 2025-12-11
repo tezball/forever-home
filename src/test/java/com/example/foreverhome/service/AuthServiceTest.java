@@ -59,6 +59,9 @@ class AuthServiceTest {
     @Mock
     private UserJourneyLogger journeyLogger;
 
+    @Mock
+    private MetricsService metricsService;
+
     private EmailVerificationProperties verificationProperties;
 
     private AuthService authService;
@@ -74,7 +77,8 @@ class AuthServiceTest {
                 passwordEncoder,
                 emailService,
                 journeyLogger,
-                verificationProperties
+                verificationProperties,
+                metricsService
         );
     }
 
@@ -165,7 +169,8 @@ class AuthServiceTest {
                     passwordEncoder,
                     emailService,
                     journeyLogger,
-                    autoActivateProperties
+                    autoActivateProperties,
+                    metricsService
             );
 
             RegisterRequest request = new RegisterRequest(

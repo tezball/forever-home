@@ -22,3 +22,4 @@ export { RescueOrgSettingsPage } from './RescueOrgSettingsPage';
 export { VetSettingsPage } from './VetSettingsPage';
 export { AdminAnalyticsPage } from './AdminAnalyticsPage';
 export { AdminModerationPage } from './AdminModerationPage';
+export { VerifyEmailPage } from './VerifyEmailPage';

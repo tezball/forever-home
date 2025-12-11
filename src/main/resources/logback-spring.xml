@@ -2,92 +2,176 @@
 <configuration>
     <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
 
+    <!-- Properties -->
+    <springProperty scope="context" name="APP_NAME" source="spring.application.name" defaultValue="forever-home"/>
+    <springProperty scope="context" name="LOKI_URL" source="loki.url" defaultValue="http://localhost:3100/loki/api/v1/push"/>
+
     <!-- Console appender for local development -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>${CONSOLE_LOG_PATTERN}</pattern>
+            <pattern>%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(%5p) %clr([%8.8X{traceId:-}]){cyan} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n%wEx</pattern>
         </encoder>
     </appender>
 
-    <!-- Loki appender for log aggregation -->
-    <appender name="LOKI" class="com.github.loki4j.logback.Loki4jAppender">
-        <http>
-            <url>http://localhost:3100/loki/api/v1/push</url>
-        </http>
-        <format>
-            <label>
-                <pattern>app=forever-home,env=dev,level=%level</pattern>
-            </label>
-            <message>
-                <pattern>
-                    {
-                        "timestamp": "%d{yyyy-MM-dd'T'HH:mm:ss.SSS'Z'}",
-                        "level": "%level",
-                        "logger": "%logger{36}",
-                        "thread": "%thread",
-                        "message": "%message",
-                        "traceId": "%X{traceId:-}",
-                        "userId": "%X{userId:-}",
-                        "userEmail": "%X{userEmail:-}",
-                        "userRole": "%X{userRole:-}",
-                        "action": "%X{action:-}",
-                        "resourceType": "%X{resourceType:-}",
-                        "resourceId": "%X{resourceId:-}",
-                        "sessionId": "%X{sessionId:-}",
-                        "exception": "%ex{full}"
-                    }
-                </pattern>
-            </message>
-            <sortByTime>true</sortByTime>
-        </format>
-    </appender>
+    <!-- Development profile -->
+    <springProfile name="default,dev">
+        <!-- Loki appender for log aggregation -->
+        <appender name="LOKI" class="com.github.loki4j.logback.Loki4jAppender">
+            <http>
+                <url>${LOKI_URL}</url>
+            </http>
+            <format>
+                <label>
+                    <pattern>app=${APP_NAME},env=dev,level=%level</pattern>
+                </label>
+                <message>
+                    <pattern>
+                        {
+                            "timestamp": "%d{yyyy-MM-dd'T'HH:mm:ss.SSS'Z'}",
+                            "level": "%level",
+                            "logger": "%logger{36}",
+                            "thread": "%thread",
+                            "message": "%message",
+                            "traceId": "%X{traceId:-}",
+                            "userId": "%X{userId:-}",
+                            "userRole": "%X{userRole:-}",
+                            "clientIp": "%X{clientIp:-}",
+                            "requestMethod": "%X{requestMethod:-}",
+                            "requestPath": "%X{requestPath:-}",
+                            "responseStatus": "%X{responseStatus:-}",
+                            "durationMs": "%X{durationMs:-}",
+                            "exception": "%ex{short}"
+                        }
+                    </pattern>
+                </message>
+                <sortByTime>true</sortByTime>
+            </format>
+        </appender>
 
-    <!-- User journey specific appender with dedicated labels -->
-    <appender name="USER_JOURNEY" class="com.github.loki4j.logback.Loki4jAppender">
-        <http>
-            <url>http://localhost:3100/loki/api/v1/push</url>
-        </http>
-        <format>
-            <label>
-                <pattern>app=forever-home,stream=user-journey,role=%X{userRole:-unknown}</pattern>
-            </label>
-            <message>
-                <pattern>
-                    {
-                        "timestamp": "%d{yyyy-MM-dd'T'HH:mm:ss.SSS'Z'}",
-                        "level": "%level",
-                        "action": "%X{action}",
-                        "userId": "%X{userId:-}",
-                        "userEmail": "%X{userEmail:-}",
-                        "userRole": "%X{userRole:-}",
-                        "resourceType": "%X{resourceType:-}",
-                        "resourceId": "%X{resourceId:-}",
-                        "petId": "%X{petId:-}",
-                        "petStatus": "%X{petStatus:-}",
-                        "applicationId": "%X{applicationId:-}",
-                        "sessionId": "%X{sessionId:-}",
-                        "message": "%message",
-                        "durationMs": "%X{durationMs:-}"
-                    }
-                </pattern>
-            </message>
-            <sortByTime>true</sortByTime>
-        </format>
-    </appender>
+        <!-- User journey specific appender -->
+        <appender name="USER_JOURNEY" class="com.github.loki4j.logback.Loki4jAppender">
+            <http>
+                <url>${LOKI_URL}</url>
+            </http>
+            <format>
+                <label>
+                    <pattern>app=${APP_NAME},stream=user-journey,role=%X{userRole:-unknown}</pattern>
+                </label>
+                <message>
+                    <pattern>
+                        {
+                            "timestamp": "%d{yyyy-MM-dd'T'HH:mm:ss.SSS'Z'}",
+                            "level": "%level",
+                            "action": "%X{action}",
+                            "userId": "%X{userId:-}",
+                            "userRole": "%X{userRole:-}",
+                            "resourceType": "%X{resourceType:-}",
+                            "resourceId": "%X{resourceId:-}",
+                            "petId": "%X{petId:-}",
+                            "petStatus": "%X{petStatus:-}",
+                            "applicationId": "%X{applicationId:-}",
+                            "message": "%message",
+                            "durationMs": "%X{durationMs:-}"
+                        }
+                    </pattern>
+                </message>
+                <sortByTime>true</sortByTime>
+            </format>
+        </appender>
 
-    <!-- Logger for user journey events -->
+        <!-- Root logger for dev -->
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="LOKI"/>
+        </root>
+    </springProfile>
+
+    <!-- Production profile -->
+    <springProfile name="prod">
+        <!-- JSON console output for container environments -->
+        <appender name="JSON_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
+                <layout class="ch.qos.logback.contrib.json.classic.JsonLayout">
+                    <timestampFormat>yyyy-MM-dd'T'HH:mm:ss.SSS'Z'</timestampFormat>
+                    <appendLineSeparator>true</appendLineSeparator>
+                    <jsonFormatter class="ch.qos.logback.contrib.jackson.JacksonJsonFormatter"/>
+                </layout>
+            </encoder>
+        </appender>
+
+        <!-- Production Loki appender -->
+        <appender name="LOKI" class="com.github.loki4j.logback.Loki4jAppender">
+            <http>
+                <url>${LOKI_URL}</url>
+            </http>
+            <format>
+                <label>
+                    <pattern>app=${APP_NAME},env=prod,level=%level,host=${HOSTNAME:-unknown}</pattern>
+                </label>
+                <message>
+                    <pattern>
+                        {
+                            "timestamp": "%d{yyyy-MM-dd'T'HH:mm:ss.SSS'Z'}",
+                            "level": "%level",
+                            "logger": "%logger{36}",
+                            "thread": "%thread",
+                            "message": "%message",
+                            "traceId": "%X{traceId:-}",
+                            "userId": "%X{userId:-}",
+                            "userRole": "%X{userRole:-}",
+                            "clientIp": "%X{clientIp:-}",
+                            "requestMethod": "%X{requestMethod:-}",
+                            "requestPath": "%X{requestPath:-}",
+                            "responseStatus": "%X{responseStatus:-}",
+                            "durationMs": "%X{durationMs:-}",
+                            "action": "%X{action:-}",
+                            "resourceType": "%X{resourceType:-}",
+                            "resourceId": "%X{resourceId:-}",
+                            "exception": "%ex{full}"
+                        }
+                    </pattern>
+                </message>
+                <sortByTime>true</sortByTime>
+            </format>
+        </appender>
+
+        <!-- Root logger for prod - use JSON output -->
+        <root level="INFO">
+            <appender-ref ref="JSON_CONSOLE"/>
+            <appender-ref ref="LOKI"/>
+        </root>
+    </springProfile>
+
+    <!-- Logger for user journey events (all profiles) -->
     <logger name="com.example.foreverhome.logging.UserJourneyLogger" level="INFO" additivity="false">
-        <appender-ref ref="USER_JOURNEY"/>
-        <appender-ref ref="CONSOLE"/>
+        <springProfile name="default,dev">
+            <appender-ref ref="USER_JOURNEY"/>
+            <appender-ref ref="CONSOLE"/>
+        </springProfile>
+        <springProfile name="prod">
+            <appender-ref ref="LOKI"/>
+        </springProfile>
     </logger>
 
-    <!-- Logger for auth events -->
+    <!-- Logging filter -->
+    <logger name="com.example.foreverhome.logging.LoggingFilter" level="INFO"/>
+
+    <!-- Auth service logging -->
     <logger name="com.example.foreverhome.service.AuthService" level="INFO"/>
+
+    <!-- Controller layer logging -->
     <logger name="com.example.foreverhome.controller" level="INFO"/>
 
-    <!-- Root logger -->
-    <root level="INFO">
-        <appender-ref ref="CONSOLE"/>
-        <appender-ref ref="LOKI"/>
-    </root>
+    <!-- Security events -->
+    <logger name="com.example.foreverhome.config.RateLimitFilter" level="WARN"/>
+    <logger name="com.example.foreverhome.security" level="INFO"/>
+
+    <!-- SQL logging (disabled by default, enable for debugging) -->
+    <logger name="org.springframework.jdbc" level="WARN"/>
+    <logger name="org.flywaydb" level="INFO"/>
+
+    <!-- Reduce noise from libraries -->
+    <logger name="org.springframework.web" level="WARN"/>
+    <logger name="org.springframework.security" level="WARN"/>
+    <logger name="io.netty" level="WARN"/>
 </configuration>

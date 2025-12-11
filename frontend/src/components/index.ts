@@ -9,3 +9,5 @@ export { ImageUpload } from './ImageUpload';
 export { ImageCarousel } from './ImageCarousel';
 export { PetTimeline } from './PetTimeline';
 export { NotificationBell } from './NotificationBell';
+export { ErrorBoundary } from './ErrorBoundary';
+export { LoadingSpinner } from './LoadingSpinner';

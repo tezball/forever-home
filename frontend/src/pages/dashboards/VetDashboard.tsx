@@ -38,8 +38,19 @@ export function VetDashboard() {
       const response = await apiClient.get<Pet>(`/vet/pets/lookup?microchip=${microchipId}`);
       setPet(response.data);
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'No pet found with that microchip ID';
-      setError(errorMessage);
+      // Handle specific error cases
+      if (err && typeof err === 'object' && 'response' in err) {
+        const response = (err as { response?: { status?: number; data?: { message?: string } } }).response;
+        if (response?.status === 404) {
+          setError('No pet found with that microchip ID. Please verify the microchip number and try again.');
+        } else if (response?.status === 403) {
+          setError('You are not approved to view pets from this rescue organization. Please contact the rescue org to request approval.');
+        } else {
+          setError(response?.data?.message || 'Failed to look up pet. Please try again.');
+        }
+      } else {
+        setError('Failed to connect to the server. Please check your connection and try again.');
+      }
     } finally {
       setSearching(false);
     }
@@ -129,7 +140,8 @@ export function VetDashboard() {
 
   const canApprove = isNeutered && isVaccinated && isHealthy;
 
-  const canSignOff = pet?.status === 'PENDING_VET';
+  // Use canSignOff from API response if available, otherwise fall back to status check
+  const canSignOff = pet?.canSignOff ?? pet?.status === 'PENDING_VET';
 
   return (
     <div className="container-app py-8">

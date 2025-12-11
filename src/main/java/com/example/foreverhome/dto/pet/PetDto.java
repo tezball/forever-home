@@ -22,7 +22,8 @@ public record PetDto(
         UUID fosterId,
         UUID rescueOrgId,
         Instant createdAt,
-        List<String> imageUrls
+        List<String> imageUrls,
+        Boolean canSignOff
 ) {
     public static PetDto from(Pet pet) {
         return new PetDto(
@@ -41,7 +42,8 @@ public record PetDto(
                 pet.getFosterId(),
                 pet.getRescueOrgId(),
                 pet.getCreatedAt(),
-                List.of() // Images loaded separately
+                List.of(), // Images loaded separately
+                null // canSignOff only set for vet lookups
         );
     }
 
@@ -62,7 +64,33 @@ public record PetDto(
                 pet.getFosterId(),
                 pet.getRescueOrgId(),
                 pet.getCreatedAt(),
-                imageUrls
+                imageUrls,
+                null // canSignOff only set for vet lookups
+        );
+    }
+
+    /**
+     * Create a PetDto with canSignOff flag for vet lookups.
+     */
+    public static PetDto fromForVet(Pet pet, List<String> imageUrls, boolean canSignOff) {
+        return new PetDto(
+                pet.getId(),
+                pet.getName(),
+                pet.getSpecies(),
+                pet.getBreed(),
+                pet.getAge(),
+                pet.getAgeUnit(),
+                pet.getSex(),
+                pet.getSize(),
+                pet.getMicrochipId(),
+                pet.getDescription(),
+                pet.getHealthNotes(),
+                pet.getStatus(),
+                pet.getFosterId(),
+                pet.getRescueOrgId(),
+                pet.getCreatedAt(),
+                imageUrls,
+                canSignOff
         );
     }
 }

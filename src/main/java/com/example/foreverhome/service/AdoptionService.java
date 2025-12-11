@@ -25,15 +25,18 @@ public class AdoptionService {
     private final AdoptionRepository adoptionRepository;
     private final PetRepository petRepository;
     private final NotificationService notificationService;
+    private final MetricsService metricsService;
 
     public AdoptionService(AdoptionApplicationRepository applicationRepository,
                            AdoptionRepository adoptionRepository,
                            PetRepository petRepository,
-                           NotificationService notificationService) {
+                           NotificationService notificationService,
+                           MetricsService metricsService) {
         this.applicationRepository = applicationRepository;
         this.adoptionRepository = adoptionRepository;
         this.petRepository = petRepository;
         this.notificationService = notificationService;
+        this.metricsService = metricsService;
     }
 
     public AdoptionApplication submitApplication(UUID adopterId, UUID petId, String message) {
@@ -54,6 +57,9 @@ public class AdoptionService {
 
         AdoptionApplication application = AdoptionApplication.create(petId, adopterId, message);
         AdoptionApplication saved = applicationRepository.save(application);
+
+        // Record metric
+        metricsService.recordApplicationSubmitted();
 
         // Notify rescue org
         if (pet.getRescueOrgId() != null) {
@@ -110,6 +116,9 @@ public class AdoptionService {
         applicationRepository.save(application);
         petRepository.save(pet);
 
+        // Record metric
+        metricsService.recordApplicationApproved();
+
         // Reject all other active applications for this pet
         rejectOtherApplications(application.getPetId(), applicationId);
 
@@ -135,6 +144,9 @@ public class AdoptionService {
 
         application.reject();
         AdoptionApplication saved = applicationRepository.save(application);
+
+        // Record metric
+        metricsService.recordApplicationRejected();
 
         // Notify adopter
         notificationService.notifyApplicationStatusChange(
@@ -181,6 +193,9 @@ public class AdoptionService {
                 rescueOrgId
         );
         Adoption saved = adoptionRepository.save(adoption);
+
+        // Record metric
+        metricsService.recordAdoptionCompleted();
 
         // Notify all parties
         notificationService.notifyApplicationStatusChange(

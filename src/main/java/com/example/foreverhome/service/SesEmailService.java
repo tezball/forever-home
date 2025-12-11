@@ -1,5 +1,6 @@
 package com.example.foreverhome.service;
 
+import com.example.foreverhome.logging.UserJourneyLogger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -17,14 +18,20 @@ public class SesEmailService implements EmailService {
     private final SesClient sesClient;
     private final String fromEmail;
     private final String baseUrl;
+    private final MetricsService metricsService;
+    private final UserJourneyLogger journeyLogger;
 
     public SesEmailService(
             SesClient sesClient,
             @Value("${app.email.from:noreply@foreverhome.local}") String fromEmail,
-            @Value("${app.base-url:http://localhost:5173}") String baseUrl) {
+            @Value("${app.base-url:http://localhost:5173}") String baseUrl,
+            MetricsService metricsService,
+            UserJourneyLogger journeyLogger) {
         this.sesClient = sesClient;
         this.fromEmail = fromEmail;
         this.baseUrl = baseUrl;
+        this.metricsService = metricsService;
+        this.journeyLogger = journeyLogger;
     }
 
     @Override
@@ -85,6 +92,7 @@ public class SesEmailService implements EmailService {
     }
 
     private void sendEmail(String to, String subject, String body) {
+        String emailType = getEmailType(subject);
         try {
             SendEmailRequest request = SendEmailRequest.builder()
                     .destination(Destination.builder().toAddresses(to).build())
@@ -98,10 +106,21 @@ public class SesEmailService implements EmailService {
                     .build();
 
             sesClient.sendEmail(request);
+            metricsService.recordEmailSent(emailType);
+            journeyLogger.logEmail(UserJourneyLogger.ACTION_EMAIL_SENT, emailType, to, true, "Subject: " + subject);
             logger.info("Email sent to {}: {}", to, subject);
         } catch (SesException e) {
+            metricsService.recordEmailFailed(emailType);
+            journeyLogger.logEmail(UserJourneyLogger.ACTION_EMAIL_FAILED, emailType, to, false, e.getMessage());
             logger.error("Failed to send email to {}: {}", to, e.getMessage());
             // Don't throw - email failure shouldn't break the flow
         }
+    }
+
+    private String getEmailType(String subject) {
+        if (subject.contains("Verify")) return "verification";
+        if (subject.contains("Reset") || subject.contains("reset")) return "password_reset";
+        if (subject.contains("notification")) return "notification";
+        return "other";
     }
 }

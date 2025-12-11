@@ -113,13 +113,12 @@ public class RescueDashboardController {
                 .flatMap(petId -> applicationRepository.findByPetId(petId).stream())
                 .toList();
 
-        // Get all adopters for these applications
+        // Get all adopters for these applications using batch fetch to avoid N+1 queries
         List<UUID> adopterIds = allApplications.stream().map(AdoptionApplication::getAdopterId).distinct().toList();
-        Map<UUID, Adopter> adopterMap = adopterIds.stream()
-                .map(adopterRepository::findById)
-                .filter(java.util.Optional::isPresent)
-                .map(java.util.Optional::get)
-                .collect(Collectors.toMap(Adopter::getId, a -> a));
+        Map<UUID, Adopter> adopterMap = adopterIds.isEmpty()
+                ? Map.of()
+                : adopterRepository.findAllByIds(adopterIds).stream()
+                        .collect(Collectors.toMap(Adopter::getId, a -> a));
 
         List<ApplicationResponse> responses = allApplications.stream()
                 .map(app -> ApplicationResponse.from(app, petMap.get(app.getPetId()), adopterMap.get(app.getAdopterId())))

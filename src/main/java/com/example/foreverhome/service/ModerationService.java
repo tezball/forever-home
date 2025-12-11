@@ -7,6 +7,7 @@ import com.example.foreverhome.domain.moderation.ContentFlag.ContentType;
 import com.example.foreverhome.domain.moderation.ContentFlag.FlagReason;
 import com.example.foreverhome.domain.moderation.ContentFlag.FlagStatus;
 import com.example.foreverhome.exception.ResourceNotFoundException;
+import com.example.foreverhome.logging.UserJourneyLogger;
 import com.example.foreverhome.repository.AuditLogRepository;
 import com.example.foreverhome.repository.ContentFlagRepository;
 import org.springframework.stereotype.Service;
@@ -21,11 +22,14 @@ public class ModerationService {
 
     private final ContentFlagRepository contentFlagRepository;
     private final AuditLogRepository auditLogRepository;
+    private final UserJourneyLogger journeyLogger;
 
     public ModerationService(ContentFlagRepository contentFlagRepository,
-                            AuditLogRepository auditLogRepository) {
+                            AuditLogRepository auditLogRepository,
+                            UserJourneyLogger journeyLogger) {
         this.contentFlagRepository = contentFlagRepository;
         this.auditLogRepository = auditLogRepository;
+        this.journeyLogger = journeyLogger;
     }
 
     /**
@@ -34,7 +38,12 @@ public class ModerationService {
     public ContentFlag createFlag(ContentType contentType, UUID contentId, UUID reporterId,
                                   FlagReason reason, String description) {
         ContentFlag flag = ContentFlag.create(contentType, contentId, reporterId, reason, description);
-        return contentFlagRepository.save(flag);
+        ContentFlag saved = contentFlagRepository.save(flag);
+
+        journeyLogger.logModeration(UserJourneyLogger.ACTION_FLAG_CREATE, saved.getId(),
+                contentType.name(), contentId, reason.name() + ": " + description);
+
+        return saved;
     }
 
     /**
@@ -82,6 +91,9 @@ public class ModerationService {
         logAuditAction(AuditAction.CONTENT_FLAG_APPROVED, "ContentFlag", flagId, reviewerId,
                 "Approved flag for " + flag.getContentType() + " " + flag.getContentId() + ": " + notes, null);
 
+        journeyLogger.logModeration(UserJourneyLogger.ACTION_FLAG_APPROVE, flagId,
+                flag.getContentType().name(), flag.getContentId(), notes);
+
         return saved;
     }
 
@@ -98,6 +110,9 @@ public class ModerationService {
         // Log the action
         logAuditAction(AuditAction.CONTENT_FLAG_DISMISSED, "ContentFlag", flagId, reviewerId,
                 "Dismissed flag for " + flag.getContentType() + " " + flag.getContentId() + ": " + notes, null);
+
+        journeyLogger.logModeration(UserJourneyLogger.ACTION_FLAG_DISMISS, flagId,
+                flag.getContentType().name(), flag.getContentId(), notes);
 
         return saved;
     }

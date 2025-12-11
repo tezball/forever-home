@@ -51,7 +51,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/rescues").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/rescues/{id}").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/vets").permitAll()
-                .requestMatchers("/actuator/health").permitAll()
+                .requestMatchers("/actuator/**").permitAll()
                 .requestMatchers("/error").permitAll()
 
                 // Admin only endpoints

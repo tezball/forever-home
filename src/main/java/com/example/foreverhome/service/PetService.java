@@ -33,24 +33,33 @@ public class PetService {
     private final NotificationService notificationService;
     private final VetApprovalService vetApprovalService;
     private final PetStatusHistoryRepository statusHistoryRepository;
+    private final MetricsService metricsService;
 
     public PetService(PetRepository petRepository,
                       PetImageRepository petImageRepository,
                       FosterRepository fosterRepository,
                       NotificationService notificationService,
                       VetApprovalService vetApprovalService,
-                      PetStatusHistoryRepository statusHistoryRepository) {
+                      PetStatusHistoryRepository statusHistoryRepository,
+                      MetricsService metricsService) {
         this.petRepository = petRepository;
         this.petImageRepository = petImageRepository;
         this.fosterRepository = fosterRepository;
         this.notificationService = notificationService;
         this.vetApprovalService = vetApprovalService;
         this.statusHistoryRepository = statusHistoryRepository;
+        this.metricsService = metricsService;
     }
 
     private void recordStatusChange(UUID petId, PetStatus fromStatus, PetStatus toStatus, UUID changedBy, String notes) {
         PetStatusHistory history = PetStatusHistory.create(petId, fromStatus, toStatus, changedBy, notes);
         statusHistoryRepository.save(history);
+
+        // Record metric for status transition
+        metricsService.recordPetStatusChange(
+                fromStatus != null ? fromStatus.name() : "NONE",
+                toStatus.name()
+        );
     }
 
     private PetDto toPetDtoWithImages(Pet pet) {
@@ -85,6 +94,10 @@ public class PetService {
                 request.healthNotes()
         );
         Pet savedPet = petRepository.save(pet);
+
+        // Record metric
+        metricsService.recordPetRegistration(request.species().name());
+
         return PetDto.from(savedPet);
     }
 
@@ -243,6 +256,9 @@ public class PetService {
 
         recordStatusChange(petId, fromStatus, PetStatus.AVAILABLE, vetUserId, "Signed off by vet");
 
+        // Record vet sign-off metric
+        metricsService.recordVetSignOff(true);
+
         notificationService.notifyFosterPetAvailable(pet.getFosterId(), pet);
 
         return PetDto.from(savedPet);
@@ -262,6 +278,9 @@ public class PetService {
         Pet savedPet = petRepository.save(pet);
 
         recordStatusChange(petId, fromStatus, PetStatus.PENDING_RESCUE, vetUserId, "Declined by vet: " + reason);
+
+        // Record vet decline metric
+        metricsService.recordVetSignOff(false);
 
         notificationService.notifyFosterPetDeclined(pet.getFosterId(), pet, reason);
 
@@ -297,10 +316,11 @@ public class PetService {
 
     /**
      * Find pet by microchip for a vet, verifying the vet is approved by the pet's rescue organization.
+     * Returns pet info with a canSignOff flag indicating if the vet can perform sign-off.
      *
      * @param microchipId The microchip ID to search for
      * @param vetUserId   The user ID of the vet performing the lookup
-     * @return The pet DTO if found and vet is approved
+     * @return The pet DTO if found and vet is approved, with canSignOff flag
      * @throws ResourceNotFoundException if pet not found
      * @throws AccessDeniedException     if vet is not approved by the pet's rescue org
      */
@@ -319,13 +339,14 @@ public class PetService {
             }
         }
 
-        // Also check that the pet is in a status that allows vet verification
-        if (pet.getStatus() != PetStatus.PENDING_VET) {
-            throw new InvalidStatusTransitionException(
-                    "Pet is not pending vet verification. Current status: " + pet.getStatus());
-        }
-
-        return toPetDtoWithImages(pet);
+        // Return pet info with canSignOff flag - vet can view pet info regardless of status
+        // but can only sign off when status is PENDING_VET
+        boolean canSignOff = pet.getStatus() == PetStatus.PENDING_VET;
+        List<String> imageUrls = petImageRepository.findByPetIdOrderByDisplayOrder(pet.getId())
+                .stream()
+                .map(PetImage::getUrl)
+                .toList();
+        return PetDto.fromForVet(pet, imageUrls, canSignOff);
     }
 
     private Pet findPetOrThrow(UUID petId) {

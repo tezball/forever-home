@@ -39,6 +39,7 @@ public class AuthService {
     private final EmailService emailService;
     private final UserJourneyLogger journeyLogger;
     private final EmailVerificationProperties verificationProperties;
+    private final MetricsService metricsService;
 
     public AuthService(UserRepository userRepository,
                        RefreshTokenRepository refreshTokenRepository,
@@ -46,7 +47,8 @@ public class AuthService {
                        PasswordEncoder passwordEncoder,
                        EmailService emailService,
                        UserJourneyLogger journeyLogger,
-                       EmailVerificationProperties verificationProperties) {
+                       EmailVerificationProperties verificationProperties,
+                       MetricsService metricsService) {
         this.userRepository = userRepository;
         this.refreshTokenRepository = refreshTokenRepository;
         this.jwtTokenProvider = jwtTokenProvider;
@@ -54,6 +56,7 @@ public class AuthService {
         this.emailService = emailService;
         this.journeyLogger = journeyLogger;
         this.verificationProperties = verificationProperties;
+        this.metricsService = metricsService;
     }
 
     public RegisterResponse register(RegisterRequest request) {
@@ -85,6 +88,9 @@ public class AuthService {
         // Save user
         userRepository.save(user);
 
+        // Record metric
+        metricsService.recordUserRegistration(request.role().name());
+
         journeyLogger.logAuth(UserJourneyLogger.ACTION_REGISTER, request.email(), true,
             "User registered with role " + request.role());
 
@@ -111,6 +117,7 @@ public class AuthService {
         if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
             user.recordFailedLoginAttempt();
             userRepository.save(user);
+            metricsService.recordLoginAttempt(false);
             journeyLogger.logAuth(UserJourneyLogger.ACTION_LOGIN, request.email(), false,
                 "Invalid password (attempt " + user.getFailedLoginAttempts() + ")");
             throw new AuthenticationException("Invalid credentials");
@@ -132,6 +139,9 @@ public class AuthService {
         user.resetFailedLoginAttempts();
         user.recordLogin();
         userRepository.save(user);
+
+        // Record successful login metric
+        metricsService.recordLoginAttempt(true);
 
         // Generate tokens
         String accessToken = jwtTokenProvider.generateAccessToken(user);

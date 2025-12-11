@@ -47,6 +47,19 @@ public class UserJourneyLogger {
     public static final String ACTION_ADMIN_APPROVE_ORG = "ADMIN_APPROVE_ORG";
     public static final String ACTION_ADMIN_APPROVE_VET = "ADMIN_APPROVE_VET";
     public static final String ACTION_ADMIN_SUSPEND_USER = "ADMIN_SUSPEND_USER";
+    public static final String ACTION_ADMIN_REACTIVATE_USER = "ADMIN_REACTIVATE_USER";
+    public static final String ACTION_ADMIN_RESET_PASSWORD = "ADMIN_RESET_PASSWORD";
+    public static final String ACTION_ADMIN_APPROVE_RESCUE = "ADMIN_APPROVE_RESCUE";
+    public static final String ACTION_ADMIN_REJECT_RESCUE = "ADMIN_REJECT_RESCUE";
+
+    // Content moderation actions
+    public static final String ACTION_FLAG_CREATE = "FLAG_CREATE";
+    public static final String ACTION_FLAG_APPROVE = "FLAG_APPROVE";
+    public static final String ACTION_FLAG_DISMISS = "FLAG_DISMISS";
+
+    // Email events
+    public static final String ACTION_EMAIL_SENT = "EMAIL_SENT";
+    public static final String ACTION_EMAIL_FAILED = "EMAIL_FAILED";
 
     /**
      * Log a user journey event with full context.
@@ -212,6 +225,48 @@ public class UserJourneyLogger {
             MDC.remove("action");
             MDC.remove("resourceType");
             MDC.remove("resourceId");
+        }
+    }
+
+    /**
+     * Log content moderation events.
+     */
+    public void logModeration(String action, UUID flagId, String contentType, UUID contentId, String details) {
+        try {
+            MDC.put("action", action);
+            MDC.put("flagId", flagId != null ? flagId.toString() : "");
+            MDC.put("contentType", contentType);
+            MDC.put("resourceType", "FLAG");
+            MDC.put("resourceId", flagId != null ? flagId.toString() : "");
+            logger.info("[{}] Flag {} on {} {} - {}", action, flagId, contentType, contentId, details);
+        } finally {
+            MDC.remove("action");
+            MDC.remove("flagId");
+            MDC.remove("contentType");
+            MDC.remove("resourceType");
+            MDC.remove("resourceId");
+        }
+    }
+
+    /**
+     * Log email events.
+     */
+    public void logEmail(String action, String emailType, String recipient, boolean success, String details) {
+        try {
+            MDC.put("action", action);
+            MDC.put("emailType", emailType);
+            MDC.put("recipient", recipient);
+            MDC.put("success", String.valueOf(success));
+            if (success) {
+                logger.info("[{}] {} to {} - {}", action, emailType, recipient, details);
+            } else {
+                logger.warn("[{}] {} to {} failed - {}", action, emailType, recipient, details);
+            }
+        } finally {
+            MDC.remove("action");
+            MDC.remove("emailType");
+            MDC.remove("recipient");
+            MDC.remove("success");
         }
     }
 }

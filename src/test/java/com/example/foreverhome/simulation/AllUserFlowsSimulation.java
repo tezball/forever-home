@@ -45,8 +45,8 @@ public class AllUserFlowsSimulation extends Simulation {
     private static final int USERS_PER_SCENARIO = Integer.parseInt(System.getProperty("USERS", "5"));
     private static final int RAMP_DURATION = Integer.parseInt(System.getProperty("RAMP_DURATION", "30"));
     private static final int TEST_DURATION = Integer.parseInt(System.getProperty("TEST_DURATION", "120"));
-    private static final String ADMIN_EMAIL = System.getProperty("ADMIN_EMAIL", "admin@foreverhome.com");
-    private static final String ADMIN_PASSWORD = System.getProperty("ADMIN_PASSWORD", "AdminPass123!");
+    private static final String ADMIN_EMAIL = System.getProperty("ADMIN_EMAIL", "admin@test.com");
+    private static final String ADMIN_PASSWORD = System.getProperty("ADMIN_PASSWORD", "password123");
 
     // Counters for unique data generation
     private static final AtomicInteger userCounter = new AtomicInteger(0);
@@ -849,6 +849,83 @@ public class AllUserFlowsSimulation extends Simulation {
         );
     }
 
+    private ChainBuilder getUsersForAdminActions() {
+        return exec(http("Get Users for Admin Actions")
+                .get("/api/admin/users/search")
+                .header("Authorization", "#{authHeader}")
+                .queryParam("role", "FOSTER")
+                .queryParam("status", "ACTIVE")
+                .queryParam("page", "1")
+                .queryParam("size", "10")
+                .check(status().in(200, 401, 403))
+                .check(jsonPath("$.users[*].id").findAll().optional().saveAs("activeUserIds"))
+        );
+    }
+
+    private ChainBuilder suspendUser() {
+        return doIf(session -> session.contains("activeUserIds") &&
+                !((List<?>) session.get("activeUserIds")).isEmpty())
+                .then(
+                        exec(session -> {
+                            List<String> ids = session.getList("activeUserIds");
+                            return session.set("userToSuspend", ids.get(0));
+                        })
+                        .exec(http("Admin Suspend User")
+                                .put("/api/admin/users/#{userToSuspend}/suspend")
+                                .header("Authorization", "#{authHeader}")
+                                .check(status().in(200, 204, 400, 401, 403, 404))
+                        )
+                );
+    }
+
+    private ChainBuilder reactivateUser() {
+        return doIf(session -> session.contains("userToSuspend"))
+                .then(
+                        exec(http("Admin Reactivate User")
+                                .put("/api/admin/users/#{userToSuspend}/reactivate")
+                                .header("Authorization", "#{authHeader}")
+                                .check(status().in(200, 204, 400, 401, 403, 404))
+                        )
+                );
+    }
+
+    private ChainBuilder resetUserPassword() {
+        return doIf(session -> session.contains("activeUserIds") &&
+                ((List<?>) session.get("activeUserIds")).size() > 1)
+                .then(
+                        exec(session -> {
+                            List<String> ids = session.getList("activeUserIds");
+                            return session.set("userToResetPassword", ids.get(1));
+                        })
+                        .exec(http("Admin Reset User Password")
+                                .post("/api/admin/users/#{userToResetPassword}/reset-password")
+                                .header("Authorization", "#{authHeader}")
+                                .check(status().in(200, 400, 401, 403, 404))
+                        )
+                );
+    }
+
+    private ChainBuilder approveFlag() {
+        return doIf(session -> session.contains("flagIds") &&
+                ((List<?>) session.get("flagIds")).size() > 1)
+                .then(
+                        exec(session -> {
+                            List<String> ids = session.getList("flagIds");
+                            return session.set("flagToApprove", ids.size() > 1 ? ids.get(1) : ids.get(0));
+                        })
+                        .exec(http("Admin Approve Flag")
+                                .put("/api/admin/flags/#{flagToApprove}/approve")
+                                .header("Authorization", "#{authHeader}")
+                                .body(StringBody("""
+                                        {
+                                            "notes": "Content violation confirmed, action taken"
+                                        }
+                                        """))
+                                .check(status().in(200, 400, 401, 403, 404))
+                        )
+                );
+    }
+
     // ==================== THINK TIME ====================
 
     private ChainBuilder shortPause() {
@@ -1042,11 +1119,23 @@ public class AllUserFlowsSimulation extends Simulation {
             .exec(shortPause())
             .exec(searchUsersByRole())
             .exec(shortPause())
+            // User management actions
+            .exec(getUsersForAdminActions())
+            .exec(shortPause())
+            .exec(suspendUser())
+            .exec(shortPause())
+            .exec(reactivateUser())
+            .exec(shortPause())
+            .exec(resetUserPassword())
+            .exec(shortPause())
+            // Content moderation
             .exec(getContentFlags())
             .exec(shortPause())
             .exec(getPendingFlags())
             .exec(shortPause())
             .exec(dismissFlag())
+            .exec(shortPause())
+            .exec(approveFlag())
             .exec(shortPause())
             .exec(getAuditLogs())
             .exec(mediumPause())
