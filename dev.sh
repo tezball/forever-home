@@ -17,6 +17,7 @@ POSTGRES_PORT=5432
 LOCALSTACK_PORT=4566
 LOKI_PORT=3100
 GRAFANA_PORT=3000
+E2E_REPORT_DIR="$PROJECT_ROOT/frontend/playwright-report"
 
 # Check if a port is in use (for local processes)
 port_in_use() {
@@ -187,6 +188,114 @@ run_gatling() {
     echo -e "${GREEN}[Gatling] Load test complete. Reports at target/gatling/${NC}"
 }
 
+# Run Playwright E2E tests
+run_e2e() {
+    local suite="${1:-}"
+    shift 2>/dev/null || true
+    local extra_args="$*"
+
+    # Check if frontend is running
+    if ! nc -z localhost $FRONTEND_PORT 2>/dev/null; then
+        echo -e "${RED}[E2E] Frontend is not running on port $FRONTEND_PORT${NC}"
+        echo -e "${YELLOW}Start the frontend first with: ./dev.sh start${NC}"
+        exit 1
+    fi
+
+    # Check if backend is running
+    if ! nc -z localhost $BACKEND_PORT 2>/dev/null; then
+        echo -e "${RED}[E2E] Backend is not running on port $BACKEND_PORT${NC}"
+        echo -e "${YELLOW}Start the backend first with: ./dev.sh start${NC}"
+        exit 1
+    fi
+
+    echo -e "${BLUE}[E2E] Running Playwright tests against http://localhost:$FRONTEND_PORT${NC}"
+
+    cd "$PROJECT_ROOT/frontend"
+
+    # Install Playwright browsers if needed
+    if [ ! -d "$HOME/.cache/ms-playwright" ] && [ ! -d "$PROJECT_ROOT/frontend/node_modules/.cache/ms-playwright" ]; then
+        echo -e "${YELLOW}[E2E] Installing Playwright browsers...${NC}"
+        npx playwright install
+    fi
+
+    case "$suite" in
+        all)
+            echo -e "${YELLOW}[E2E] Running ALL e2e tests...${NC}"
+            npx playwright test $extra_args
+            ;;
+        auth)
+            echo -e "${YELLOW}[E2E] Running authentication tests...${NC}"
+            npx playwright test auth-flows.spec.ts auth.spec.ts $extra_args
+            ;;
+        foster)
+            echo -e "${YELLOW}[E2E] Running foster journey tests...${NC}"
+            npx playwright test foster-journey.spec.ts $extra_args
+            ;;
+        adopter)
+            echo -e "${YELLOW}[E2E] Running adopter journey tests...${NC}"
+            npx playwright test adopter-journey.spec.ts $extra_args
+            ;;
+        rescue)
+            echo -e "${YELLOW}[E2E] Running rescue org journey tests...${NC}"
+            npx playwright test rescue-journey.spec.ts $extra_args
+            ;;
+        vet)
+            echo -e "${YELLOW}[E2E] Running vet journey tests...${NC}"
+            npx playwright test vet-journey.spec.ts $extra_args
+            ;;
+        admin)
+            echo -e "${YELLOW}[E2E] Running admin journey tests...${NC}"
+            npx playwright test admin-journey.spec.ts $extra_args
+            ;;
+        lifecycle)
+            echo -e "${YELLOW}[E2E] Running full adoption lifecycle tests...${NC}"
+            npx playwright test adoption-lifecycle.spec.ts $extra_args
+            ;;
+        public)
+            echo -e "${YELLOW}[E2E] Running public pages tests...${NC}"
+            npx playwright test public-pages.spec.ts pet-browsing.spec.ts $extra_args
+            ;;
+        ui)
+            echo -e "${YELLOW}[E2E] Opening Playwright UI mode...${NC}"
+            npx playwright test --ui $extra_args
+            ;;
+        headed)
+            echo -e "${YELLOW}[E2E] Running tests in headed mode...${NC}"
+            npx playwright test --headed $extra_args
+            ;;
+        debug)
+            echo -e "${YELLOW}[E2E] Running tests in debug mode...${NC}"
+            npx playwright test --debug $extra_args
+            ;;
+        report)
+            echo -e "${YELLOW}[E2E] Opening test report...${NC}"
+            npx playwright show-report
+            ;;
+        "")
+            # Default to all tests
+            echo -e "${YELLOW}[E2E] Running ALL e2e tests (default)...${NC}"
+            npx playwright test $extra_args
+            ;;
+        *)
+            # Treat as a specific test file or grep pattern
+            echo -e "${YELLOW}[E2E] Running tests matching: $suite${NC}"
+            npx playwright test -g "$suite" $extra_args
+            ;;
+    esac
+
+    local exit_code=$?
+
+    if [ $exit_code -eq 0 ]; then
+        echo -e "${GREEN}[E2E] All tests passed!${NC}"
+    else
+        echo -e "${RED}[E2E] Some tests failed. Check the report for details.${NC}"
+        echo -e "${YELLOW}[E2E] Run './dev.sh e2e report' to view the HTML report${NC}"
+    fi
+
+    echo -e "${GREEN}[E2E] Test complete. Reports at frontend/playwright-report/${NC}"
+    return $exit_code
+}
+
 # Show status
 show_status() {
     echo -e "${BLUE}=== Forever Home Service Status ===${NC}"
@@ -263,8 +372,12 @@ case "${1:-}" in
         shift
         run_gatling "$@"
         ;;
+    e2e)
+        shift
+        run_e2e "$@"
+        ;;
     *)
-        echo "Usage: $0 {start|stop|restart|status|gatling}"
+        echo "Usage: $0 {start|stop|restart|status|gatling|e2e}"
         echo
         echo "Commands:"
         echo "  start                - Start all services (Docker + Backend + Frontend)"
@@ -272,6 +385,35 @@ case "${1:-}" in
         echo "  restart              - Restart backend and frontend (keeps Docker running)"
         echo "  status               - Show status of all services"
         echo "  gatling [SIM] [OPTS] - Run Gatling load tests"
+        echo "  e2e [SUITE] [OPTS]   - Run Playwright E2E tests"
+        echo
+        echo "E2E test suites:"
+        echo "  all        - Run ALL e2e tests (default)"
+        echo "  auth       - Authentication flows (login, register, logout)"
+        echo "  foster     - Foster user journey (create pet, submit to rescue)"
+        echo "  adopter    - Adopter user journey (browse, favorite, apply)"
+        echo "  rescue     - Rescue org journey (review pets, manage vets, applications)"
+        echo "  vet        - Vet journey (lookup pets, sign-off)"
+        echo "  admin      - Admin journey (analytics, moderation, user management)"
+        echo "  lifecycle  - Full adoption lifecycle (cross-role integration)"
+        echo "  public     - Public pages (unauthenticated browsing)"
+        echo "  ui         - Open Playwright UI mode for interactive testing"
+        echo "  headed     - Run tests in headed browser mode"
+        echo "  debug      - Run tests in debug mode (step through)"
+        echo "  report     - Open the HTML test report"
+        echo "  <pattern>  - Run tests matching a grep pattern"
+        echo
+        echo "E2E examples:"
+        echo "  $0 e2e                         # Run all e2e tests"
+        echo "  $0 e2e auth                    # Run only authentication tests"
+        echo "  $0 e2e foster                  # Run only foster journey tests"
+        echo "  $0 e2e lifecycle               # Run full adoption lifecycle tests"
+        echo "  $0 e2e ui                      # Interactive Playwright UI"
+        echo "  $0 e2e headed                  # Run tests with visible browser"
+        echo "  $0 e2e debug                   # Debug mode with step-through"
+        echo "  $0 e2e report                  # View HTML test report"
+        echo "  $0 e2e \"should login\"          # Run tests matching pattern"
+        echo "  $0 e2e all --project=chromium  # Run on specific browser"
         echo
         echo "Gatling simulations:"
         echo "  all, allflows  - ALL user flows simulation (default) - tests all roles and features"

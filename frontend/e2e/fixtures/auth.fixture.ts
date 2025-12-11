@@ -9,15 +9,31 @@ export const TEST_ACCOUNTS = {
   rescue: { email: 'rescue@test.com', password: 'password123' },
 };
 
-async function login(page: Page, email: string, password: string): Promise<void> {
-  await page.goto('/login');
+async function login(page: Page, email: string, password: string, retries = 3): Promise<void> {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    await page.goto('/login');
 
-  await page.getByLabel(/email/i).fill(email);
-  await page.getByLabel(/password/i).fill(password);
-  await page.getByRole('button', { name: /sign in/i }).click();
+    await page.getByLabel(/email/i).fill(email);
+    await page.getByLabel(/password/i).fill(password);
+    await page.getByRole('button', { name: /sign in/i }).click();
 
-  // Wait for authentication to complete (redirect or dashboard load)
-  await page.waitForURL(/.*dashboard|.*\/$/);
+    try {
+      // Wait for navigation away from login page (successful auth redirects to home or dashboard)
+      await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 10000 });
+      return; // Success, exit the function
+    } catch {
+      // Check if there's an error message visible
+      const errorVisible = await page.getByText(/invalid email or password/i).isVisible().catch(() => false);
+      if (errorVisible && attempt < retries) {
+        // Wait a bit before retrying
+        await page.waitForTimeout(1000);
+        continue;
+      }
+      if (attempt === retries) {
+        throw new Error(`Login failed for ${email} after ${retries} attempts`);
+      }
+    }
+  }
 }
 
 export const test = base.extend<{

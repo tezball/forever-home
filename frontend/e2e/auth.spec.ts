@@ -49,24 +49,25 @@ test.describe('Authentication', () => {
     test('should display registration form', async ({ page }) => {
       await page.goto('/register');
 
-      await expect(page.getByLabel(/name/i)).toBeVisible();
+      await expect(page.getByLabel(/full name/i)).toBeVisible();
       await expect(page.getByLabel(/email/i)).toBeVisible();
       await expect(page.getByLabel(/^password$/i)).toBeVisible();
-      await expect(page.getByRole('button', { name: /create account|register|sign up/i })).toBeVisible();
+      await expect(page.getByRole('button', { name: /create account/i })).toBeVisible();
     });
 
     test('should have role selection', async ({ page }) => {
       await page.goto('/register');
 
-      // Look for role dropdown or radio buttons
-      const roleField = page.getByLabel(/role/i);
+      // Look for role dropdown - labeled "I want to..."
+      const roleField = page.getByLabel(/i want to/i);
       await expect(roleField).toBeVisible();
     });
 
     test('should have link to login page', async ({ page }) => {
       await page.goto('/register');
 
-      await expect(page.getByRole('link', { name: /sign in|login/i })).toBeVisible();
+      // Check for the "Sign in" link in the form section (not the nav bar)
+      await expect(page.locator('main').getByRole('link', { name: /sign in/i })).toBeVisible();
     });
   });
 
@@ -81,7 +82,8 @@ test.describe('Authentication', () => {
     test('should have link back to login', async ({ page }) => {
       await page.goto('/forgot-password');
 
-      await expect(page.getByRole('link', { name: /sign in|back to login|login/i })).toBeVisible();
+      // Check for the "Sign in" link in the main content (not the nav bar)
+      await expect(page.locator('main').getByRole('link', { name: /sign in/i })).toBeVisible();
     });
   });
 });

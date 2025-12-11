@@ -48,11 +48,33 @@
         "-i",
         "--rm",
         "--network=host",
-        "-e", "GRAFANA_URL=http://localhost:3000",
-        "-e", "GRAFANA_SERVICE_ACCOUNT_TOKEN=glsa_buxpPbLu2Pxg5zZdEEcAxbuzVeUl56dz_77c25f5f",
+        "-e",
+        "GRAFANA_URL=http://localhost:3000",
+        "-e",
+        "GRAFANA_SERVICE_ACCOUNT_TOKEN=glsa_buxpPbLu2Pxg5zZdEEcAxbuzVeUl56dz_77c25f5f",
         "grafana/mcp-grafana:latest",
-        "-t", "stdio"
+        "-t",
+        "stdio"
       ]
+    },
+    "awslabs.cdk-mcp-server": {
+      "command": "uvx",
+      "args": [
+        "awslabs.cdk-mcp-server@latest"
+      ],
+      "env": {
+        "FASTMCP_LOG_LEVEL": "ERROR"
+      }
+    },
+    "awslabs.aws-documentation-mcp-server": {
+      "command": "uvx",
+      "args": [
+        "awslabs.aws-documentation-mcp-server@latest"
+      ],
+      "env": {
+        "FASTMCP_LOG_LEVEL": "ERROR",
+        "AWS_DOCUMENTATION_PARTITION": "aws"
+      }
     }
   }
 }

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Button, PetCard } from '../components';
+import apiClient from '../api/client';
 import type { Pet } from '../types';
 
 interface PlatformStats {
@@ -19,19 +20,17 @@ export function HomePage() {
   useEffect(() => {
     const fetchHomeData = async () => {
       try {
-        const [petsRes, statsRes] = await Promise.all([
-          fetch('/api/pets/featured'),
-          fetch('/api/stats'),
+        const [petsRes, statsRes] = await Promise.allSettled([
+          apiClient.get<Pet[]>('/pets/featured'),
+          apiClient.get<PlatformStats>('/stats'),
         ]);
 
-        if (petsRes.ok) {
-          const petsData = await petsRes.json();
-          setFeaturedPets(petsData);
+        if (petsRes.status === 'fulfilled') {
+          setFeaturedPets(petsRes.value.data);
         }
 
-        if (statsRes.ok) {
-          const statsData = await statsRes.json();
-          setStats(statsData);
+        if (statsRes.status === 'fulfilled') {
+          setStats(statsRes.value.data);
         }
       } catch (error) {
         console.error('Failed to fetch home data:', error);
