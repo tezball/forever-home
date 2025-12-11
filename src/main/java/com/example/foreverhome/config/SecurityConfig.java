@@ -54,6 +54,11 @@ public class SecurityConfig {
                 .requestMatchers("/actuator/**").permitAll()
                 .requestMatchers("/error").permitAll()
 
+                // Static resources for SPA
+                .requestMatchers("/", "/index.html").permitAll()
+                .requestMatchers("/assets/**").permitAll()
+                .requestMatchers("/*.js", "/*.css", "/*.ico", "/*.svg", "/*.png", "/*.jpg").permitAll()
+
                 // Admin only endpoints
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
 

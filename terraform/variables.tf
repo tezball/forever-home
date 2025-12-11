@@ -3,7 +3,7 @@
 variable "aws_region" {
   description = "AWS region to deploy to"
   type        = string
-  default     = "us-east-1"
+  default     = "eu-west-1"
 }
 
 variable "environment" {
@@ -22,20 +22,20 @@ variable "vpc_cidr" {
 variable "availability_zones" {
   description = "List of availability zones"
   type        = list(string)
-  default     = ["us-east-1a", "us-east-1b"]
+  default     = ["eu-west-1a", "eu-west-1b"]
 }
 
 # ECS Configuration - Minimal sizing for cost optimization
 variable "ecs_task_cpu" {
-  description = "CPU units for the ECS task (256 = 0.25 vCPU, minimum for Fargate)"
+  description = "CPU units for the ECS task (256 = 0.25 vCPU, 512 = 0.5 vCPU)"
   type        = number
-  default     = 256
+  default     = 512
 }
 
 variable "ecs_task_memory" {
-  description = "Memory for the ECS task in MB (512 MB minimum for Fargate)"
+  description = "Memory for the ECS task in MB (1024 MB for Spring Boot with static assets)"
   type        = number
-  default     = 512
+  default     = 1024
 }
 
 variable "ecs_desired_count" {

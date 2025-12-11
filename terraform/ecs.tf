@@ -276,9 +276,9 @@ resource "aws_ecs_task_definition" "app" {
       healthCheck = {
         command     = ["CMD-SHELL", "curl -f http://localhost:${var.container_port}/actuator/health || exit 1"]
         interval    = 30
-        timeout     = 5
+        timeout     = 10
         retries     = 3
-        startPeriod = 60
+        startPeriod = 120
       }
 
       essential = true

@@ -33,6 +33,7 @@ export interface Pet {
   rescueOrgId: string | null;
   createdAt: string;
   imageUrls: string[];
+  canSignOff?: boolean;
 }
 
 export interface LoginRequest {

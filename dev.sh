@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Forever Home - Development Environment Manager
-# Usage: ./dev.sh [start|stop|restart|status|gatling]
+# Usage: ./dev.sh [start|stop|restart|status|gatling|deploy-aws]
 
 # Colors for output
 RED='\033[0;31m'
@@ -11,6 +11,7 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TERRAFORM_DIR="$PROJECT_ROOT/terraform"
 BACKEND_PORT=8080
 FRONTEND_PORT=5173
 POSTGRES_PORT=5432
@@ -296,6 +297,153 @@ run_e2e() {
     return $exit_code
 }
 
+# Deploy to AWS
+deploy_aws() {
+    local auto_approve="${1:-}"
+
+    echo -e "${BLUE}=== Deploying Forever Home to AWS ===${NC}"
+    echo
+
+    # Check AWS prerequisites
+    echo -e "${YELLOW}[Deploy] Checking prerequisites...${NC}"
+    local missing=()
+    command -v aws >/dev/null 2>&1 || missing+=("aws-cli")
+    command -v terraform >/dev/null 2>&1 || missing+=("terraform")
+    command -v docker >/dev/null 2>&1 || missing+=("docker")
+
+    if [ ${#missing[@]} -gt 0 ]; then
+        echo -e "${RED}Missing prerequisites: ${missing[*]}${NC}"
+        echo -e "${YELLOW}Please install the missing tools and try again.${NC}"
+        exit 1
+    fi
+
+    # Check AWS credentials
+    if ! aws sts get-caller-identity >/dev/null 2>&1; then
+        echo -e "${RED}[Deploy] AWS credentials not configured or invalid${NC}"
+        echo -e "${YELLOW}Run 'aws configure' or set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY${NC}"
+        exit 1
+    fi
+
+    local aws_account_id=$(aws sts get-caller-identity --query Account --output text)
+    local aws_region=$(aws configure get region || echo "us-east-1")
+    echo -e "${GREEN}[Deploy] AWS Account: $aws_account_id, Region: $aws_region${NC}"
+
+    # Initialize Terraform
+    echo -e "${BLUE}[Deploy] Initializing Terraform...${NC}"
+    cd "$TERRAFORM_DIR"
+    terraform init -input=false
+
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}[Deploy] Terraform init failed${NC}"
+        exit 1
+    fi
+
+    # Plan Terraform changes
+    echo -e "${BLUE}[Deploy] Planning infrastructure changes...${NC}"
+    terraform plan -out=tfplan -input=false
+
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}[Deploy] Terraform plan failed${NC}"
+        exit 1
+    fi
+
+    # Apply Terraform (with or without auto-approve)
+    echo -e "${BLUE}[Deploy] Applying infrastructure changes...${NC}"
+    if [ "$auto_approve" = "--auto-approve" ] || [ "$auto_approve" = "-y" ]; then
+        terraform apply -input=false tfplan
+    else
+        terraform apply tfplan
+    fi
+
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}[Deploy] Terraform apply failed${NC}"
+        exit 1
+    fi
+
+    # Get outputs
+    local ecr_url=$(terraform output -raw ecr_repository_url)
+    local ecs_cluster=$(terraform output -raw ecs_cluster_name)
+    local ecs_service=$(terraform output -raw ecs_service_name)
+    local alb_dns=$(terraform output -raw alb_dns_name)
+
+    # Extract region from ECR URL (format: account.dkr.ecr.region.amazonaws.com/repo)
+    local deploy_region=$(echo "$ecr_url" | sed -n 's/.*\.ecr\.\([^.]*\)\.amazonaws\.com.*/\1/p')
+
+    # Clean up plan file
+    rm -f tfplan
+
+    # Build and push Docker image
+    echo -e "${BLUE}[Deploy] Building Docker image...${NC}"
+    cd "$PROJECT_ROOT"
+
+    # Login to ECR (use registry URL, not repository URL)
+    local ecr_registry=$(echo "$ecr_url" | cut -d'/' -f1)
+    echo -e "${YELLOW}[Deploy] Logging into ECR registry: $ecr_registry (region: $deploy_region)${NC}"
+    aws ecr get-login-password --region "$deploy_region" | docker login --username AWS --password-stdin "$ecr_registry"
+
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}[Deploy] ECR login failed${NC}"
+        exit 1
+    fi
+
+    # Build the image
+    echo -e "${YELLOW}[Deploy] Building application image...${NC}"
+    docker build -t "$ecr_url:latest" .
+
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}[Deploy] Docker build failed${NC}"
+        exit 1
+    fi
+
+    # Push to ECR
+    echo -e "${YELLOW}[Deploy] Pushing image to ECR...${NC}"
+    docker push "$ecr_url:latest"
+
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}[Deploy] Docker push failed${NC}"
+        exit 1
+    fi
+
+    # Force new deployment
+    echo -e "${BLUE}[Deploy] Triggering ECS deployment...${NC}"
+    aws ecs update-service \
+        --cluster "$ecs_cluster" \
+        --service "$ecs_service" \
+        --force-new-deployment \
+        --region "$deploy_region" \
+        >/dev/null
+
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}[Deploy] ECS deployment trigger failed${NC}"
+        exit 1
+    fi
+
+    # Wait for deployment to stabilize (optional)
+    echo -e "${YELLOW}[Deploy] Waiting for ECS service to stabilize (this may take a few minutes)...${NC}"
+    aws ecs wait services-stable \
+        --cluster "$ecs_cluster" \
+        --services "$ecs_service" \
+        --region "$deploy_region"
+
+    if [ $? -eq 0 ]; then
+        echo -e "${GREEN}[Deploy] ECS service is stable${NC}"
+    else
+        echo -e "${YELLOW}[Deploy] Service may still be deploying. Check AWS console for status.${NC}"
+    fi
+
+    echo
+    echo -e "${GREEN}========================================${NC}"
+    echo -e "${GREEN}  Deployment Complete!${NC}"
+    echo -e "${GREEN}========================================${NC}"
+    echo
+    echo -e "${BLUE}ALB DNS Name:${NC} $alb_dns"
+    echo -e "${BLUE}Application URL:${NC} http://$alb_dns"
+    echo
+    echo -e "${YELLOW}Note: DNS propagation may take a few minutes.${NC}"
+    echo -e "${YELLOW}If you configured a custom domain, use that instead.${NC}"
+    echo
+}
+
 # Show status
 show_status() {
     echo -e "${BLUE}=== Forever Home Service Status ===${NC}"
@@ -376,8 +524,12 @@ case "${1:-}" in
         shift
         run_e2e "$@"
         ;;
+    deploy-aws)
+        shift
+        deploy_aws "$@"
+        ;;
     *)
-        echo "Usage: $0 {start|stop|restart|status|gatling|e2e}"
+        echo "Usage: $0 {start|stop|restart|status|gatling|e2e|deploy-aws}"
         echo
         echo "Commands:"
         echo "  start                - Start all services (Docker + Backend + Frontend)"
@@ -386,6 +538,7 @@ case "${1:-}" in
         echo "  status               - Show status of all services"
         echo "  gatling [SIM] [OPTS] - Run Gatling load tests"
         echo "  e2e [SUITE] [OPTS]   - Run Playwright E2E tests"
+        echo "  deploy-aws [OPTS]    - Full deploy to AWS (Terraform + Docker + ECS)"
         echo
         echo "E2E test suites:"
         echo "  all        - Run ALL e2e tests (default)"
@@ -445,6 +598,28 @@ case "${1:-}" in
         echo "  - Rescue Org flow (approve pets, manage vets, process applications)"
         echo "  - Vet flow (lookup pets, sign-off)"
         echo "  - Admin flow (analytics, moderation, user management)"
+        echo
+        echo "AWS Deployment:"
+        echo "  deploy-aws             - Full deploy: Terraform + Docker build + ECS deployment"
+        echo "  deploy-aws -y          - Same as above but auto-approve Terraform changes"
+        echo "  deploy-aws --auto-approve  - Same as -y"
+        echo
+        echo "AWS deployment performs:"
+        echo "  1. Validates AWS CLI credentials and Terraform installation"
+        echo "  2. Runs 'terraform init' and 'terraform apply' in terraform/"
+        echo "  3. Builds Docker image and pushes to ECR"
+        echo "  4. Forces new ECS deployment"
+        echo "  5. Waits for service to stabilize"
+        echo "  6. Outputs the ALB DNS name"
+        echo
+        echo "Prerequisites for deploy-aws:"
+        echo "  - AWS CLI configured with valid credentials"
+        echo "  - Terraform >= 1.0 installed"
+        echo "  - Docker installed and running"
+        echo
+        echo "AWS deployment examples:"
+        echo "  $0 deploy-aws                # Interactive deploy (prompts for Terraform approval)"
+        echo "  $0 deploy-aws -y             # Auto-approve Terraform changes"
         exit 1
         ;;
 esac

@@ -1,7 +1,15 @@
 # Forever Home Application Dockerfile
 # Multi-stage build for minimal image size
 
-# Build stage
+# Stage 1: Build frontend
+FROM node:22-alpine AS frontend-builder
+WORKDIR /frontend
+COPY frontend/package*.json ./
+RUN npm ci
+COPY frontend/ ./
+RUN npm run build
+
+# Stage 2: Build backend
 FROM eclipse-temurin:25-jdk-alpine AS builder
 
 WORKDIR /app
@@ -17,10 +25,13 @@ RUN chmod +x ./mvnw && ./mvnw dependency:go-offline -B
 # Copy source code
 COPY src src
 
+# Copy frontend build into static resources
+COPY --from=frontend-builder /frontend/dist/ src/main/resources/static/
+
 # Build the application (skip tests for faster builds)
 RUN ./mvnw package -DskipTests -B
 
-# Runtime stage - minimal JRE image
+# Stage 3: Runtime - minimal JRE image
 FROM eclipse-temurin:25-jre-alpine
 
 WORKDIR /app
