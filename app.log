@@ -1786,3 +1786,16 @@ WHERE name = 'Test Rescue Organization'
 2025-12-12 17:30:45.830  INFO [eddb1a28] c.e.foreverhome.logging.LoggingFilter    : Request completed: POST /api/pets/65a0c4c9-4504-4c11-b77b-c0ea09139d97/submit - 200 (11ms)
 2025-12-12 17:30:47.847  INFO [d5d8a165] c.e.foreverhome.logging.LoggingFilter    : Request completed: GET /api/pets/my - 200 (5ms)
 2025-12-12 17:30:47.853  INFO [6225d70f] c.e.foreverhome.logging.LoggingFilter    : Request completed: GET /api/pets/my - 200 (5ms)
+2025-12-12 17:31:32.127  INFO [bef82a7a] c.e.foreverhome.logging.LoggingFilter    : Request completed: POST /api/auth/logout - 204 (9ms)
+2025-12-12 17:31:34.797  INFO [19d82aa8] c.e.f.logging.UserJourneyLogger          : [USER_LOGIN] Success: tezball86@yahoo.ie - Login successful as FOSTER
+2025-12-12 17:31:34.799  INFO [19d82aa8] c.e.foreverhome.logging.LoggingFilter    : Request completed: POST /api/auth/login - 200 (54ms)
+2025-12-12 17:31:34.811  INFO [8419254c] c.e.foreverhome.logging.LoggingFilter    : Request completed: GET /api/notifications/unread/count - 200 (1ms)
+2025-12-12 17:31:34.818  INFO [cc4cf882] c.e.foreverhome.logging.LoggingFilter    : Request completed: GET /api/stats - 200 (3ms)
+2025-12-12 17:31:34.821  INFO [6254a676] c.e.foreverhome.logging.LoggingFilter    : Request completed: GET /api/pets/featured - 200 (5ms)
+[ERROR] Failed to execute goal org.springframework.boot:spring-boot-maven-plugin:4.0.0:run (default-cli) on project forever-home: Process terminated with exit code: 137 -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoExecutionException

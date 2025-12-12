@@ -73,10 +73,6 @@ export function AdopterDashboard() {
     return ['SUBMITTED', 'UNDER_REVIEW'].includes(status);
   };
 
-  const pendingApplications = applications.filter((a) => a.status === 'SUBMITTED' || a.status === 'UNDER_REVIEW');
-  const approvedApplications = applications.filter((a) => a.status === 'APPROVED');
-  const rejectedApplications = applications.filter((a) => a.status === 'REJECTED');
-
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'SUBMITTED':
@@ -117,26 +113,6 @@ export function AdopterDashboard() {
           </button>
         </div>
       )}
-
-      {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <div className="card p-4 text-center">
-          <p className="text-3xl font-bold text-accent-500">{favorites.length}</p>
-          <p className="text-sm text-gray-600">Favorites</p>
-        </div>
-        <div className="card p-4 text-center">
-          <p className="text-3xl font-bold text-warning-600">{pendingApplications.length}</p>
-          <p className="text-sm text-gray-600">Pending</p>
-        </div>
-        <div className="card p-4 text-center">
-          <p className="text-3xl font-bold text-success-500">{approvedApplications.length}</p>
-          <p className="text-sm text-gray-600">Approved</p>
-        </div>
-        <div className="card p-4 text-center">
-          <p className="text-3xl font-bold text-gray-500">{rejectedApplications.length}</p>
-          <p className="text-sm text-gray-600">Rejected</p>
-        </div>
-      </div>
 
       {loading ? (
         <div className="flex justify-center py-12">

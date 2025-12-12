@@ -90,26 +90,6 @@ export function FosterDashboard() {
         </div>
       )}
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <div className="card p-4 text-center">
-          <p className="text-3xl font-bold text-gray-900">{draftPets.length}</p>
-          <p className="text-sm text-gray-600">Drafts</p>
-        </div>
-        <div className="card p-4 text-center">
-          <p className="text-3xl font-bold text-warning-600">{pendingPets.length}</p>
-          <p className="text-sm text-gray-600">Pending</p>
-        </div>
-        <div className="card p-4 text-center">
-          <p className="text-3xl font-bold text-success-500">{activePets.length}</p>
-          <p className="text-sm text-gray-600">Active</p>
-        </div>
-        <div className="card p-4 text-center">
-          <p className="text-3xl font-bold text-primary-500">{completedPets.length}</p>
-          <p className="text-sm text-gray-600">Completed</p>
-        </div>
-      </div>
-
       {loading ? (
         <div className="flex justify-center py-12">
           <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary-500 border-t-transparent" />
