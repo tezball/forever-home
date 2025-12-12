@@ -1,12 +1,23 @@
 # RDS PostgreSQL Database - Minimal Configuration
 
-# DB Subnet Group
-resource "aws_db_subnet_group" "main" {
-  name       = "${local.name_prefix}-db-subnet-group"
+# DB Subnet Group (private - for production use)
+resource "aws_db_subnet_group" "private" {
+  name       = "${local.name_prefix}-db-subnet-group-private"
   subnet_ids = aws_subnet.private[*].id
 
   tags = {
-    Name = "${local.name_prefix}-db-subnet-group"
+    Name = "${local.name_prefix}-db-subnet-group-private"
+  }
+}
+
+# DB Subnet Group (public - for IDE/external access in dev)
+resource "aws_db_subnet_group" "public" {
+  count      = var.db_publicly_accessible ? 1 : 0
+  name       = "${local.name_prefix}-db-subnet-group-public"
+  subnet_ids = aws_subnet.public[*].id
+
+  tags = {
+    Name = "${local.name_prefix}-db-subnet-group-public"
   }
 }
 
@@ -34,6 +45,18 @@ resource "aws_security_group" "rds" {
   tags = {
     Name = "${local.name_prefix}-rds-sg"
   }
+}
+
+# Security Group rule for external access (IDE connections)
+resource "aws_security_group_rule" "rds_external_access" {
+  count             = var.db_publicly_accessible ? 1 : 0
+  type              = "ingress"
+  from_port         = 5432
+  to_port           = 5432
+  protocol          = "tcp"
+  cidr_blocks       = ["0.0.0.0/0"]
+  security_group_id = aws_security_group.rds.id
+  description       = "PostgreSQL from anywhere (test/dev only)"
 }
 
 # Generate random password for RDS
@@ -84,9 +107,9 @@ resource "aws_db_instance" "main" {
   password = random_password.db_password.result
 
   # Network configuration
-  db_subnet_group_name   = aws_db_subnet_group.main.name
+  db_subnet_group_name   = var.db_publicly_accessible ? aws_db_subnet_group.public[0].name : aws_db_subnet_group.private.name
   vpc_security_group_ids = [aws_security_group.rds.id]
-  publicly_accessible    = false
+  publicly_accessible    = var.db_publicly_accessible
   multi_az               = var.db_multi_az
 
   # Backup configuration

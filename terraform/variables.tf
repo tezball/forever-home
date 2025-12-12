@@ -81,6 +81,12 @@ variable "db_multi_az" {
   default     = false
 }
 
+variable "db_publicly_accessible" {
+  description = "Make RDS publicly accessible for IDE/external connections. WARNING: Only enable for test/dev!"
+  type        = bool
+  default     = true
+}
+
 # Application Configuration
 variable "admin_email" {
   description = "Admin email for bootstrap"

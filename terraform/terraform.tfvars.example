@@ -24,13 +24,15 @@ db_name              = "foreverhome"
 db_username          = "foreverhome_admin"
 db_multi_az          = false  # Set to true for production
 
+# Database External Access (for IDE connections) - TEST/DEV ONLY!
+db_publicly_accessible = true
+
 # Application Configuration
 admin_email          = "admin@yourdomain.com"
 app_base_url         = ""  # Leave empty to use ALB DNS name
 cors_allowed_origins = "http://localhost:5173,http://localhost:3000"
 
 # Email Configuration (REQUIRED for email verification)
-# This email/domain MUST be verified in AWS SES
 email_from = "noreply@yourdomain.com"
 
 # Database Reset (DANGEROUS - use only for dev/testing!)

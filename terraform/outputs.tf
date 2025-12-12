@@ -33,14 +33,63 @@ output "rds_endpoint" {
   value       = aws_db_instance.main.endpoint
 }
 
+output "rds_host" {
+  description = "RDS hostname (without port)"
+  value       = aws_db_instance.main.address
+}
+
+output "rds_port" {
+  description = "RDS port"
+  value       = aws_db_instance.main.port
+}
+
 output "rds_database_name" {
   description = "RDS database name"
   value       = aws_db_instance.main.db_name
 }
 
+output "rds_username" {
+  description = "RDS master username"
+  value       = var.db_username
+}
+
 output "rds_secret_arn" {
   description = "ARN of the RDS credentials secret"
   value       = aws_secretsmanager_secret.db_password.arn
+}
+
+output "rds_publicly_accessible" {
+  description = "Whether RDS is publicly accessible"
+  value       = var.db_publicly_accessible
+}
+
+# IDE Database Connection Info (only shown when public access is enabled)
+output "ide_database_connection" {
+  description = "Database connection info for IDE (only when publicly accessible)"
+  value = (var.db_publicly_accessible
+    ? <<-EOT
+
+    ============================================
+    DATABASE CONNECTION INFO FOR IDE
+    ============================================
+
+    Host:     ${aws_db_instance.main.address}
+    Port:     ${aws_db_instance.main.port}
+    Database: ${aws_db_instance.main.db_name}
+    Username: ${var.db_username}
+    Password: (retrieve from AWS Secrets Manager)
+
+    To get the password, run:
+    aws secretsmanager get-secret-value --secret-id ${aws_secretsmanager_secret.db_password.arn} --query 'SecretString' --output text | jq -r '.password'
+
+    JDBC URL:
+    jdbc:postgresql://${aws_db_instance.main.address}:${aws_db_instance.main.port}/${aws_db_instance.main.db_name}
+
+    ============================================
+    EOT
+    : "Database is not publicly accessible. Set db_publicly_accessible=true to enable IDE connections."
+  )
+  sensitive = false
 }
 
 # ECS Outputs
