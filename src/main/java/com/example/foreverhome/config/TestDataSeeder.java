@@ -252,12 +252,12 @@ public class TestDataSeeder implements CommandLineRunner {
                 UUID id = UUID.randomUUID();
                 jdbcTemplate.update("""
                     INSERT INTO rescue_organizations (id, user_id, name, phone, website, description,
-                        contact_name, contact_email, address_street, address_city, address_state, address_postal_code, address_country)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        contact_name, contact_email, verified, address_street, address_city, address_state, address_postal_code, address_country)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     id, user.getId(), "Test Rescue Organization", "555-0104",
                     "https://testrescue.org", "Test rescue organization for development",
-                    "Test Contact", "rescue@test.com",
+                    "Test Contact", "rescue@test.com", true,
                     "123 Test Street", "Test City", "TS", "12345", "USA");
             }
             case ADMIN -> {
@@ -314,12 +314,12 @@ public class TestDataSeeder implements CommandLineRunner {
                     UUID id = UUID.randomUUID();
                     jdbcTemplate.update("""
                         INSERT INTO rescue_organizations (id, user_id, name, phone, website, description,
-                            contact_name, contact_email, address_street, address_city, address_state, address_postal_code, address_country)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            contact_name, contact_email, verified, address_street, address_city, address_state, address_postal_code, address_country)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                         """,
                         id, user.getId(), "Test Rescue Organization", "555-0104",
                         "https://testrescue.org", "Test rescue organization for development",
-                        "Test Contact", "rescue@test.com",
+                        "Test Contact", "rescue@test.com", true,
                         "123 Test Street", "Test City", "TS", "12345", "USA");
                     logger.info("Created missing RescueOrganization profile for: {}", account.email());
                 }

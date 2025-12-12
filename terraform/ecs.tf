@@ -246,6 +246,14 @@ resource "aws_ecs_task_definition" "app" {
         {
           name  = "TEST_MODE_ENABLED"
           value = var.environment == "prod" ? "false" : "true"
+        },
+        {
+          name  = "EMAIL_FROM"
+          value = var.email_from
+        },
+        {
+          name  = "FLYWAY_CLEAN_ON_START"
+          value = tostring(var.reset_database_on_deploy)
         }
       ]
 

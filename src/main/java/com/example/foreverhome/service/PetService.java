@@ -159,9 +159,13 @@ public class PetService {
                 .toList();
     }
 
-    public PetDto updatePet(UUID petId, UUID fosterId, UpdatePetRequest request) {
+    public PetDto updatePet(UUID petId, UUID userId, UpdatePetRequest request) {
         Pet pet = findPetOrThrow(petId);
-        verifyOwnership(pet, fosterId);
+
+        // Look up the foster profile by user ID
+        Foster foster = fosterRepository.findByUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Foster profile not found for user"));
+        verifyOwnership(pet, foster.getId());
 
         if (!pet.getStatus().isEditable()) {
             throw new InvalidStatusTransitionException("Pet cannot be edited in status: " + pet.getStatus());
@@ -175,9 +179,13 @@ public class PetService {
         return PetDto.from(savedPet);
     }
 
-    public PetDto submitForReview(UUID petId, UUID fosterId, UUID rescueOrgId) {
+    public PetDto submitForReview(UUID petId, UUID userId, UUID rescueOrgId) {
         Pet pet = findPetOrThrow(petId);
-        verifyOwnership(pet, fosterId);
+
+        // Look up the foster profile by user ID
+        Foster foster = fosterRepository.findByUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Foster profile not found for user"));
+        verifyOwnership(pet, foster.getId());
 
         if (!pet.canTransitionTo(PetStatus.PENDING_RESCUE)) {
             throw new InvalidStatusTransitionException(
@@ -189,9 +197,6 @@ public class PetService {
         pet.submitForReview(rescueOrgId);
         Pet savedPet = petRepository.save(pet);
 
-        // Look up the user ID for the foster to record in history
-        Foster foster = fosterRepository.findById(fosterId).orElse(null);
-        UUID userId = foster != null ? foster.getUserId() : null;
         recordStatusChange(petId, fromStatus, PetStatus.PENDING_RESCUE, userId, "Submitted for rescue review");
 
         notificationService.notifyRescueOrgPetSubmitted(rescueOrgId, pet);
@@ -287,9 +292,13 @@ public class PetService {
         return PetDto.from(savedPet);
     }
 
-    public PetDto withdrawPet(UUID petId, UUID fosterId) {
+    public PetDto withdrawPet(UUID petId, UUID userId) {
         Pet pet = findPetOrThrow(petId);
-        verifyOwnership(pet, fosterId);
+
+        // Look up the foster profile by user ID
+        Foster foster = fosterRepository.findByUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Foster profile not found for user"));
+        verifyOwnership(pet, foster.getId());
 
         if (pet.getStatus().isTerminal()) {
             throw new InvalidStatusTransitionException("Cannot withdraw pet in terminal status: " + pet.getStatus());
@@ -299,9 +308,6 @@ public class PetService {
         pet.withdraw();
         Pet savedPet = petRepository.save(pet);
 
-        // Look up the user ID for the foster to record in history
-        Foster foster = fosterRepository.findById(fosterId).orElse(null);
-        UUID userId = foster != null ? foster.getUserId() : null;
         recordStatusChange(petId, fromStatus, PetStatus.WITHDRAWN, userId, "Withdrawn by foster");
 
         return PetDto.from(savedPet);

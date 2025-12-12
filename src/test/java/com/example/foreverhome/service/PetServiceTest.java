@@ -207,7 +207,9 @@ class PetServiceTest {
         void givenPetInDraftStatusAndOwnerIsFoster_whenUpdate_thenUpdatesPet() {
             // Given
             UUID petId = UUID.randomUUID();
+            UUID userId = UUID.randomUUID();
             UUID fosterId = UUID.randomUUID();
+            Foster foster = createTestFoster(userId, fosterId);
             Pet pet = Pet.create(
                     fosterId, "Buddy", Species.DOG, "Golden Retriever",
                     3, AgeUnit.YEARS, PetSex.MALE, PetSize.LARGE,
@@ -218,11 +220,12 @@ class PetServiceTest {
                     null, null, null, null, null, null, null,
                     "Updated description", null
             );
+            when(fosterRepository.findByUserId(userId)).thenReturn(Optional.of(foster));
             when(petRepository.findById(petId)).thenReturn(Optional.of(pet));
             when(petRepository.save(any(Pet.class))).thenAnswer(inv -> inv.getArgument(0));
 
             // When
-            PetDto result = petService.updatePet(petId, fosterId, request);
+            PetDto result = petService.updatePet(petId, userId, request);
 
             // Then
             assertThat(result.name()).isEqualTo("Max");
@@ -234,8 +237,10 @@ class PetServiceTest {
         void givenPetNotOwnedByFoster_whenUpdate_thenThrowsAccessDeniedException() {
             // Given
             UUID petId = UUID.randomUUID();
+            UUID userId = UUID.randomUUID();
             UUID fosterId = UUID.randomUUID();
             UUID differentFosterId = UUID.randomUUID();
+            Foster foster = createTestFoster(userId, fosterId);
             Pet pet = Pet.create(
                     differentFosterId, "Buddy", Species.DOG, "Golden Retriever",
                     3, AgeUnit.YEARS, PetSex.MALE, PetSize.LARGE,
@@ -244,10 +249,11 @@ class PetServiceTest {
             UpdatePetRequest request = new UpdatePetRequest(
                     "Max", null, null, null, null, null, null, null, null, null
             );
+            when(fosterRepository.findByUserId(userId)).thenReturn(Optional.of(foster));
             when(petRepository.findById(petId)).thenReturn(Optional.of(pet));
 
             // When/Then
-            assertThatThrownBy(() -> petService.updatePet(petId, fosterId, request))
+            assertThatThrownBy(() -> petService.updatePet(petId, userId, request))
                     .isInstanceOf(AccessDeniedException.class);
         }
     }
@@ -261,18 +267,21 @@ class PetServiceTest {
         void givenPetInDraftStatus_whenSubmit_thenStatusChangesToPendingRescue() {
             // Given
             UUID petId = UUID.randomUUID();
+            UUID userId = UUID.randomUUID();
             UUID fosterId = UUID.randomUUID();
             UUID rescueOrgId = UUID.randomUUID();
+            Foster foster = createTestFoster(userId, fosterId);
             Pet pet = Pet.create(
                     fosterId, "Buddy", Species.DOG, "Golden Retriever",
                     3, AgeUnit.YEARS, PetSex.MALE, PetSize.LARGE,
                     "CHIP123456", "Description", null
             );
+            when(fosterRepository.findByUserId(userId)).thenReturn(Optional.of(foster));
             when(petRepository.findById(petId)).thenReturn(Optional.of(pet));
             when(petRepository.save(any(Pet.class))).thenAnswer(inv -> inv.getArgument(0));
 
             // When
-            PetDto result = petService.submitForReview(petId, fosterId, rescueOrgId);
+            PetDto result = petService.submitForReview(petId, userId, rescueOrgId);
 
             // Then
             assertThat(result.status()).isEqualTo(PetStatus.PENDING_RESCUE);
@@ -284,18 +293,21 @@ class PetServiceTest {
         void givenPetNotInDraftStatus_whenSubmit_thenThrowsInvalidStatusTransitionException() {
             // Given
             UUID petId = UUID.randomUUID();
+            UUID userId = UUID.randomUUID();
             UUID fosterId = UUID.randomUUID();
             UUID rescueOrgId = UUID.randomUUID();
+            Foster foster = createTestFoster(userId, fosterId);
             Pet pet = Pet.create(
                     fosterId, "Buddy", Species.DOG, "Golden Retriever",
                     3, AgeUnit.YEARS, PetSex.MALE, PetSize.LARGE,
                     "CHIP123456", "Description", null
             );
             pet.submitForReview(rescueOrgId); // Now in PENDING_RESCUE
+            when(fosterRepository.findByUserId(userId)).thenReturn(Optional.of(foster));
             when(petRepository.findById(petId)).thenReturn(Optional.of(pet));
 
             // When/Then
-            assertThatThrownBy(() -> petService.submitForReview(petId, fosterId, rescueOrgId))
+            assertThatThrownBy(() -> petService.submitForReview(petId, userId, rescueOrgId))
                     .isInstanceOf(InvalidStatusTransitionException.class);
         }
     }
@@ -357,17 +369,20 @@ class PetServiceTest {
         void givenPetInAnyNonTerminalStatus_whenWithdraw_thenStatusBecomesWithdrawn() {
             // Given
             UUID petId = UUID.randomUUID();
+            UUID userId = UUID.randomUUID();
             UUID fosterId = UUID.randomUUID();
+            Foster foster = createTestFoster(userId, fosterId);
             Pet pet = Pet.create(
                     fosterId, "Buddy", Species.DOG, "Golden Retriever",
                     3, AgeUnit.YEARS, PetSex.MALE, PetSize.LARGE,
                     "CHIP123456", "Description", null
             );
+            when(fosterRepository.findByUserId(userId)).thenReturn(Optional.of(foster));
             when(petRepository.findById(petId)).thenReturn(Optional.of(pet));
             when(petRepository.save(any(Pet.class))).thenAnswer(inv -> inv.getArgument(0));
 
             // When
-            PetDto result = petService.withdrawPet(petId, fosterId);
+            PetDto result = petService.withdrawPet(petId, userId);
 
             // Then
             assertThat(result.status()).isEqualTo(PetStatus.WITHDRAWN);
@@ -421,5 +436,18 @@ class PetServiceTest {
                 "A friendly dog",
                 null
         );
+    }
+
+    private Foster createTestFoster(UUID userId, UUID fosterId) {
+        Foster foster = Foster.create(userId, "John", "Doe", "555-1234", null);
+        // Use reflection to set the foster's id since it's set internally
+        try {
+            java.lang.reflect.Field idField = Foster.class.getDeclaredField("id");
+            idField.setAccessible(true);
+            idField.set(foster, fosterId);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        return foster;
     }
 }

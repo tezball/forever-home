@@ -8,14 +8,15 @@ resource "aws_s3_bucket" "images" {
   }
 }
 
-# Block public access
+# Allow public read access for pet images
+# Note: In production, consider using CloudFront with OAI for better security
 resource "aws_s3_bucket_public_access_block" "images" {
   bucket = aws_s3_bucket.images.id
 
-  block_public_acls       = true
-  block_public_policy     = true
-  ignore_public_acls      = true
-  restrict_public_buckets = true
+  block_public_acls       = false
+  block_public_policy     = false
+  ignore_public_acls      = false
+  restrict_public_buckets = false
 }
 
 # Bucket versioning (for recovery)
@@ -81,9 +82,12 @@ resource "aws_s3_bucket_cors_configuration" "images" {
   }
 }
 
-# Bucket policy (optional - for CloudFront access if needed later)
+# Bucket policy for ECS task access and public read
 resource "aws_s3_bucket_policy" "images" {
   bucket = aws_s3_bucket.images.id
+
+  # Ensure public access block is applied first
+  depends_on = [aws_s3_bucket_public_access_block.images]
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -100,6 +104,13 @@ resource "aws_s3_bucket_policy" "images" {
           "s3:DeleteObject"
         ]
         Resource = "${aws_s3_bucket.images.arn}/*"
+      },
+      {
+        Sid       = "PublicReadAccess"
+        Effect    = "Allow"
+        Principal = "*"
+        Action    = "s3:GetObject"
+        Resource  = "${aws_s3_bucket.images.arn}/*"
       }
     ]
   })

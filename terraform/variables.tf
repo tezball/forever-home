@@ -107,6 +107,20 @@ variable "s3_bucket_name" {
   default     = ""
 }
 
+# Email Configuration
+variable "email_from" {
+  description = "Verified SES email address to send emails from"
+  type        = string
+  default     = ""
+}
+
+# Database Reset Configuration
+variable "reset_database_on_deploy" {
+  description = "WARNING: If true, drops ALL tables and re-runs migrations on each deploy. Use only for dev/testing!"
+  type        = bool
+  default     = false
+}
+
 # Domain Configuration (optional)
 variable "domain_name" {
   description = "Domain name for the application (optional)"

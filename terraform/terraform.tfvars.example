@@ -29,6 +29,14 @@ admin_email          = "admin@yourdomain.com"
 app_base_url         = ""  # Leave empty to use ALB DNS name
 cors_allowed_origins = "http://localhost:5173,http://localhost:3000"
 
+# Email Configuration (REQUIRED for email verification)
+# This email/domain MUST be verified in AWS SES
+email_from = "noreply@yourdomain.com"
+
+# Database Reset (DANGEROUS - use only for dev/testing!)
+# When true, drops ALL tables and re-runs migrations on each deploy
+reset_database_on_deploy = false
+
 # S3 Configuration
 s3_bucket_name = ""  # Leave empty for auto-generated name
 
