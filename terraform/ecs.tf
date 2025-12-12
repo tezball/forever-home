@@ -237,11 +237,11 @@ resource "aws_ecs_task_definition" "app" {
         },
         {
           name  = "APP_EMAIL_VERIFICATION_USE_CONSOLE"
-          value = "false"
+          value = "true"
         },
         {
           name  = "APP_EMAIL_VERIFICATION_AUTO_ACTIVATE"
-          value = "false"
+          value = "true"
         },
         {
           name  = "TEST_MODE_ENABLED"
