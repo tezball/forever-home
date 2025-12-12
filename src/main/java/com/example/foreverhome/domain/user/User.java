@@ -149,6 +149,14 @@ public class User implements Persistable<UUID> {
         return isNew;
     }
 
+    /**
+     * Marks the entity as no longer new (after initial save).
+     * This is needed when the entity is saved multiple times in a transaction.
+     */
+    public void markNotNew() {
+        this.isNew = false;
+    }
+
     public String getEmail() {
         return email;
     }

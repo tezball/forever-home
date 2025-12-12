@@ -108,6 +108,7 @@ public class AuthService {
 
         // Save user
         userRepository.save(user);
+        user.markNotNew();  // Mark as not new for subsequent saves
 
         // Auto-create role-specific profile
         createRoleProfile(user.getId(), request.role(), request.name());

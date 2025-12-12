@@ -1,5 +1,7 @@
 package com.example.foreverhome.service;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -7,6 +9,7 @@ import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.S3Exception;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -15,6 +18,8 @@ import java.util.UUID;
 
 @Service
 public class S3StorageService {
+
+    private static final Logger logger = LoggerFactory.getLogger(S3StorageService.class);
 
     private final S3Client s3Client;
     private final String bucketName;
@@ -42,6 +47,9 @@ public class S3StorageService {
         String key = folder + "/" + UUID.randomUUID() + extension;
 
         try {
+            logger.info("Uploading file to S3: bucket={}, key={}, contentType={}, size={}",
+                    bucketName, key, file.getContentType(), file.getSize());
+
             PutObjectRequest putRequest = PutObjectRequest.builder()
                     .bucket(bucketName)
                     .key(key)
@@ -50,8 +58,15 @@ public class S3StorageService {
 
             s3Client.putObject(putRequest, RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
 
-            return buildFileUrl(key);
+            String url = buildFileUrl(key);
+            logger.info("Successfully uploaded file to S3: {}", url);
+            return url;
+        } catch (S3Exception e) {
+            logger.error("S3 error uploading file: statusCode={}, awsErrorCode={}, message={}",
+                    e.statusCode(), e.awsErrorDetails().errorCode(), e.awsErrorDetails().errorMessage(), e);
+            throw new StorageException("Failed to upload file to S3: " + e.awsErrorDetails().errorMessage(), e);
         } catch (IOException e) {
+            logger.error("IO error uploading file", e);
             throw new StorageException("Failed to upload file", e);
         }
     }

@@ -82,9 +82,15 @@ start_docker() {
 
 # Stop Docker services
 stop_docker() {
+    local clean="${1:-}"
     echo -e "${BLUE}[Docker] Stopping services...${NC}"
     cd "$PROJECT_ROOT"
-    docker compose down
+    if [ "$clean" = "clean" ]; then
+        echo -e "${YELLOW}[Docker] Removing volumes for clean state...${NC}"
+        docker compose down -v
+    else
+        docker compose down
+    fi
     echo -e "${GREEN}[Docker] Stopped${NC}"
 }
 
@@ -476,10 +482,18 @@ case "${1:-}" in
         stop_docker
         echo -e "${GREEN}All services stopped${NC}"
         ;;
-    restart)
-        echo -e "${BLUE}=== Restarting Forever Home App ===${NC}"
+    clean)
+        echo -e "${BLUE}=== Stopping Forever Home (Clean - Removing Data) ===${NC}"
         stop_app
+        stop_docker "clean"
+        echo -e "${GREEN}All services stopped and data removed${NC}"
+        ;;
+    restart)
+        echo -e "${BLUE}=== Restarting Forever Home App (Clean) ===${NC}"
+        stop_app
+        stop_docker "clean"
         sleep 1
+        start_docker
         start_app
         echo
         show_status
@@ -500,12 +514,13 @@ case "${1:-}" in
         deploy_aws "$@"
         ;;
     *)
-        echo "Usage: $0 {start|stop|restart|status|gatling|e2e|deploy-aws}"
+        echo "Usage: $0 {start|stop|clean|restart|status|gatling|e2e|deploy-aws}"
         echo
         echo "Commands:"
         echo "  start                - Start all services (Docker + App on port 8080)"
-        echo "  stop                 - Stop all services"
-        echo "  restart              - Restart app (keeps Docker running)"
+        echo "  stop                 - Stop all services (preserves data)"
+        echo "  clean                - Stop all services and remove all data (fresh start)"
+        echo "  restart              - Restart everything with clean data (stop + clean + start)"
         echo "  status               - Show status of all services"
         echo "  gatling [SIM] [OPTS] - Run Gatling load tests"
         echo "  e2e [SUITE] [OPTS]   - Run Playwright E2E tests"
