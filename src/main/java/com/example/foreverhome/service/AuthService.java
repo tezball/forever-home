@@ -1,9 +1,14 @@
 package com.example.foreverhome.service;
 
 import com.example.foreverhome.config.EmailVerificationProperties;
+import com.example.foreverhome.domain.profile.Adopter;
+import com.example.foreverhome.domain.profile.Foster;
+import com.example.foreverhome.domain.profile.RescueOrganization;
+import com.example.foreverhome.domain.profile.Vet;
 import com.example.foreverhome.domain.user.AccountStatus;
 import com.example.foreverhome.domain.user.RefreshToken;
 import com.example.foreverhome.domain.user.User;
+import com.example.foreverhome.domain.user.UserRole;
 import com.example.foreverhome.dto.auth.LoginRequest;
 import com.example.foreverhome.dto.auth.LoginResponse;
 import com.example.foreverhome.dto.auth.RegisterRequest;
@@ -13,8 +18,12 @@ import com.example.foreverhome.exception.AuthenticationException;
 import com.example.foreverhome.exception.EmailAlreadyExistsException;
 import com.example.foreverhome.exception.InvalidTokenException;
 import com.example.foreverhome.logging.UserJourneyLogger;
+import com.example.foreverhome.repository.AdopterRepository;
+import com.example.foreverhome.repository.FosterRepository;
 import com.example.foreverhome.repository.RefreshTokenRepository;
+import com.example.foreverhome.repository.RescueOrganizationRepository;
 import com.example.foreverhome.repository.UserRepository;
+import com.example.foreverhome.repository.VetRepository;
 import com.example.foreverhome.security.JwtTokenProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,6 +49,10 @@ public class AuthService {
     private final UserJourneyLogger journeyLogger;
     private final EmailVerificationProperties verificationProperties;
     private final MetricsService metricsService;
+    private final FosterRepository fosterRepository;
+    private final AdopterRepository adopterRepository;
+    private final VetRepository vetRepository;
+    private final RescueOrganizationRepository rescueOrganizationRepository;
 
     public AuthService(UserRepository userRepository,
                        RefreshTokenRepository refreshTokenRepository,
@@ -48,7 +61,11 @@ public class AuthService {
                        EmailService emailService,
                        UserJourneyLogger journeyLogger,
                        EmailVerificationProperties verificationProperties,
-                       MetricsService metricsService) {
+                       MetricsService metricsService,
+                       FosterRepository fosterRepository,
+                       AdopterRepository adopterRepository,
+                       VetRepository vetRepository,
+                       RescueOrganizationRepository rescueOrganizationRepository) {
         this.userRepository = userRepository;
         this.refreshTokenRepository = refreshTokenRepository;
         this.jwtTokenProvider = jwtTokenProvider;
@@ -57,6 +74,10 @@ public class AuthService {
         this.journeyLogger = journeyLogger;
         this.verificationProperties = verificationProperties;
         this.metricsService = metricsService;
+        this.fosterRepository = fosterRepository;
+        this.adopterRepository = adopterRepository;
+        this.vetRepository = vetRepository;
+        this.rescueOrganizationRepository = rescueOrganizationRepository;
     }
 
     public RegisterResponse register(RegisterRequest request) {
@@ -87,6 +108,16 @@ public class AuthService {
 
         // Save user
         userRepository.save(user);
+
+        // Auto-create role-specific profile
+        createRoleProfile(user.getId(), request.role(), request.name());
+
+        // Mark profile as complete since we auto-created it
+        user.markProfileComplete();
+        userRepository.save(user);
+
+        // Send welcome email
+        emailService.sendWelcomeEmail(request.email(), request.name());
 
         // Record metric
         metricsService.recordUserRegistration(request.role().name());
@@ -238,5 +269,46 @@ public class AuthService {
 
     public void logoutAll(UUID userId) {
         refreshTokenRepository.revokeAllByUserId(userId);
+    }
+
+    /**
+     * Auto-creates the role-specific profile during registration.
+     * This allows users to immediately use role-specific features without completing a separate profile step.
+     */
+    private void createRoleProfile(UUID userId, UserRole role, String fullName) {
+        // Parse full name into first and last name
+        String[] nameParts = fullName.trim().split("\\s+", 2);
+        String firstName = nameParts[0];
+        String lastName = nameParts.length > 1 ? nameParts[1] : firstName;
+
+        switch (role) {
+            case FOSTER -> {
+                Foster foster = Foster.create(userId, firstName, lastName, null, null);
+                fosterRepository.save(foster);
+                logger.info("Auto-created Foster profile for user {}", userId);
+            }
+            case ADOPTER -> {
+                Adopter adopter = Adopter.create(userId, firstName, lastName, null, null, null, null);
+                adopterRepository.save(adopter);
+                logger.info("Auto-created Adopter profile for user {}", userId);
+            }
+            case VET -> {
+                // Vets require clinic name and license number, use placeholders
+                Vet vet = Vet.create(userId, "Clinic - " + fullName, "PENDING", null, null, null, null);
+                vetRepository.save(vet);
+                logger.info("Auto-created Vet profile for user {}", userId);
+            }
+            case RESCUE_ORG -> {
+                // Rescue orgs require organization name
+                RescueOrganization org = RescueOrganization.create(userId, "Organization - " + fullName,
+                        null, null, null, firstName + " " + lastName, null, null, null);
+                rescueOrganizationRepository.save(org);
+                logger.info("Auto-created RescueOrganization profile for user {}", userId);
+            }
+            case ADMIN -> {
+                // Admins don't need a profile, they use the Admin entity created elsewhere
+                logger.info("Admin role - no profile auto-creation needed for user {}", userId);
+            }
+        }
     }
 }

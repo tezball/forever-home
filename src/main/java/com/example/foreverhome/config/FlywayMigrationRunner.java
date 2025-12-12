@@ -38,9 +38,13 @@ public class FlywayMigrationRunner {
     @Value("${spring.flyway.clean-on-start:false}")
     private boolean cleanOnStart;
 
+    @Value("${spring.flyway.repair-on-start:true}")
+    private boolean repairOnStart;
+
     /**
      * Explicitly configure and run Flyway migrations.
      * If clean-on-start is enabled, drops all tables before migrating.
+     * If repair-on-start is enabled, repairs checksum mismatches before migrating.
      */
     @Bean
     @Order(Ordered.HIGHEST_PRECEDENCE)
@@ -53,7 +57,7 @@ public class FlywayMigrationRunner {
         logger.info("Configuring Flyway manually with datasource");
         logger.info("Flyway locations: {}", locations);
         logger.info("Baseline on migrate: {}, Baseline version: {}", baselineOnMigrate, baselineVersion);
-        logger.info("Clean on start: {}", cleanOnStart);
+        logger.info("Clean on start: {}, Repair on start: {}", cleanOnStart, repairOnStart);
 
         Flyway flyway = Flyway.configure()
             .dataSource(dataSource)
@@ -67,6 +71,12 @@ public class FlywayMigrationRunner {
             logger.warn("!!! FLYWAY CLEAN ENABLED - DROPPING ALL TABLES !!!");
             flyway.clean();
             logger.info("Database cleaned successfully");
+        }
+
+        if (repairOnStart) {
+            logger.info("Running Flyway repair to fix checksum mismatches...");
+            flyway.repair();
+            logger.info("Flyway repair completed");
         }
 
         logger.info("Running Flyway migrations...");

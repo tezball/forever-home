@@ -5,33 +5,38 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
-import software.amazon.awssdk.services.ses.SesClient;
-import software.amazon.awssdk.services.ses.model.*;
 
+/**
+ * SMTP-based email service for local development with Mailpit.
+ * Sends real emails via SMTP that can be viewed in Mailpit UI at http://localhost:8025
+ */
 @Service
-@ConditionalOnProperty(name = "app.email.provider", havingValue = "ses")
-public class SesEmailService implements EmailService {
+@ConditionalOnProperty(name = "app.email.provider", havingValue = "smtp")
+public class SmtpEmailService implements EmailService {
 
-    private static final Logger logger = LoggerFactory.getLogger(SesEmailService.class);
+    private static final Logger logger = LoggerFactory.getLogger(SmtpEmailService.class);
 
-    private final SesClient sesClient;
+    private final JavaMailSender mailSender;
     private final String fromEmail;
     private final String baseUrl;
     private final MetricsService metricsService;
     private final UserJourneyLogger journeyLogger;
 
-    public SesEmailService(
-            SesClient sesClient,
+    public SmtpEmailService(
+            JavaMailSender mailSender,
             @Value("${app.email.from:noreply@foreverhome.local}") String fromEmail,
             @Value("${app.base-url:http://localhost:5173}") String baseUrl,
             MetricsService metricsService,
             UserJourneyLogger journeyLogger) {
-        this.sesClient = sesClient;
+        this.mailSender = mailSender;
         this.fromEmail = fromEmail;
         this.baseUrl = baseUrl;
         this.metricsService = metricsService;
         this.journeyLogger = journeyLogger;
+        logger.info("SmtpEmailService initialized - emails will be sent via SMTP (Mailpit UI: http://localhost:8025)");
     }
 
     @Override
@@ -49,7 +54,7 @@ public class SesEmailService implements EmailService {
             If you didn't create an account, please ignore this email.
             """.formatted(verificationLink);
 
-        sendEmail(to, subject, body);
+        sendEmail(to, subject, body, "verification");
     }
 
     @Override
@@ -67,7 +72,7 @@ public class SesEmailService implements EmailService {
             If you didn't request this, please ignore this email.
             """.formatted(resetLink);
 
-        sendEmail(to, subject, body);
+        sendEmail(to, subject, body, "password_reset");
     }
 
     @Override
@@ -83,12 +88,12 @@ public class SesEmailService implements EmailService {
             If you didn't expect this reset, please contact support.
             """.formatted(temporaryPassword);
 
-        sendEmail(to, subject, body);
+        sendEmail(to, subject, body, "admin_password_reset");
     }
 
     @Override
     public void sendNotificationEmail(String to, String subject, String body) {
-        sendEmail(to, subject, body);
+        sendEmail(to, subject, body, "notification");
     }
 
     @Override
@@ -112,40 +117,26 @@ public class SesEmailService implements EmailService {
             The Forever Home Team
             """.formatted(name);
 
-        sendEmail(to, subject, body);
+        sendEmail(to, subject, body, "welcome");
     }
 
-    private void sendEmail(String to, String subject, String body) {
-        String emailType = getEmailType(subject);
+    private void sendEmail(String to, String subject, String body, String emailType) {
         try {
-            SendEmailRequest request = SendEmailRequest.builder()
-                    .destination(Destination.builder().toAddresses(to).build())
-                    .message(Message.builder()
-                            .subject(Content.builder().data(subject).build())
-                            .body(Body.builder()
-                                    .text(Content.builder().data(body).build())
-                                    .build())
-                            .build())
-                    .source(fromEmail)
-                    .build();
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(fromEmail);
+            message.setTo(to);
+            message.setSubject(subject);
+            message.setText(body);
 
-            sesClient.sendEmail(request);
+            mailSender.send(message);
+
             metricsService.recordEmailSent(emailType);
             journeyLogger.logEmail(UserJourneyLogger.ACTION_EMAIL_SENT, emailType, to, true, "Subject: " + subject);
-            logger.info("Email sent to {}: {}", to, subject);
-        } catch (SesException e) {
+            logger.info("Email sent to {}: {} (view at http://localhost:8025)", to, subject);
+        } catch (Exception e) {
             metricsService.recordEmailFailed(emailType);
             journeyLogger.logEmail(UserJourneyLogger.ACTION_EMAIL_FAILED, emailType, to, false, e.getMessage());
             logger.error("Failed to send email to {}: {}", to, e.getMessage());
-            // Don't throw - email failure shouldn't break the flow
         }
-    }
-
-    private String getEmailType(String subject) {
-        if (subject.contains("Verify")) return "verification";
-        if (subject.contains("Reset") || subject.contains("reset")) return "password_reset";
-        if (subject.contains("Welcome")) return "welcome";
-        if (subject.contains("notification")) return "notification";
-        return "other";
     }
 }

@@ -12,12 +12,13 @@ NC='\033[0m'
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TERRAFORM_DIR="$PROJECT_ROOT/terraform"
-BACKEND_PORT=8080
-FRONTEND_PORT=5173
+APP_PORT=8080
 POSTGRES_PORT=5432
 LOCALSTACK_PORT=4566
 LOKI_PORT=3100
 GRAFANA_PORT=3000
+MAILPIT_UI_PORT=8025
+MAILPIT_SMTP_PORT=1025
 E2E_REPORT_DIR="$PROJECT_ROOT/frontend/playwright-report"
 
 # Check if a port is in use (for local processes)
@@ -57,8 +58,6 @@ check_prereqs() {
     local missing=()
     command -v docker >/dev/null 2>&1 || missing+=("docker")
     command -v java >/dev/null 2>&1 || missing+=("java")
-    command -v node >/dev/null 2>&1 || missing+=("node")
-    command -v npm >/dev/null 2>&1 || missing+=("npm")
 
     if [ ${#missing[@]} -gt 0 ]; then
         echo -e "${RED}Missing prerequisites: ${missing[*]}${NC}"
@@ -68,7 +67,7 @@ check_prereqs() {
 
 # Start Docker services
 start_docker() {
-    echo -e "${BLUE}[Docker] Starting PostgreSQL, LocalStack, Loki, Grafana...${NC}"
+    echo -e "${BLUE}[Docker] Starting PostgreSQL, LocalStack, Loki, Grafana, Mailpit...${NC}"
     cd "$PROJECT_ROOT"
     docker compose up -d
 
@@ -78,6 +77,7 @@ start_docker() {
     wait_for_port $LOCALSTACK_PORT "LocalStack" 30 || echo -e "${YELLOW}[LocalStack] May still be starting...${NC}"
     wait_for_port $LOKI_PORT "Loki" 30 || echo -e "${YELLOW}[Loki] May still be starting...${NC}"
     wait_for_port $GRAFANA_PORT "Grafana" 30 || echo -e "${YELLOW}[Grafana] May still be starting...${NC}"
+    wait_for_port $MAILPIT_UI_PORT "Mailpit" 30 || echo -e "${YELLOW}[Mailpit] May still be starting...${NC}"
 }
 
 # Stop Docker services
@@ -88,53 +88,26 @@ stop_docker() {
     echo -e "${GREEN}[Docker] Stopped${NC}"
 }
 
-# Start backend
-start_backend() {
-    if port_in_use $BACKEND_PORT; then
-        echo -e "${YELLOW}[Backend] Already running on port $BACKEND_PORT${NC}"
+# Start application (backend serves UI on port 8080)
+start_app() {
+    if port_in_use $APP_PORT; then
+        echo -e "${YELLOW}[App] Already running on port $APP_PORT${NC}"
     else
-        echo -e "${BLUE}[Backend] Starting Spring Boot...${NC}"
+        echo -e "${BLUE}[App] Starting Spring Boot (serves API + UI)...${NC}"
         cd "$PROJECT_ROOT"
         ./mvnw spring-boot:run -q > /dev/null 2>&1 &
-        wait_for_port $BACKEND_PORT "Backend" 30
+        wait_for_port $APP_PORT "App" 60
     fi
 }
 
-# Start frontend
-start_frontend() {
-    if port_in_use $FRONTEND_PORT; then
-        echo -e "${YELLOW}[Frontend] Already running on port $FRONTEND_PORT${NC}"
+# Stop application
+stop_app() {
+    if port_in_use $APP_PORT; then
+        echo -e "${BLUE}[App] Stopping...${NC}"
+        kill_port $APP_PORT
+        echo -e "${GREEN}[App] Stopped${NC}"
     else
-        # Install deps if needed
-        if [ ! -d "$PROJECT_ROOT/frontend/node_modules" ]; then
-            echo -e "${YELLOW}[Frontend] Installing dependencies...${NC}"
-            cd "$PROJECT_ROOT/frontend"
-            npm install
-        fi
-
-        echo -e "${BLUE}[Frontend] Starting Vite...${NC}"
-        cd "$PROJECT_ROOT/frontend"
-        npm run dev > /dev/null 2>&1 &
-        wait_for_port $FRONTEND_PORT "Frontend" 10
-    fi
-}
-
-# Stop apps (backend + frontend)
-stop_apps() {
-    if port_in_use $BACKEND_PORT; then
-        echo -e "${BLUE}[Backend] Stopping...${NC}"
-        kill_port $BACKEND_PORT
-        echo -e "${GREEN}[Backend] Stopped${NC}"
-    else
-        echo -e "${YELLOW}[Backend] Not running${NC}"
-    fi
-
-    if port_in_use $FRONTEND_PORT; then
-        echo -e "${BLUE}[Frontend] Stopping...${NC}"
-        kill_port $FRONTEND_PORT
-        echo -e "${GREEN}[Frontend] Stopped${NC}"
-    else
-        echo -e "${YELLOW}[Frontend] Not running${NC}"
+        echo -e "${YELLOW}[App] Not running${NC}"
     fi
 }
 
@@ -144,14 +117,14 @@ run_gatling() {
     shift 2>/dev/null || true
     local extra_args="$*"
 
-    # Check if backend is running
-    if ! nc -z localhost $BACKEND_PORT 2>/dev/null; then
-        echo -e "${RED}[Gatling] Backend is not running on port $BACKEND_PORT${NC}"
-        echo -e "${YELLOW}Start the backend first with: ./dev.sh start${NC}"
+    # Check if app is running
+    if ! nc -z localhost $APP_PORT 2>/dev/null; then
+        echo -e "${RED}[Gatling] App is not running on port $APP_PORT${NC}"
+        echo -e "${YELLOW}Start the app first with: ./dev.sh start${NC}"
         exit 1
     fi
 
-    echo -e "${BLUE}[Gatling] Running load tests against http://localhost:$BACKEND_PORT${NC}"
+    echo -e "${BLUE}[Gatling] Running load tests against http://localhost:$APP_PORT${NC}"
 
     cd "$PROJECT_ROOT"
 
@@ -195,23 +168,22 @@ run_e2e() {
     shift 2>/dev/null || true
     local extra_args="$*"
 
-    # Check if frontend is running
-    if ! nc -z localhost $FRONTEND_PORT 2>/dev/null; then
-        echo -e "${RED}[E2E] Frontend is not running on port $FRONTEND_PORT${NC}"
-        echo -e "${YELLOW}Start the frontend first with: ./dev.sh start${NC}"
+    # Check if app is running
+    if ! nc -z localhost $APP_PORT 2>/dev/null; then
+        echo -e "${RED}[E2E] App is not running on port $APP_PORT${NC}"
+        echo -e "${YELLOW}Start the app first with: ./dev.sh start${NC}"
         exit 1
     fi
 
-    # Check if backend is running
-    if ! nc -z localhost $BACKEND_PORT 2>/dev/null; then
-        echo -e "${RED}[E2E] Backend is not running on port $BACKEND_PORT${NC}"
-        echo -e "${YELLOW}Start the backend first with: ./dev.sh start${NC}"
-        exit 1
-    fi
-
-    echo -e "${BLUE}[E2E] Running Playwright tests against http://localhost:$FRONTEND_PORT${NC}"
+    echo -e "${BLUE}[E2E] Running Playwright tests against http://localhost:$APP_PORT${NC}"
 
     cd "$PROJECT_ROOT/frontend"
+
+    # Install deps if needed
+    if [ ! -d "$PROJECT_ROOT/frontend/node_modules" ]; then
+        echo -e "${YELLOW}[E2E] Installing dependencies...${NC}"
+        npm install
+    fi
 
     # Install Playwright browsers if needed
     if [ ! -d "$HOME/.cache/ms-playwright" ] && [ ! -d "$PROJECT_ROOT/frontend/node_modules/.cache/ms-playwright" ]; then
@@ -473,16 +445,16 @@ show_status() {
         echo -e "${RED}[Grafana]     Not running${NC}"
     fi
 
-    if nc -z localhost $BACKEND_PORT 2>/dev/null; then
-        echo -e "${GREEN}[Backend]     Running on http://localhost:$BACKEND_PORT${NC}"
+    if nc -z localhost $MAILPIT_UI_PORT 2>/dev/null; then
+        echo -e "${GREEN}[Mailpit]     Running on http://localhost:$MAILPIT_UI_PORT (SMTP: $MAILPIT_SMTP_PORT)${NC}"
     else
-        echo -e "${RED}[Backend]     Not running${NC}"
+        echo -e "${RED}[Mailpit]     Not running${NC}"
     fi
 
-    if nc -z localhost $FRONTEND_PORT 2>/dev/null; then
-        echo -e "${GREEN}[Frontend]    Running on http://localhost:$FRONTEND_PORT${NC}"
+    if nc -z localhost $APP_PORT 2>/dev/null; then
+        echo -e "${GREEN}[App]         Running on http://localhost:$APP_PORT (API + UI)${NC}"
     else
-        echo -e "${RED}[Frontend]    Not running${NC}"
+        echo -e "${RED}[App]         Not running${NC}"
     fi
     echo
 }
@@ -493,23 +465,22 @@ case "${1:-}" in
         echo -e "${BLUE}=== Starting Forever Home ===${NC}"
         check_prereqs
         start_docker
-        start_backend
-        start_frontend
+        start_app
         echo
         show_status
+        echo -e "${BLUE}Open http://localhost:$APP_PORT in your browser${NC}"
         ;;
     stop)
         echo -e "${BLUE}=== Stopping Forever Home ===${NC}"
-        stop_apps
+        stop_app
         stop_docker
         echo -e "${GREEN}All services stopped${NC}"
         ;;
     restart)
-        echo -e "${BLUE}=== Restarting Forever Home Apps ===${NC}"
-        stop_apps
+        echo -e "${BLUE}=== Restarting Forever Home App ===${NC}"
+        stop_app
         sleep 1
-        start_backend
-        start_frontend
+        start_app
         echo
         show_status
         ;;
@@ -532,9 +503,9 @@ case "${1:-}" in
         echo "Usage: $0 {start|stop|restart|status|gatling|e2e|deploy-aws}"
         echo
         echo "Commands:"
-        echo "  start                - Start all services (Docker + Backend + Frontend)"
+        echo "  start                - Start all services (Docker + App on port 8080)"
         echo "  stop                 - Stop all services"
-        echo "  restart              - Restart backend and frontend (keeps Docker running)"
+        echo "  restart              - Restart app (keeps Docker running)"
         echo "  status               - Show status of all services"
         echo "  gatling [SIM] [OPTS] - Run Gatling load tests"
         echo "  e2e [SUITE] [OPTS]   - Run Playwright E2E tests"

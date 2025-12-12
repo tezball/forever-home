@@ -8,7 +8,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 @Service
-@ConditionalOnProperty(name = "app.email.verification.use-console", havingValue = "true")
+@ConditionalOnProperty(name = "app.email.provider", havingValue = "console")
 public class ConsoleEmailService implements EmailService {
 
     private static final Logger logger = LoggerFactory.getLogger(ConsoleEmailService.class);
@@ -103,5 +103,23 @@ public class ConsoleEmailService implements EmailService {
             ║  {}
             ╚══════════════════════════════════════════════════════════════════╝
             """, to, subject, body);
+    }
+
+    @Override
+    public void sendWelcomeEmail(String to, String name) {
+        metricsService.recordEmailSent("welcome");
+        journeyLogger.logEmail(UserJourneyLogger.ACTION_EMAIL_SENT, "welcome", to, true, "Welcome email sent");
+        logger.info("""
+
+            ╔══════════════════════════════════════════════════════════════════╗
+            ║                    WELCOME EMAIL                                 ║
+            ╠══════════════════════════════════════════════════════════════════╣
+            ║  To: {}
+            ║  Name: {}
+            ║
+            ║  Welcome to Forever Home! Your account has been created.
+            ║  You can now browse pets and connect with rescue organizations.
+            ╚══════════════════════════════════════════════════════════════════╝
+            """, to, name);
     }
 }

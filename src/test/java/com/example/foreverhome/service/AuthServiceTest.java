@@ -13,8 +13,12 @@ import com.example.foreverhome.exception.AuthenticationException;
 import com.example.foreverhome.exception.EmailAlreadyExistsException;
 import com.example.foreverhome.exception.InvalidTokenException;
 import com.example.foreverhome.logging.UserJourneyLogger;
+import com.example.foreverhome.repository.AdopterRepository;
+import com.example.foreverhome.repository.FosterRepository;
 import com.example.foreverhome.repository.RefreshTokenRepository;
+import com.example.foreverhome.repository.RescueOrganizationRepository;
 import com.example.foreverhome.repository.UserRepository;
+import com.example.foreverhome.repository.VetRepository;
 import com.example.foreverhome.security.JwtTokenProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -62,6 +66,18 @@ class AuthServiceTest {
     @Mock
     private MetricsService metricsService;
 
+    @Mock
+    private FosterRepository fosterRepository;
+
+    @Mock
+    private AdopterRepository adopterRepository;
+
+    @Mock
+    private VetRepository vetRepository;
+
+    @Mock
+    private RescueOrganizationRepository rescueOrganizationRepository;
+
     private EmailVerificationProperties verificationProperties;
 
     private AuthService authService;
@@ -78,7 +94,11 @@ class AuthServiceTest {
                 emailService,
                 journeyLogger,
                 verificationProperties,
-                metricsService
+                metricsService,
+                fosterRepository,
+                adopterRepository,
+                vetRepository,
+                rescueOrganizationRepository
         );
     }
 
@@ -112,9 +132,9 @@ class AuthServiceTest {
             assertThat(response.message()).contains("verification");
 
             ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
-            verify(userRepository).save(userCaptor.capture());
-            User savedUser = userCaptor.getValue();
-            assertThat(savedUser.getStatus()).isEqualTo(AccountStatus.PENDING);
+            verify(userRepository, times(2)).save(userCaptor.capture());
+            // First save is initial user creation, second is after profile creation
+            User savedUser = userCaptor.getAllValues().get(1);
             assertThat(savedUser.getRole()).isEqualTo(UserRole.ADOPTER);
         }
 
@@ -170,7 +190,11 @@ class AuthServiceTest {
                     emailService,
                     journeyLogger,
                     autoActivateProperties,
-                    metricsService
+                    metricsService,
+                    fosterRepository,
+                    adopterRepository,
+                    vetRepository,
+                    rescueOrganizationRepository
             );
 
             RegisterRequest request = new RegisterRequest(
@@ -188,8 +212,9 @@ class AuthServiceTest {
 
             // Then
             ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
-            verify(userRepository).save(userCaptor.capture());
-            User savedUser = userCaptor.getValue();
+            verify(userRepository, times(2)).save(userCaptor.capture());
+            // Second save is after profile creation with profileComplete set
+            User savedUser = userCaptor.getAllValues().get(1);
             assertThat(savedUser.getStatus()).isEqualTo(AccountStatus.ACTIVE);
             verify(emailService, never()).sendVerificationEmail(anyString(), anyString());
         }
