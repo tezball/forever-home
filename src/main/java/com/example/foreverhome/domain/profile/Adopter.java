@@ -1,6 +1,8 @@
 package com.example.foreverhome.domain.profile;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Transient;
+import org.springframework.data.domain.Persistable;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Embedded;
 import org.springframework.data.relational.core.mapping.Table;
@@ -12,10 +14,13 @@ import java.util.UUID;
  * Profile for users who want to adopt pets.
  */
 @Table("adopters")
-public class Adopter {
+public class Adopter implements Persistable<UUID> {
 
     @Id
     private UUID id;
+
+    @Transient
+    private boolean isNew = false;
 
     @Column("user_id")
     private UUID userId;
@@ -64,8 +69,15 @@ public class Adopter {
         if (lastName == null || lastName.isBlank()) {
             throw new IllegalArgumentException("lastName cannot be null or blank");
         }
-        return new Adopter(UUID.randomUUID(), userId, firstName.trim(), lastName.trim(),
+        Adopter adopter = new Adopter(UUID.randomUUID(), userId, firstName.trim(), lastName.trim(),
                 phone, livingSituation, petExperience, address);
+        adopter.isNew = true;
+        return adopter;
+    }
+
+    @Override
+    public boolean isNew() {
+        return isNew;
     }
 
     public UUID getId() {

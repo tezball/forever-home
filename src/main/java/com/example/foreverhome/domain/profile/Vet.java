@@ -1,6 +1,8 @@
 package com.example.foreverhome.domain.profile;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Transient;
+import org.springframework.data.domain.Persistable;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Embedded;
 import org.springframework.data.relational.core.mapping.Table;
@@ -12,10 +14,13 @@ import java.util.UUID;
  * Profile for veterinary professionals who verify pet health.
  */
 @Table("vets")
-public class Vet {
+public class Vet implements Persistable<UUID> {
 
     @Id
     private UUID id;
+
+    @Transient
+    private boolean isNew = false;
 
     @Column("user_id")
     private UUID userId;
@@ -72,8 +77,15 @@ public class Vet {
         if (licenseNumber == null || licenseNumber.isBlank()) {
             throw new IllegalArgumentException("licenseNumber cannot be null or blank");
         }
-        return new Vet(UUID.randomUUID(), userId, clinicName.trim(), licenseNumber.trim(),
+        Vet vet = new Vet(UUID.randomUUID(), userId, clinicName.trim(), licenseNumber.trim(),
                 phone, website, description, null, false, address);
+        vet.isNew = true;
+        return vet;
+    }
+
+    @Override
+    public boolean isNew() {
+        return isNew;
     }
 
     public UUID getId() {
