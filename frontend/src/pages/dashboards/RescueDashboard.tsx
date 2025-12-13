@@ -29,6 +29,9 @@ export function RescueDashboard() {
   const [successMessage, setSuccessMessage] = useState('');
   const [activeStatusFilter, setActiveStatusFilter] = useState<StatusFilter>('ALL');
 
+  // Expanded pet details
+  const [expandedPetId, setExpandedPetId] = useState<string | null>(null);
+
   // Application modals
   const [selectedApplication, setSelectedApplication] = useState<AdoptionApplication | null>(null);
   const [viewApplicationModalOpen, setViewApplicationModalOpen] = useState(false);
@@ -58,6 +61,10 @@ export function RescueDashboard() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const togglePetDetails = (petId: string) => {
+    setExpandedPetId(expandedPetId === petId ? null : petId);
   };
 
   const handleAcceptPet = async (pet: Pet) => {
@@ -213,14 +220,9 @@ export function RescueDashboard() {
 
   return (
     <div className="container-app py-8">
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Rescue Dashboard</h1>
-          <p className="text-gray-600">Welcome back, {user?.name}</p>
-        </div>
-        <Link to="/rescue/vets">
-          <Button variant="outline">Manage Vets</Button>
-        </Link>
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900">Rescue Dashboard</h1>
+        <p className="text-gray-600">Welcome back, {user?.name}</p>
       </div>
 
       {/* Success Message */}
@@ -274,38 +276,90 @@ export function RescueDashboard() {
             {pendingPets.length > 0 ? (
               <div className="card divide-y divide-secondary-200">
                 {pendingPets.map((pet) => (
-                  <div key={pet.id} className="p-4 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <img
-                        src={pet.imageUrls[0] || `https://placedog.net/80/80?id=${pet.id.slice(0, 8)}`}
-                        alt={pet.name}
-                        className="w-16 h-16 rounded-lg object-cover"
-                      />
-                      <div>
-                        <Link to={`/pets/${pet.id}`} className="font-medium text-gray-900 hover:text-primary-500">
-                          {pet.name}
-                        </Link>
-                        <p className="text-sm text-gray-500">{pet.breed || pet.species}</p>
+                  <div key={pet.id}>
+                    <div className="p-4 flex items-center justify-between">
+                      <div className="flex items-center gap-4 flex-1">
+                        <img
+                          src={pet.imageUrls[0] || `https://placedog.net/80/80?id=${pet.id.slice(0, 8)}`}
+                          alt={pet.name}
+                          className="w-16 h-16 rounded-lg object-cover"
+                        />
+                        <div className="flex-1">
+                          <Link to={`/pets/${pet.id}`} className="font-medium text-gray-900 hover:text-primary-500">
+                            {pet.name}
+                          </Link>
+                          <p className="text-sm text-gray-500">{pet.breed || pet.species}</p>
+                          <p className="text-xs text-gray-400">Microchip: {pet.microchipId}</p>
+                        </div>
+                        <button
+                          onClick={() => togglePetDetails(pet.id)}
+                          className="text-sm text-primary-500 hover:text-primary-600 flex items-center gap-1"
+                        >
+                          {expandedPetId === pet.id ? 'Hide' : 'View'} Details
+                          <svg
+                            className={`w-4 h-4 transition-transform ${expandedPetId === pet.id ? 'rotate-180' : ''}`}
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </button>
+                      </div>
+                      <div className="flex gap-2 ml-4">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openDeclineModal(pet)}
+                          disabled={actionLoading}
+                        >
+                          Decline
+                        </Button>
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          onClick={() => handleAcceptPet(pet)}
+                          loading={actionLoading}
+                        >
+                          Accept
+                        </Button>
                       </div>
                     </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => openDeclineModal(pet)}
-                        disabled={actionLoading}
-                      >
-                        Decline
-                      </Button>
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        onClick={() => handleAcceptPet(pet)}
-                        loading={actionLoading}
-                      >
-                        Accept
-                      </Button>
-                    </div>
+                    {/* Expandable Details */}
+                    {expandedPetId === pet.id && (
+                      <div className="px-4 pb-4 pt-0 bg-gray-50 border-t border-gray-100">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 py-3">
+                          <div>
+                            <p className="text-xs text-gray-500">Age</p>
+                            <p className="text-sm font-medium">{pet.age} {pet.ageUnit.toLowerCase()}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-500">Sex</p>
+                            <p className="text-sm font-medium capitalize">{pet.sex.toLowerCase()}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-500">Size</p>
+                            <p className="text-sm font-medium capitalize">{pet.size.toLowerCase()}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-500">Species</p>
+                            <p className="text-sm font-medium capitalize">{pet.species.toLowerCase()}</p>
+                          </div>
+                        </div>
+                        {pet.description && (
+                          <div className="py-2 border-t border-gray-200">
+                            <p className="text-xs text-gray-500 mb-1">Description</p>
+                            <p className="text-sm text-gray-700">{pet.description}</p>
+                          </div>
+                        )}
+                        {pet.healthNotes && (
+                          <div className="py-2 border-t border-gray-200">
+                            <p className="text-xs text-gray-500 mb-1">Health Notes</p>
+                            <p className="text-sm text-gray-700">{pet.healthNotes}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

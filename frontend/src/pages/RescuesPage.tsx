@@ -69,8 +69,22 @@ export function RescuesPage() {
       ) : filteredRescues.length === 0 ? (
         <div className="text-center py-12">
           <div className="text-6xl mb-4">🏥</div>
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">No rescue organizations found</h3>
-          <p className="text-gray-600">Try adjusting your search or check back later</p>
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">
+            {rescues.length === 0 ? 'No rescue organizations yet' : 'No organizations match your search'}
+          </h3>
+          <p className="text-gray-600 mb-6">
+            {rescues.length === 0
+              ? 'We\'re expanding our network of rescue partners. Check back soon!'
+              : 'Try a different search term or browse all organizations.'}
+          </p>
+          {search && (
+            <button
+              onClick={() => setSearch('')}
+              className="inline-flex items-center px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors"
+            >
+              Clear Search
+            </button>
+          )}
         </div>
       ) : (
         <>

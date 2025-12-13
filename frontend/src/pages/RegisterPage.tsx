@@ -149,6 +149,7 @@ export function RegisterPage() {
               value={formData.password}
               onChange={handleChange}
               placeholder="At least 8 characters"
+              hint="Must be at least 8 characters long"
               required
               autoComplete="new-password"
             />

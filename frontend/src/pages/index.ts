@@ -24,3 +24,4 @@ export { AdminAnalyticsPage } from './AdminAnalyticsPage';
 export { AdminModerationPage } from './AdminModerationPage';
 export { VerifyEmailPage } from './VerifyEmailPage';
 export { VetRequestApprovalPage } from './VetRequestApprovalPage';
+export { ProfilePage } from './ProfilePage';

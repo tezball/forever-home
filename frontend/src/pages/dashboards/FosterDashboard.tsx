@@ -62,9 +62,12 @@ export function FosterDashboard() {
   };
 
   const draftPets = pets.filter((p) => p.status === 'DRAFT');
-  const pendingPets = pets.filter((p) => ['PENDING_RESCUE', 'PENDING_VET'].includes(p.status));
-  const activePets = pets.filter((p) => ['AVAILABLE', 'IN_PROGRESS'].includes(p.status));
-  const completedPets = pets.filter((p) => ['ADOPTED', 'WITHDRAWN'].includes(p.status));
+  const pendingRescuePets = pets.filter((p) => p.status === 'PENDING_RESCUE');
+  const pendingVetPets = pets.filter((p) => p.status === 'PENDING_VET');
+  const availablePets = pets.filter((p) => p.status === 'AVAILABLE');
+  const inProgressPets = pets.filter((p) => p.status === 'IN_PROGRESS');
+  const adoptedPets = pets.filter((p) => p.status === 'ADOPTED');
+  const withdrawnPets = pets.filter((p) => p.status === 'WITHDRAWN');
 
   return (
     <div className="container-app py-8">
@@ -107,48 +110,178 @@ export function FosterDashboard() {
         </div>
       ) : (
         <div className="space-y-8">
-          {/* Draft Pets */}
+          {/* Status Overview Stats */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+            <div className="card p-3 text-center">
+              <p className="text-2xl font-bold text-gray-500">{draftPets.length}</p>
+              <p className="text-xs text-gray-500">Drafts</p>
+            </div>
+            <div className="card p-3 text-center">
+              <p className="text-2xl font-bold text-yellow-600">{pendingRescuePets.length}</p>
+              <p className="text-xs text-gray-500">With Rescue</p>
+            </div>
+            <div className="card p-3 text-center">
+              <p className="text-2xl font-bold text-success-600">{availablePets.length}</p>
+              <p className="text-xs text-gray-500">Available</p>
+            </div>
+            <div className="card p-3 text-center">
+              <p className="text-2xl font-bold text-purple-600">{inProgressPets.length}</p>
+              <p className="text-xs text-gray-500">In Progress</p>
+            </div>
+            <div className="card p-3 text-center">
+              <p className="text-2xl font-bold text-primary-600">{adoptedPets.length}</p>
+              <p className="text-xs text-gray-500">Adopted</p>
+            </div>
+            <div className="card p-3 text-center">
+              <p className="text-2xl font-bold text-error-600">{withdrawnPets.length}</p>
+              <p className="text-xs text-gray-500">Withdrawn</p>
+            </div>
+          </div>
+
+          {/* Draft Pets - with prominent CTA */}
           {draftPets.length > 0 && (
             <section>
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Drafts</h2>
+              <div className="flex items-center gap-2 mb-4">
+                <h2 className="text-xl font-semibold text-gray-900">Drafts</h2>
+                <span className="text-sm text-gray-500">- Ready to submit for review</span>
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {draftPets.map((pet) => (
+                  <div key={pet.id} className="card hover:shadow-lg transition-shadow border-2 border-dashed border-gray-300">
+                    <Link to={`/pets/${pet.id}`} className="block">
+                      <div className="relative">
+                        <img
+                          src={pet.imageUrls[0] || `https://placedog.net/400/300?id=${pet.id.slice(0, 8)}`}
+                          alt={pet.name}
+                          className="w-full h-48 object-cover"
+                        />
+                        {pet.imageUrls.length === 0 && (
+                          <div className="absolute bottom-2 right-2 bg-warning-100 text-warning-700 text-xs px-2 py-1 rounded">
+                            No photos
+                          </div>
+                        )}
+                      </div>
+                      <div className="p-4">
+                        <div className="flex justify-between items-start mb-2">
+                          <h3 className="text-lg font-semibold text-gray-900">{pet.name}</h3>
+                          <span className="status-badge bg-gray-100 text-gray-800">Draft</span>
+                        </div>
+                        <p className="text-sm text-gray-500 mb-2">
+                          {pet.breed || pet.species} • {pet.age} {pet.ageUnit.toLowerCase()} • {pet.sex.toLowerCase()}
+                        </p>
+                      </div>
+                    </Link>
+                    <div className="px-4 pb-4 space-y-2">
+                      <Link to={`/foster/pets/${pet.id}/submit`} className="block">
+                        <Button variant="primary" size="sm" className="w-full">
+                          Continue → Submit for Review
+                        </Button>
+                      </Link>
+                      <div className="flex gap-2">
+                        <Link to={`/foster/pets/${pet.id}/edit`} className="flex-1">
+                          <Button variant="outline" size="sm" className="w-full">
+                            Edit
+                          </Button>
+                        </Link>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => openWithdrawModal(pet)}
+                          className="text-error-600"
+                        >
+                          Withdraw
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Pending Rescue Review */}
+          {pendingRescuePets.length > 0 && (
+            <section>
+              <div className="flex items-center gap-2 mb-4">
+                <h2 className="text-xl font-semibold text-gray-900">Pending Rescue Review</h2>
+                <span className="text-sm text-gray-500">- Awaiting rescue organization approval</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {pendingRescuePets.map((pet) => (
                   <PetCard key={pet.id} pet={pet} showEditButton onWithdraw={openWithdrawModal} />
                 ))}
               </div>
             </section>
           )}
 
-          {/* Pending Pets */}
-          {pendingPets.length > 0 && (
+          {/* Pending Vet */}
+          {pendingVetPets.length > 0 && (
             <section>
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Pending Review</h2>
+              <div className="flex items-center gap-2 mb-4">
+                <h2 className="text-xl font-semibold text-gray-900">Pending Vet Verification</h2>
+                <span className="text-sm text-gray-500">- Awaiting veterinary sign-off</span>
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {pendingPets.map((pet) => (
+                {pendingVetPets.map((pet) => (
                   <PetCard key={pet.id} pet={pet} showEditButton onWithdraw={openWithdrawModal} />
                 ))}
               </div>
             </section>
           )}
 
-          {/* Active Pets */}
-          {activePets.length > 0 && (
+          {/* Available for Adoption */}
+          {availablePets.length > 0 && (
             <section>
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Active Listings</h2>
+              <div className="flex items-center gap-2 mb-4">
+                <h2 className="text-xl font-semibold text-gray-900">Available for Adoption</h2>
+                <span className="text-sm text-success-600">- Listed and visible to adopters</span>
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {activePets.map((pet) => (
+                {availablePets.map((pet) => (
                   <PetCard key={pet.id} pet={pet} showEditButton onWithdraw={openWithdrawModal} />
                 ))}
               </div>
             </section>
           )}
 
-          {/* Completed */}
-          {completedPets.length > 0 && (
+          {/* In Progress */}
+          {inProgressPets.length > 0 && (
             <section>
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Completed</h2>
+              <div className="flex items-center gap-2 mb-4">
+                <h2 className="text-xl font-semibold text-gray-900">Adoption In Progress</h2>
+                <span className="text-sm text-purple-600">- Has approved adoption application</span>
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {completedPets.map((pet) => (
+                {inProgressPets.map((pet) => (
+                  <PetCard key={pet.id} pet={pet} showEditButton onWithdraw={openWithdrawModal} />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Adopted */}
+          {adoptedPets.length > 0 && (
+            <section>
+              <div className="flex items-center gap-2 mb-4">
+                <h2 className="text-xl font-semibold text-gray-900">Successfully Adopted</h2>
+                <span className="text-sm text-primary-600">- Found their forever homes!</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {adoptedPets.map((pet) => (
+                  <PetCard key={pet.id} pet={pet} />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Withdrawn */}
+          {withdrawnPets.length > 0 && (
+            <section>
+              <div className="flex items-center gap-2 mb-4">
+                <h2 className="text-xl font-semibold text-gray-900">Withdrawn</h2>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {withdrawnPets.map((pet) => (
                   <PetCard key={pet.id} pet={pet} />
                 ))}
               </div>

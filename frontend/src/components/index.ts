@@ -11,3 +11,4 @@ export { PetTimeline } from './PetTimeline';
 export { NotificationBell } from './NotificationBell';
 export { ErrorBoundary } from './ErrorBoundary';
 export { LoadingSpinner } from './LoadingSpinner';
+export { Breadcrumb, BackToDashboard } from './Breadcrumb';

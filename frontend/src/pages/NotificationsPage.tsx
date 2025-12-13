@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Button } from '../components';
+import { Link } from 'react-router-dom';
+import { Button, Breadcrumb } from '../components';
 import type { Notification } from '../types';
 import apiClient from '../api/client';
 
@@ -125,6 +126,7 @@ export function NotificationsPage() {
 
   return (
     <div className="container-app py-8">
+      <Breadcrumb items={[{ label: 'Notifications' }]} />
       <div className="max-w-3xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -135,11 +137,21 @@ export function NotificationsPage() {
               </p>
             )}
           </div>
-          {unreadCount > 0 && (
-            <Button variant="outline" onClick={handleMarkAllAsRead}>
-              Mark all as read
-            </Button>
-          )}
+          <div className="flex gap-2">
+            {unreadCount > 0 && (
+              <Button variant="outline" onClick={handleMarkAllAsRead}>
+                Mark all as read
+              </Button>
+            )}
+            <Link to="/settings">
+              <Button variant="ghost">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </Button>
+            </Link>
+          </div>
         </div>
 
         {notifications.length === 0 ? (
@@ -147,10 +159,13 @@ export function NotificationsPage() {
             <svg className="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
             </svg>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">No notifications</h2>
-            <p className="text-gray-600">
-              You're all caught up! Check back later for updates on your pets and applications.
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">No notifications yet</h2>
+            <p className="text-gray-600 mb-6">
+              You're all caught up! We'll notify you about updates on your pets, applications, and other important activity.
             </p>
+            <Link to="/settings">
+              <Button variant="outline">Manage Notification Settings</Button>
+            </Link>
           </div>
         ) : (
           <div className="card divide-y divide-gray-200">

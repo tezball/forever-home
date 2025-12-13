@@ -118,8 +118,22 @@ export function PetListPage() {
       ) : filteredPets.length === 0 ? (
         <div className="text-center py-12">
           <div className="text-6xl mb-4">🐾</div>
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">No pets found</h3>
-          <p className="text-gray-600">Try adjusting your filters or check back later</p>
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">
+            {pets.length === 0 ? 'No pets available right now' : 'No pets match your filters'}
+          </h3>
+          <p className="text-gray-600 mb-6">
+            {pets.length === 0
+              ? 'Check back soon - new pets are added regularly!'
+              : 'Try adjusting your search or filters to find more options.'}
+          </p>
+          {(filters.species || filters.size || filters.sex || filters.search) && (
+            <button
+              onClick={() => setFilters({ species: '', size: '', sex: '', search: '' })}
+              className="inline-flex items-center px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors"
+            >
+              Clear All Filters
+            </button>
+          )}
         </div>
       ) : (
         <>

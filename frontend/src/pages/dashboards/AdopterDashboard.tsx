@@ -120,10 +120,29 @@ export function AdopterDashboard() {
         </div>
       ) : (
         <div className="space-y-8">
-          {/* Applications */}
-          {applications.length > 0 && (
-            <section>
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">My Applications</h2>
+          {/* Quick Actions - show when user has no applications and no favorites */}
+          {applications.length === 0 && favorites.length === 0 && (
+            <section className="card p-8 text-center">
+              <div className="text-6xl mb-4">🐾</div>
+              <h2 className="text-2xl font-semibold text-gray-900 mb-2">Welcome to Forever Home!</h2>
+              <p className="text-gray-600 mb-6 max-w-lg mx-auto">
+                Start your journey to find your perfect companion. Browse available pets, save your favorites, and submit adoption applications.
+              </p>
+              <div className="flex flex-wrap justify-center gap-4">
+                <Link to="/pets">
+                  <Button variant="primary">Browse Available Pets</Button>
+                </Link>
+                <Link to="/rescues">
+                  <Button variant="outline">View Rescue Organizations</Button>
+                </Link>
+              </div>
+            </section>
+          )}
+
+          {/* Applications - always show section header even if empty */}
+          <section>
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">My Applications</h2>
+            {applications.length > 0 ? (
               <div className="card divide-y divide-secondary-200">
                 {applications.map((app) => (
                   <div
@@ -163,8 +182,15 @@ export function AdopterDashboard() {
                   </div>
                 ))}
               </div>
-            </section>
-          )}
+            ) : (
+              <div className="card p-6 text-center bg-secondary-50">
+                <p className="text-gray-600 mb-4">You haven't submitted any adoption applications yet.</p>
+                <Link to="/pets">
+                  <Button variant="outline" size="sm">Find a Pet to Adopt</Button>
+                </Link>
+              </div>
+            )}
+          </section>
 
           {/* Favorites */}
           <section>

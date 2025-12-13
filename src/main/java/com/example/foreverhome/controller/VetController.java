@@ -57,6 +57,17 @@ public class VetController {
     }
 
     /**
+     * Get all pets pending vet verification from approved rescue organizations.
+     * This shows the vet's work queue - pets that need their sign-off.
+     */
+    @GetMapping("/pets/pending")
+    public ResponseEntity<List<PetDto>> getPendingPets(
+            @AuthenticationPrincipal UserPrincipal principal) {
+        List<PetDto> pets = petService.getPendingVetPetsForVet(principal.userId());
+        return ResponseEntity.ok(pets);
+    }
+
+    /**
      * Lookup a pet by microchip number.
      * The vet must be approved by the pet's rescue organization.
      */

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { Button } from '../components';
+import { Button, Breadcrumb } from '../components';
 import apiClient from '../api/client';
 
 interface NotificationPreferences {
@@ -81,6 +81,7 @@ export function SettingsPage() {
 
   return (
     <div className="container-app py-8">
+      <Breadcrumb items={[{ label: 'Settings' }]} />
       <div className="max-w-2xl mx-auto">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Settings</h1>
         <p className="text-gray-600 mb-8">Manage your account preferences</p>

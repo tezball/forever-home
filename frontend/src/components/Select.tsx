@@ -9,12 +9,13 @@ interface SelectOption {
 interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   label?: string;
   error?: string;
+  hint?: string;
   options: SelectOption[];
   placeholder?: string;
 }
 
 export const Select = forwardRef<HTMLSelectElement, SelectProps>(
-  ({ label, error, options, placeholder, className = '', id: providedId, ...props }, ref) => {
+  ({ label, error, hint, options, placeholder, className = '', id: providedId, required, ...props }, ref) => {
     const generatedId = useId();
     const selectId = providedId || generatedId;
 
@@ -23,12 +24,16 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
         {label && (
           <label htmlFor={selectId} className="block text-sm font-medium text-gray-700 mb-1">
             {label}
+            {required && <span className="text-error-500 ml-0.5">*</span>}
           </label>
         )}
         <div className="relative">
           <select
             ref={ref}
             id={selectId}
+            required={required}
+            aria-invalid={error ? 'true' : undefined}
+            aria-describedby={error ? `${selectId}-error` : hint ? `${selectId}-hint` : undefined}
             className={`w-full h-12 px-4 py-3 pr-10 border-2 rounded bg-secondary-50 appearance-none focus:outline-none focus:border-primary-500 transition-colors ${
               error ? 'border-error-500' : 'border-secondary-200'
             } ${className}`}
@@ -51,8 +56,11 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
             </svg>
           </div>
         </div>
+        {hint && !error && (
+          <p id={`${selectId}-hint`} className="mt-1 text-sm text-gray-500">{hint}</p>
+        )}
         {error && (
-          <p className="mt-1 text-sm text-error-500">{error}</p>
+          <p id={`${selectId}-error`} className="mt-1 text-sm text-error-500" role="alert">{error}</p>
         )}
       </div>
     );

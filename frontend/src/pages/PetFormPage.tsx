@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Button, Input, Select, ImageUpload } from '../components';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Button, Input, Select, ImageUpload, Textarea, Breadcrumb } from '../components';
 import type { Pet, PetImage, Species, PetSize, PetSex, AgeUnit, CreatePetRequest } from '../types';
 import apiClient from '../api/client';
 
@@ -187,21 +187,17 @@ export function PetFormPage() {
 
   return (
     <div className="container-app py-8">
-      {/* Back link */}
-      <Link
-        to="/foster/dashboard"
-        className="inline-flex items-center text-gray-600 hover:text-primary-500 mb-6"
-      >
-        <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-        </svg>
-        Back to Dashboard
-      </Link>
+      <Breadcrumb items={[{ label: isEditing ? 'Edit Pet' : 'Register New Pet' }]} />
 
       <div className="max-w-2xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">
           {isEditing ? 'Edit Pet' : 'Register a New Pet'}
         </h1>
+        <p className="text-gray-600 mb-8">
+          {isEditing
+            ? 'Update the pet\'s information below.'
+            : 'Fill in the details below to register a pet for adoption. Fields marked with * are required.'}
+        </p>
 
         {generalError && (
           <div className="bg-error-50 border border-error-200 text-error-700 px-4 py-3 rounded-lg mb-6">
@@ -215,21 +211,23 @@ export function PetFormPage() {
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Input
-                label="Pet Name *"
+                label="Pet Name"
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
                 error={errors.name}
                 placeholder="Enter pet's name"
+                required
               />
 
               <Select
-                label="Species *"
+                label="Species"
                 name="species"
                 value={formData.species}
                 onChange={handleChange}
                 options={speciesOptions}
                 disabled={isEditing}
+                required
               />
 
               <Input
@@ -239,21 +237,23 @@ export function PetFormPage() {
                 onChange={handleChange}
                 placeholder="e.g., Golden Retriever"
                 disabled={isEditing}
+                hint="Optional - helps adopters find the right match"
               />
 
               <Select
-                label="Sex *"
+                label="Sex"
                 name="sex"
                 value={formData.sex}
                 onChange={handleChange}
                 options={sexOptions}
                 disabled={isEditing}
+                required
               />
 
               <div className="flex gap-2">
                 <div className="flex-1">
                   <Input
-                    label="Age *"
+                    label="Age"
                     name="age"
                     type="number"
                     min="0"
@@ -262,11 +262,12 @@ export function PetFormPage() {
                     error={errors.age}
                     placeholder="Age"
                     disabled={isEditing}
+                    required
                   />
                 </div>
                 <div className="w-32">
                   <Select
-                    label="&nbsp;"
+                    label="Unit"
                     name="ageUnit"
                     value={formData.ageUnit}
                     onChange={handleChange}
@@ -277,22 +278,25 @@ export function PetFormPage() {
               </div>
 
               <Select
-                label="Size *"
+                label="Size"
                 name="size"
                 value={formData.size}
                 onChange={handleChange}
                 options={sizeOptions}
                 disabled={isEditing}
+                required
               />
 
               <Input
-                label="Microchip ID *"
+                label="Microchip ID"
                 name="microchipId"
                 value={formData.microchipId}
                 onChange={handleChange}
                 error={errors.microchipId}
                 placeholder="Enter microchip ID"
                 disabled={isEditing}
+                hint="Required for vet verification"
+                required
               />
             </div>
           </div>
@@ -301,39 +305,27 @@ export function PetFormPage() {
           <div className="card p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">About the Pet</h2>
             <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Description ({formData.description.length}/500)
-                </label>
-                <textarea
-                  name="description"
-                  value={formData.description}
-                  onChange={handleChange}
-                  rows={4}
-                  maxLength={500}
-                  className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
-                    errors.description ? 'border-error-500' : 'border-gray-300'
-                  }`}
-                  placeholder="Tell potential adopters about this pet's personality, history, and what makes them special..."
-                />
-                {errors.description && (
-                  <p className="mt-1 text-sm text-error-500">{errors.description}</p>
-                )}
-              </div>
+              <Textarea
+                label={`Description (${formData.description.length}/500)`}
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+                rows={4}
+                maxLength={500}
+                error={errors.description}
+                placeholder="Tell potential adopters about this pet's personality, history, and what makes them special..."
+                hint="A good description helps adopters connect with the pet"
+              />
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Health Notes
-                </label>
-                <textarea
-                  name="healthNotes"
-                  value={formData.healthNotes}
-                  onChange={handleChange}
-                  rows={3}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  placeholder="Vaccination status, medical history, special needs, etc."
-                />
-              </div>
+              <Textarea
+                label="Health Notes"
+                name="healthNotes"
+                value={formData.healthNotes}
+                onChange={handleChange}
+                rows={3}
+                placeholder="Vaccination status, medical history, special needs, etc."
+                hint="This information will be shared with the vet during sign-off"
+              />
             </div>
           </div>
 

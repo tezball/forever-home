@@ -79,8 +79,22 @@ export function VetsPage() {
       ) : filteredVets.length === 0 ? (
         <div className="text-center py-12">
           <div className="text-6xl mb-4">⚕️</div>
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">No veterinarians found</h3>
-          <p className="text-gray-600">Try adjusting your search or check back later</p>
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">
+            {vets.length === 0 ? 'No verified veterinarians yet' : 'No veterinarians match your search'}
+          </h3>
+          <p className="text-gray-600 mb-6">
+            {vets.length === 0
+              ? 'Our network of verified veterinarians is growing. Check back soon!'
+              : 'Try a different search term or browse all veterinarians.'}
+          </p>
+          {search && (
+            <button
+              onClick={() => setSearch('')}
+              className="inline-flex items-center px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors"
+            >
+              Clear Search
+            </button>
+          )}
         </div>
       ) : (
         <>

@@ -171,10 +171,14 @@ export function VetSignOffHistoryPage() {
               ? 'Your verified pets will appear here once you complete sign-offs.'
               : 'Try adjusting your date range filters.'}
           </p>
-          {signOffs.length > 0 && (
+          {signOffs.length > 0 ? (
             <Button variant="outline" onClick={clearFilters}>
               Clear Filters
             </Button>
+          ) : (
+            <Link to="/vet/dashboard">
+              <Button variant="primary">Go to Dashboard to Verify Pets</Button>
+            </Link>
           )}
         </div>
       ) : (

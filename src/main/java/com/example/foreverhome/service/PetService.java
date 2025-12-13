@@ -162,6 +162,35 @@ public class PetService {
                 .toList();
     }
 
+    /**
+     * Get all PENDING_VET pets from rescue organizations that have approved this vet.
+     * This provides the vet's work queue without requiring microchip lookup.
+     */
+    @Transactional(readOnly = true)
+    public List<PetDto> getPendingVetPetsForVet(UUID vetUserId) {
+        // Get all rescue orgs that have approved this vet
+        List<UUID> approvedRescueOrgIds = vetApprovalService.getRescueOrgsForVet(vetUserId)
+                .stream()
+                .map(org -> org.getId())
+                .toList();
+
+        if (approvedRescueOrgIds.isEmpty()) {
+            return List.of();
+        }
+
+        // Find all PENDING_VET pets from those rescue orgs
+        return petRepository.findByStatusAndRescueOrgIdIn(PetStatus.PENDING_VET, approvedRescueOrgIds)
+                .stream()
+                .map(pet -> {
+                    List<String> imageUrls = petImageRepository.findByPetIdOrderByDisplayOrder(pet.getId())
+                            .stream()
+                            .map(img -> storageService.getPublicUrl(img.getS3Key()))
+                            .toList();
+                    return PetDto.fromForVet(pet, imageUrls, true); // All pending pets can be signed off
+                })
+                .toList();
+    }
+
     public PetDto updatePet(UUID petId, UUID userId, UpdatePetRequest request) {
         Pet pet = findPetOrThrow(petId);
 

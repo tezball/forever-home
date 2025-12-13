@@ -33,6 +33,10 @@ export function VetDashboard() {
   const [approvedOrgs, setApprovedOrgs] = useState<ApprovedOrg[]>([]);
   const [loadingOrgs, setLoadingOrgs] = useState(true);
 
+  // Pending pets queue
+  const [pendingPets, setPendingPets] = useState<Pet[]>([]);
+  const [loadingPending, setLoadingPending] = useState(true);
+
   // Decline reason checkboxes
   const [declineNotNeutered, setDeclineNotNeutered] = useState(false);
   const [declineVaccinations, setDeclineVaccinations] = useState(false);
@@ -40,6 +44,7 @@ export function VetDashboard() {
 
   useEffect(() => {
     fetchApprovedOrgs();
+    fetchPendingPets();
   }, []);
 
   const fetchApprovedOrgs = async () => {
@@ -51,6 +56,23 @@ export function VetDashboard() {
     } finally {
       setLoadingOrgs(false);
     }
+  };
+
+  const fetchPendingPets = async () => {
+    try {
+      const response = await apiClient.get<Pet[]>('/vet/pets/pending');
+      setPendingPets(response.data);
+    } catch {
+      // Silently fail
+    } finally {
+      setLoadingPending(false);
+    }
+  };
+
+  const selectPetFromQueue = (petFromQueue: Pet) => {
+    setPet(petFromQueue);
+    setMicrochipId(petFromQueue.microchipId);
+    setError('');
   };
 
   const handleSearch = async (e: React.FormEvent) => {
@@ -130,6 +152,8 @@ export function VetDashboard() {
       setPet({ ...pet, status: 'AVAILABLE' });
       setSuccessMessage(`${pet.name} has been verified and is now available for adoption`);
       resetSignOffForm();
+      // Refresh pending pets list
+      setPendingPets((prev) => prev.filter((p) => p.id !== pet.id));
       setTimeout(() => setSuccessMessage(''), 5000);
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to sign off on pet';
@@ -145,6 +169,7 @@ export function VetDashboard() {
     setSubmitting(true);
     setError('');
     try {
+      const declinedPetId = pet.id;
       await apiClient.post(`/vet/pets/${pet.id}/decline`, {
         reason: buildDeclineReason(),
       });
@@ -156,6 +181,8 @@ export function VetDashboard() {
       setDeclineNotNeutered(false);
       setDeclineVaccinations(false);
       setDeclineHealthConcerns(false);
+      // Refresh pending pets list
+      setPendingPets((prev) => prev.filter((p) => p.id !== declinedPetId));
       setTimeout(() => setSuccessMessage(''), 5000);
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to decline pet';
@@ -185,6 +212,70 @@ export function VetDashboard() {
             <Button variant="outline">View Sign-Off History</Button>
           </Link>
         </div>
+      </div>
+
+      {/* Pending Sign-offs Queue */}
+      <div className="card p-6 mb-8">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold text-gray-900">
+            Pending Sign-offs
+            {pendingPets.length > 0 && (
+              <span className="ml-2 px-2 py-0.5 text-sm bg-warning-100 text-warning-700 rounded-full">
+                {pendingPets.length}
+              </span>
+            )}
+          </h2>
+        </div>
+        {loadingPending ? (
+          <div className="flex justify-center py-4">
+            <div className="animate-spin rounded-full h-8 w-8 border-4 border-primary-500 border-t-transparent" />
+          </div>
+        ) : pendingPets.length > 0 ? (
+          <div className="space-y-3">
+            <p className="text-gray-600 text-sm mb-4">
+              These pets are awaiting your verification. Click to review and sign off.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {pendingPets.map((pendingPet) => (
+                <button
+                  key={pendingPet.id}
+                  onClick={() => selectPetFromQueue(pendingPet)}
+                  className={`flex items-center gap-4 p-4 rounded-lg border-2 transition-colors text-left ${
+                    pet?.id === pendingPet.id
+                      ? 'border-primary-500 bg-primary-50'
+                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  <img
+                    src={pendingPet.imageUrls[0] || `https://placedog.net/80/80?id=${pendingPet.id.slice(0, 8)}`}
+                    alt={pendingPet.name}
+                    className="w-16 h-16 rounded-lg object-cover"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-gray-900 truncate">{pendingPet.name}</p>
+                    <p className="text-sm text-gray-500 truncate">{pendingPet.breed || pendingPet.species}</p>
+                    <p className="text-xs text-gray-400 font-mono">{pendingPet.microchipId}</p>
+                  </div>
+                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="text-center py-6 bg-gray-50 rounded-lg">
+            <div className="w-12 h-12 bg-success-100 rounded-full flex items-center justify-center mx-auto mb-3">
+              <svg className="w-6 h-6 text-success-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <p className="text-gray-600">No pets awaiting sign-off</p>
+            <p className="text-sm text-gray-500 mt-1">
+              Use the microchip lookup below to find a specific pet
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Approved Organizations */}

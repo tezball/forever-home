@@ -71,4 +71,7 @@ public interface PetRepository extends CrudRepository<Pet, UUID> {
 
     @Query("SELECT * FROM pets WHERE status = 'AVAILABLE' ORDER BY created_at DESC LIMIT :limit")
     List<Pet> findFeaturedPets(@Param("limit") int limit);
+
+    @Query("SELECT * FROM pets WHERE status = :status AND rescue_org_id IN (:rescueOrgIds) ORDER BY created_at DESC")
+    List<Pet> findByStatusAndRescueOrgIdIn(@Param("status") PetStatus status, @Param("rescueOrgIds") List<UUID> rescueOrgIds);
 }

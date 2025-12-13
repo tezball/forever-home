@@ -4,6 +4,15 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Button, Modal } from '../../components';
 import apiClient from '../../api/client';
 
+interface QuickStats {
+  totalUsers: number;
+  totalPets: number;
+  totalAdoptions: number;
+  pendingApprovals: number;
+  petsAvailable: number;
+  petsPendingVet: number;
+}
+
 interface Approval {
   id: string;
   type: 'RESCUE_ORG';
@@ -58,6 +67,31 @@ export function AdminDashboard() {
   // Approval action state
   const [processingApprovalId, setProcessingApprovalId] = useState<string | null>(null);
 
+  // Quick stats
+  const [quickStats, setQuickStats] = useState<QuickStats | null>(null);
+
+  const fetchQuickStats = async () => {
+    try {
+      const response = await apiClient.get<{
+        totalUsers: number;
+        totalPets: number;
+        totalAdoptions: number;
+        pendingApprovals: number;
+        petStatistics: { available: number; pendingVet: number };
+      }>('/admin/analytics');
+      setQuickStats({
+        totalUsers: response.data.totalUsers,
+        totalPets: response.data.totalPets,
+        totalAdoptions: response.data.totalAdoptions,
+        pendingApprovals: response.data.pendingApprovals,
+        petsAvailable: response.data.petStatistics?.available ?? 0,
+        petsPendingVet: response.data.petStatistics?.pendingVet ?? 0,
+      });
+    } catch {
+      // Stats are optional, silently fail
+    }
+  };
+
   const fetchApprovals = async () => {
     try {
       const res = await apiClient.get<Approval[]>('/admin/approvals');
@@ -88,7 +122,7 @@ export function AdminDashboard() {
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
-      await Promise.all([fetchApprovals(), fetchUsers()]);
+      await Promise.all([fetchApprovals(), fetchUsers(), fetchQuickStats()]);
       setLoading(false);
     };
     loadData();
@@ -269,6 +303,36 @@ export function AdminDashboard() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
+        </div>
+      )}
+
+      {/* Quick Stats */}
+      {quickStats && (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+          <div className="card p-4">
+            <p className="text-3xl font-bold text-primary-600">{quickStats.totalUsers}</p>
+            <p className="text-sm text-gray-600">Total Users</p>
+          </div>
+          <div className="card p-4">
+            <p className="text-3xl font-bold text-info-600">{quickStats.totalPets}</p>
+            <p className="text-sm text-gray-600">Total Pets</p>
+          </div>
+          <div className="card p-4">
+            <p className="text-3xl font-bold text-success-600">{quickStats.totalAdoptions}</p>
+            <p className="text-sm text-gray-600">Adoptions</p>
+          </div>
+          <Link to="#" onClick={() => setActiveTab('approvals')} className="card p-4 hover:bg-warning-50 transition-colors">
+            <p className="text-3xl font-bold text-warning-600">{quickStats.pendingApprovals}</p>
+            <p className="text-sm text-gray-600">Pending Approvals</p>
+          </Link>
+          <div className="card p-4">
+            <p className="text-3xl font-bold text-success-500">{quickStats.petsAvailable}</p>
+            <p className="text-sm text-gray-600">Pets Available</p>
+          </div>
+          <div className="card p-4">
+            <p className="text-3xl font-bold text-blue-600">{quickStats.petsPendingVet}</p>
+            <p className="text-sm text-gray-600">Pending Vet</p>
+          </div>
         </div>
       )}
 
