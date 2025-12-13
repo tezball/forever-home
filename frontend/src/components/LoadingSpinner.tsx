@@ -45,29 +45,3 @@ export function LoadingSpinner({
     </div>
   );
 }
-
-/**
- * Full page loading state for route transitions.
- */
-export function PageLoader() {
-  return (
-    <LoadingSpinner
-      message="Loading page..."
-      size="lg"
-      fullScreen
-    />
-  );
-}
-
-/**
- * Inline loading indicator for buttons and small areas.
- */
-export function InlineLoader({ className = '' }: { className?: string }) {
-  return (
-    <div
-      className={`inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent ${className}`}
-      role="status"
-      aria-label="Loading"
-    />
-  );
-}
