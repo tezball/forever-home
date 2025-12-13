@@ -1,6 +1,8 @@
 package com.example.foreverhome.domain.profile;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Transient;
+import org.springframework.data.domain.Persistable;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
@@ -11,10 +13,13 @@ import java.util.UUID;
  * Minimal profile for platform administrators.
  */
 @Table("admins")
-public class Admin {
+public class Admin implements Persistable<UUID> {
 
     @Id
     private UUID id;
+
+    @Transient
+    private boolean isNew = true;
 
     @Column("user_id")
     private UUID userId;
@@ -40,6 +45,15 @@ public class Admin {
 
     public UUID getUserId() {
         return userId;
+    }
+
+    @Override
+    public boolean isNew() {
+        return isNew;
+    }
+
+    public void markNotNew() {
+        this.isNew = false;
     }
 
     @Override

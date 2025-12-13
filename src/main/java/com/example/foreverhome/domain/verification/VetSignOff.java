@@ -1,6 +1,8 @@
 package com.example.foreverhome.domain.verification;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Transient;
+import org.springframework.data.domain.Persistable;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
@@ -14,10 +16,13 @@ import java.util.UUID;
  * Once created, cannot be modified.
  */
 @Table("vet_signoffs")
-public class VetSignOff {
+public class VetSignOff implements Persistable<UUID> {
 
     @Id
     private UUID id;
+
+    @Transient
+    private boolean isNew = true;
 
     @Column("pet_id")
     private UUID petId;
@@ -99,6 +104,15 @@ public class VetSignOff {
 
     public Instant getSignedOffAt() {
         return signedOffAt;
+    }
+
+    @Override
+    public boolean isNew() {
+        return isNew;
+    }
+
+    public void markNotNew() {
+        this.isNew = false;
     }
 
     @Override

@@ -12,6 +12,7 @@ import java.util.UUID;
 
 /**
  * Photos of pets to help adopters connect emotionally.
+ * Stores S3 keys rather than full URLs for environment independence.
  */
 @Table("pet_images")
 public class PetImage implements Persistable<UUID> {
@@ -22,8 +23,8 @@ public class PetImage implements Persistable<UUID> {
     @Column("pet_id")
     private UUID petId;
 
-    @Column("url")
-    private String url;
+    @Column("s3_key")
+    private String s3Key;
 
     @Column("is_primary")
     private boolean primary;
@@ -40,23 +41,23 @@ public class PetImage implements Persistable<UUID> {
     protected PetImage() {
     }
 
-    private PetImage(UUID id, UUID petId, String url, boolean primary, int displayOrder, Instant uploadedAt) {
+    private PetImage(UUID id, UUID petId, String s3Key, boolean primary, int displayOrder, Instant uploadedAt) {
         this.id = id;
         this.petId = petId;
-        this.url = url;
+        this.s3Key = s3Key;
         this.primary = primary;
         this.displayOrder = displayOrder;
         this.uploadedAt = uploadedAt;
     }
 
-    public static PetImage create(UUID petId, String url, boolean primary, int displayOrder) {
+    public static PetImage create(UUID petId, String s3Key, boolean primary, int displayOrder) {
         if (petId == null) {
             throw new IllegalArgumentException("petId cannot be null");
         }
-        if (url == null || url.isBlank()) {
-            throw new IllegalArgumentException("url cannot be null or blank");
+        if (s3Key == null || s3Key.isBlank()) {
+            throw new IllegalArgumentException("s3Key cannot be null or blank");
         }
-        PetImage image = new PetImage(UUID.randomUUID(), petId, url, primary, displayOrder, Instant.now());
+        PetImage image = new PetImage(UUID.randomUUID(), petId, s3Key, primary, displayOrder, Instant.now());
         image.isNew = true;
         return image;
     }
@@ -69,8 +70,8 @@ public class PetImage implements Persistable<UUID> {
         return petId;
     }
 
-    public String getUrl() {
-        return url;
+    public String getS3Key() {
+        return s3Key;
     }
 
     public boolean isPrimary() {

@@ -21,6 +21,10 @@ services:
       - SERVICES=s3,ses
       - DEBUG=1
       - AWS_DEFAULT_REGION=us-east-1
+      # Enable persistence to survive container restarts
+      - PERSISTENCE=1
+      # Ensure data directory is consistent
+      - DATA_DIR=/var/lib/localstack/data
     ports:
       - '4566:4566'
     volumes:

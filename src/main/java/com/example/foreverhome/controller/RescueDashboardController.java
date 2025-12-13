@@ -13,6 +13,7 @@ import com.example.foreverhome.repository.PetImageRepository;
 import com.example.foreverhome.repository.PetRepository;
 import com.example.foreverhome.repository.RescueOrganizationRepository;
 import com.example.foreverhome.security.UserPrincipal;
+import com.example.foreverhome.service.S3StorageService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -38,17 +39,20 @@ public class RescueDashboardController {
     private final AdoptionApplicationRepository applicationRepository;
     private final RescueOrganizationRepository rescueOrganizationRepository;
     private final AdopterRepository adopterRepository;
+    private final S3StorageService storageService;
 
     public RescueDashboardController(PetRepository petRepository,
                                       PetImageRepository petImageRepository,
                                       AdoptionApplicationRepository applicationRepository,
                                       RescueOrganizationRepository rescueOrganizationRepository,
-                                      AdopterRepository adopterRepository) {
+                                      AdopterRepository adopterRepository,
+                                      S3StorageService storageService) {
         this.petRepository = petRepository;
         this.petImageRepository = petImageRepository;
         this.applicationRepository = applicationRepository;
         this.rescueOrganizationRepository = rescueOrganizationRepository;
         this.adopterRepository = adopterRepository;
+        this.storageService = storageService;
     }
 
     /**
@@ -65,7 +69,7 @@ public class RescueDashboardController {
     private PetDto toPetDtoWithImages(Pet pet) {
         List<String> imageUrls = petImageRepository.findByPetIdOrderByDisplayOrder(pet.getId())
                 .stream()
-                .map(PetImage::getUrl)
+                .map(img -> storageService.getPublicUrl(img.getS3Key()))
                 .toList();
         return PetDto.from(pet, imageUrls);
     }

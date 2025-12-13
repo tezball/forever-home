@@ -3,14 +3,17 @@ package com.example.foreverhome.controller;
 import com.example.foreverhome.domain.pet.Pet;
 import com.example.foreverhome.domain.profile.RescueOrganization;
 import com.example.foreverhome.domain.profile.Vet;
+import com.example.foreverhome.domain.verification.VetApprovalRequest;
 import com.example.foreverhome.domain.verification.VetSignOff;
 import com.example.foreverhome.dto.pet.PetDto;
 import com.example.foreverhome.exception.ResourceNotFoundException;
 import com.example.foreverhome.repository.PetRepository;
+import com.example.foreverhome.repository.RescueOrganizationRepository;
 import com.example.foreverhome.repository.VetRepository;
 import com.example.foreverhome.repository.VetSignOffRepository;
 import com.example.foreverhome.security.UserPrincipal;
 import com.example.foreverhome.service.PetService;
+import com.example.foreverhome.service.VetApprovalRequestService;
 import com.example.foreverhome.service.VetApprovalService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -34,18 +37,23 @@ public class VetController {
 
     private final PetService petService;
     private final VetApprovalService vetApprovalService;
+    private final VetApprovalRequestService vetApprovalRequestService;
     private final VetRepository vetRepository;
     private final VetSignOffRepository vetSignOffRepository;
     private final PetRepository petRepository;
+    private final RescueOrganizationRepository rescueOrganizationRepository;
 
     public VetController(PetService petService, VetApprovalService vetApprovalService,
+                         VetApprovalRequestService vetApprovalRequestService,
                          VetRepository vetRepository, VetSignOffRepository vetSignOffRepository,
-                         PetRepository petRepository) {
+                         PetRepository petRepository, RescueOrganizationRepository rescueOrganizationRepository) {
         this.petService = petService;
         this.vetApprovalService = vetApprovalService;
+        this.vetApprovalRequestService = vetApprovalRequestService;
         this.vetRepository = vetRepository;
         this.vetSignOffRepository = vetSignOffRepository;
         this.petRepository = petRepository;
+        this.rescueOrganizationRepository = rescueOrganizationRepository;
     }
 
     /**
@@ -97,6 +105,62 @@ public class VetController {
                 .map(RescueOrgSummary::from)
                 .toList();
         return ResponseEntity.ok(summaries);
+    }
+
+    /**
+     * Get all verified rescue organizations that the vet can request approval from.
+     * Excludes organizations where the vet is already approved or has a pending request.
+     */
+    @GetMapping("/rescue-orgs/available")
+    public ResponseEntity<List<RescueOrgSummary>> getAvailableRescueOrgs(
+            @AuthenticationPrincipal UserPrincipal principal) {
+        List<RescueOrganization> orgs = vetApprovalRequestService.getAvailableRescueOrgsForVet(principal.userId());
+        List<RescueOrgSummary> summaries = orgs.stream()
+                .map(RescueOrgSummary::from)
+                .toList();
+        return ResponseEntity.ok(summaries);
+    }
+
+    /**
+     * Submit an approval request to a rescue organization.
+     */
+    @PostMapping("/rescue-orgs/{rescueOrgId}/request")
+    public ResponseEntity<ApprovalRequestResponse> requestApproval(
+            @PathVariable UUID rescueOrgId,
+            @RequestBody(required = false) ApprovalRequestBody requestBody,
+            @AuthenticationPrincipal UserPrincipal principal) {
+        String message = requestBody != null ? requestBody.message() : null;
+        VetApprovalRequest request = vetApprovalRequestService.requestApproval(
+                principal.userId(), rescueOrgId, message);
+        RescueOrganization org = rescueOrganizationRepository.findById(rescueOrgId).orElse(null);
+        return ResponseEntity.ok(ApprovalRequestResponse.from(request, org));
+    }
+
+    /**
+     * Get all approval requests made by this vet.
+     */
+    @GetMapping("/approval-requests")
+    public ResponseEntity<List<ApprovalRequestResponse>> getMyApprovalRequests(
+            @AuthenticationPrincipal UserPrincipal principal) {
+        List<VetApprovalRequest> requests = vetApprovalRequestService.getRequestsForVet(principal.userId());
+        List<ApprovalRequestResponse> responses = requests.stream()
+                .map(request -> {
+                    RescueOrganization org = rescueOrganizationRepository.findById(request.getRescueOrgId()).orElse(null);
+                    return ApprovalRequestResponse.from(request, org);
+                })
+                .toList();
+        return ResponseEntity.ok(responses);
+    }
+
+    /**
+     * Withdraw a pending approval request.
+     */
+    @DeleteMapping("/approval-requests/{requestId}")
+    public ResponseEntity<Void> withdrawApprovalRequest(
+            @PathVariable UUID requestId,
+            @AuthenticationPrincipal UserPrincipal principal) {
+        vetApprovalRequestService.withdrawRequest(principal.userId(), requestId);
+        return ResponseEntity.noContent().build();
     }
 
     /**
@@ -156,6 +220,10 @@ public class VetController {
             String reason
     ) {}
 
+    public record ApprovalRequestBody(
+            String message
+    ) {}
+
     // Response DTOs
     record RescueOrgSummary(
             UUID id,
@@ -206,4 +274,28 @@ public class VetController {
     }
 
     record SignOffCountResponse(long count) {}
+
+    record ApprovalRequestResponse(
+            UUID id,
+            UUID rescueOrgId,
+            String rescueOrgName,
+            String status,
+            String message,
+            Instant requestedAt,
+            Instant reviewedAt,
+            String rejectionReason
+    ) {
+        static ApprovalRequestResponse from(VetApprovalRequest request, RescueOrganization org) {
+            return new ApprovalRequestResponse(
+                    request.getId(),
+                    request.getRescueOrgId(),
+                    org != null ? org.getName() : "Unknown",
+                    request.getStatus().name(),
+                    request.getMessage(),
+                    request.getRequestedAt(),
+                    request.getReviewedAt(),
+                    request.getRejectionReason()
+            );
+        }
+    }
 }

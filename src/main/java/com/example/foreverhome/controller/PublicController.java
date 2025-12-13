@@ -11,6 +11,7 @@ import com.example.foreverhome.repository.PetRepository;
 import com.example.foreverhome.repository.RescueOrganizationRepository;
 import com.example.foreverhome.repository.VetRepository;
 import com.example.foreverhome.repository.VetSignOffRepository;
+import com.example.foreverhome.service.S3StorageService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -30,19 +31,22 @@ public class PublicController {
     private final AdoptionRepository adoptionRepository;
     private final VetRepository vetRepository;
     private final VetSignOffRepository vetSignOffRepository;
+    private final S3StorageService storageService;
 
     public PublicController(RescueOrganizationRepository rescueOrganizationRepository,
                            PetRepository petRepository,
                            PetImageRepository petImageRepository,
                            AdoptionRepository adoptionRepository,
                            VetRepository vetRepository,
-                           VetSignOffRepository vetSignOffRepository) {
+                           VetSignOffRepository vetSignOffRepository,
+                           S3StorageService storageService) {
         this.rescueOrganizationRepository = rescueOrganizationRepository;
         this.petRepository = petRepository;
         this.petImageRepository = petImageRepository;
         this.adoptionRepository = adoptionRepository;
         this.vetRepository = vetRepository;
         this.vetSignOffRepository = vetSignOffRepository;
+        this.storageService = storageService;
     }
 
     /**
@@ -89,7 +93,7 @@ public class PublicController {
                             .map(pet -> {
                                 List<String> imageUrls = petImageRepository.findByPetIdOrderByDisplayOrder(pet.getId())
                                         .stream()
-                                        .map(PetImage::getUrl)
+                                        .map(img -> storageService.getPublicUrl(img.getS3Key()))
                                         .toList();
                                 return PetPublicResponse.from(pet, imageUrls);
                             })

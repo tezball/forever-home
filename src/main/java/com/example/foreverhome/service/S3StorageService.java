@@ -8,6 +8,8 @@ import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
+import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 
@@ -16,6 +18,14 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Service for storing and retrieving files from S3 (or LocalStack in development).
+ *
+ * Key design decisions:
+ * - Returns S3 keys (not URLs) from upload operations for environment independence
+ * - URLs are constructed dynamically based on current endpoint configuration
+ * - Supports both LocalStack (dev) and AWS S3 (prod) transparently
+ */
 @Service
 public class S3StorageService {
 
@@ -40,6 +50,15 @@ public class S3StorageService {
         this.allowedContentTypes = Arrays.asList(allowedContentTypes.split(","));
     }
 
+    /**
+     * Uploads a file to S3 and returns the S3 key (not the full URL).
+     * The key can be used with {@link #getPublicUrl(String)} to construct a URL.
+     *
+     * @param file   the file to upload
+     * @param folder the folder path within the bucket (e.g., "pets/{petId}")
+     * @return the S3 key for the uploaded file
+     * @throws StorageException if the upload fails
+     */
     public String uploadFile(MultipartFile file, String folder) {
         validateFile(file);
 
@@ -58,9 +77,8 @@ public class S3StorageService {
 
             s3Client.putObject(putRequest, RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
 
-            String url = buildFileUrl(key);
-            logger.info("Successfully uploaded file to S3: {}", url);
-            return url;
+            logger.info("Successfully uploaded file to S3: key={}", key);
+            return key;
         } catch (S3Exception e) {
             logger.error("S3 error uploading file: statusCode={}, awsErrorCode={}, message={}",
                     e.statusCode(), e.awsErrorDetails().errorCode(), e.awsErrorDetails().errorMessage(), e);
@@ -71,18 +89,86 @@ public class S3StorageService {
         }
     }
 
-    public void deleteFile(String fileUrl) {
-        String key = extractKeyFromUrl(fileUrl);
-        if (key == null) {
+    /**
+     * Deletes a file from S3 using its key.
+     *
+     * @param s3Key the S3 key of the file to delete
+     */
+    public void deleteFile(String s3Key) {
+        if (s3Key == null || s3Key.isBlank()) {
+            logger.warn("Attempted to delete file with null or blank key");
             return;
         }
 
-        DeleteObjectRequest deleteRequest = DeleteObjectRequest.builder()
-                .bucket(bucketName)
-                .key(key)
-                .build();
+        try {
+            logger.info("Deleting file from S3: bucket={}, key={}", bucketName, s3Key);
 
-        s3Client.deleteObject(deleteRequest);
+            DeleteObjectRequest deleteRequest = DeleteObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(s3Key)
+                    .build();
+
+            s3Client.deleteObject(deleteRequest);
+            logger.info("Successfully deleted file from S3: key={}", s3Key);
+        } catch (S3Exception e) {
+            logger.error("S3 error deleting file: key={}, statusCode={}, message={}",
+                    s3Key, e.statusCode(), e.awsErrorDetails().errorMessage(), e);
+            throw new StorageException("Failed to delete file from S3: " + e.awsErrorDetails().errorMessage(), e);
+        }
+    }
+
+    /**
+     * Constructs a public URL for an S3 key based on the current environment configuration.
+     *
+     * @param s3Key the S3 key
+     * @return the public URL for accessing the file
+     */
+    public String getPublicUrl(String s3Key) {
+        if (s3Key == null || s3Key.isBlank()) {
+            return null;
+        }
+
+        if (awsEndpoint != null && !awsEndpoint.isBlank()) {
+            // LocalStack URL format: http://localhost:4566/bucket/key
+            return awsEndpoint + "/" + bucketName + "/" + s3Key;
+        }
+        // AWS S3 URL format: https://bucket.s3.amazonaws.com/key
+        return "https://" + bucketName + ".s3.amazonaws.com/" + s3Key;
+    }
+
+    /**
+     * Checks if a file exists in S3.
+     *
+     * @param s3Key the S3 key to check
+     * @return true if the file exists, false otherwise
+     */
+    public boolean fileExists(String s3Key) {
+        if (s3Key == null || s3Key.isBlank()) {
+            return false;
+        }
+
+        try {
+            HeadObjectRequest headRequest = HeadObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(s3Key)
+                    .build();
+            s3Client.headObject(headRequest);
+            return true;
+        } catch (NoSuchKeyException e) {
+            return false;
+        } catch (S3Exception e) {
+            logger.warn("Error checking if file exists: key={}, error={}", s3Key, e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Gets the bucket name being used.
+     *
+     * @return the S3 bucket name
+     */
+    public String getBucketName() {
+        return bucketName;
     }
 
     private void validateFile(MultipartFile file) {
@@ -105,35 +191,6 @@ public class S3StorageService {
             return "";
         }
         return filename.substring(filename.lastIndexOf("."));
-    }
-
-    private String buildFileUrl(String key) {
-        if (awsEndpoint != null && !awsEndpoint.isBlank()) {
-            // LocalStack URL format
-            return awsEndpoint + "/" + bucketName + "/" + key;
-        }
-        // AWS S3 URL format
-        return "https://" + bucketName + ".s3.amazonaws.com/" + key;
-    }
-
-    private String extractKeyFromUrl(String url) {
-        if (url == null || url.isBlank()) {
-            return null;
-        }
-
-        // Handle LocalStack format: http://localhost:4566/bucket/key
-        if (url.contains(bucketName + "/")) {
-            int bucketIndex = url.indexOf(bucketName + "/");
-            return url.substring(bucketIndex + bucketName.length() + 1);
-        }
-
-        // Handle AWS S3 format: https://bucket.s3.amazonaws.com/key
-        if (url.contains(".s3.amazonaws.com/")) {
-            int keyIndex = url.indexOf(".s3.amazonaws.com/") + ".s3.amazonaws.com/".length();
-            return url.substring(keyIndex);
-        }
-
-        return null;
     }
 
     public static class StorageException extends RuntimeException {

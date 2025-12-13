@@ -1,6 +1,8 @@
 package com.example.foreverhome.domain.moderation;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Transient;
+import org.springframework.data.domain.Persistable;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
@@ -12,10 +14,13 @@ import java.util.UUID;
  * Content flag representing a report about potentially inappropriate content.
  */
 @Table("content_flags")
-public class ContentFlag {
+public class ContentFlag implements Persistable<UUID> {
 
     @Id
     private UUID id;
+
+    @Transient
+    private boolean isNew = true;
 
     @Column("content_type")
     private ContentType contentType;
@@ -137,6 +142,15 @@ public class ContentFlag {
         this.reviewedBy = reviewerId;
         this.reviewedAt = Instant.now();
         this.resolutionNotes = notes;
+    }
+
+    @Override
+    public boolean isNew() {
+        return isNew;
+    }
+
+    public void markNotNew() {
+        this.isNew = false;
     }
 
     @Override

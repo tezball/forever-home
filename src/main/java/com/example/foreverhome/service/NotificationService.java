@@ -188,6 +188,45 @@ public class NotificationService {
         );
     }
 
+    public void notifyRescueOrgVetRequest(UUID rescueOrgUserId, String vetClinicName) {
+        String title = "New Vet Approval Request";
+        String message = "A vet from '" + vetClinicName + "' has requested approval to verify your pets.";
+        createNotificationWithEmail(
+                rescueOrgUserId,
+                NotificationType.NEW_APPLICATION,
+                title,
+                message,
+                false // new application type
+        );
+    }
+
+    public void notifyVetRequestApproved(UUID vetUserId, String rescueOrgName) {
+        String title = "Approval Request Accepted";
+        String message = "Your request to be approved by '" + rescueOrgName + "' has been accepted. You can now verify their pets.";
+        createNotificationWithEmail(
+                vetUserId,
+                NotificationType.APPLICATION_UPDATE,
+                title,
+                message,
+                true // status change
+        );
+    }
+
+    public void notifyVetRequestRejected(UUID vetUserId, String rescueOrgName, String reason) {
+        String title = "Approval Request Declined";
+        String message = "Your request to be approved by '" + rescueOrgName + "' has been declined.";
+        if (reason != null && !reason.isBlank()) {
+            message += " Reason: " + reason;
+        }
+        createNotificationWithEmail(
+                vetUserId,
+                NotificationType.APPLICATION_UPDATE,
+                title,
+                message,
+                true // status change
+        );
+    }
+
     /**
      * Creates an in-app notification and optionally sends an email based on user preferences.
      */

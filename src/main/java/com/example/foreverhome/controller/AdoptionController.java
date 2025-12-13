@@ -14,6 +14,7 @@ import com.example.foreverhome.repository.PetRepository;
 import com.example.foreverhome.repository.RescueOrganizationRepository;
 import com.example.foreverhome.security.UserPrincipal;
 import com.example.foreverhome.service.AdoptionService;
+import com.example.foreverhome.service.S3StorageService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -35,15 +36,18 @@ public class AdoptionController {
     private final RescueOrganizationRepository rescueOrganizationRepository;
     private final PetRepository petRepository;
     private final PetImageRepository petImageRepository;
+    private final S3StorageService storageService;
 
     public AdoptionController(AdoptionService adoptionService,
                               RescueOrganizationRepository rescueOrganizationRepository,
                               PetRepository petRepository,
-                              PetImageRepository petImageRepository) {
+                              PetImageRepository petImageRepository,
+                              S3StorageService storageService) {
         this.adoptionService = adoptionService;
         this.rescueOrganizationRepository = rescueOrganizationRepository;
         this.petRepository = petRepository;
         this.petImageRepository = petImageRepository;
+        this.storageService = storageService;
     }
 
     @PostMapping("/applications")
@@ -71,7 +75,7 @@ public class AdoptionController {
         // Get primary image for each pet
         Map<UUID, String> petImageMap = petIds.isEmpty() ? Map.of() :
                 petImageRepository.findPrimaryImagesByPetIds(petIds).stream()
-                        .collect(Collectors.toMap(PetImage::getPetId, PetImage::getUrl, (a, b) -> a));
+                        .collect(Collectors.toMap(PetImage::getPetId, img -> storageService.getPublicUrl(img.getS3Key()), (a, b) -> a));
 
         List<AdopterApplicationResponse> responses = applications.stream()
                 .map(app -> AdopterApplicationResponse.from(app, petMap.get(app.getPetId()), petImageMap.get(app.getPetId())))

@@ -25,23 +25,26 @@ public class FavoriteService {
     private final PetImageRepository petImageRepository;
     private final AdopterRepository adopterRepository;
     private final NotificationService notificationService;
+    private final S3StorageService storageService;
 
     public FavoriteService(FavoriteRepository favoriteRepository,
                            PetRepository petRepository,
                            PetImageRepository petImageRepository,
                            AdopterRepository adopterRepository,
-                           NotificationService notificationService) {
+                           NotificationService notificationService,
+                           S3StorageService storageService) {
         this.favoriteRepository = favoriteRepository;
         this.petRepository = petRepository;
         this.petImageRepository = petImageRepository;
         this.adopterRepository = adopterRepository;
         this.notificationService = notificationService;
+        this.storageService = storageService;
     }
 
     private PetDto toPetDtoWithImages(Pet pet) {
         List<String> imageUrls = petImageRepository.findByPetIdOrderByDisplayOrder(pet.getId())
                 .stream()
-                .map(PetImage::getUrl)
+                .map(img -> storageService.getPublicUrl(img.getS3Key()))
                 .toList();
         return PetDto.from(pet, imageUrls);
     }

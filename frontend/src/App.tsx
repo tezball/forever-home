@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Header, ErrorBoundary } from './components';
-import { HomePage, LoginPage, RegisterPage, PetListPage, PetDetailPage, PetFormPage, PetSubmitPage, RescuesPage, RescueVetManagement, ForgotPasswordPage, ResetPasswordPage, HelpCenterPage, ContactPage, PrivacyPolicyPage, VetSignOffHistoryPage, SettingsPage, NotificationsPage, RescueOrgProfilePage, VetsPage, VetProfilePage, RescueOrgSettingsPage, VetSettingsPage, AdminAnalyticsPage, AdminModerationPage, VerifyEmailPage } from './pages';
+import { HomePage, LoginPage, RegisterPage, PetListPage, PetDetailPage, PetFormPage, PetSubmitPage, RescuesPage, RescueVetManagement, ForgotPasswordPage, ResetPasswordPage, HelpCenterPage, ContactPage, PrivacyPolicyPage, VetSignOffHistoryPage, SettingsPage, NotificationsPage, RescueOrgProfilePage, VetsPage, VetProfilePage, RescueOrgSettingsPage, VetSettingsPage, AdminAnalyticsPage, AdminModerationPage, VerifyEmailPage, VetRequestApprovalPage } from './pages';
 import {
   FosterDashboard,
   AdopterDashboard,
@@ -145,6 +145,14 @@ function AppRoutes() {
             element={
               <ProtectedRoute allowedRoles={['VET']}>
                 <VetSignOffHistoryPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/vet/approvals"
+            element={
+              <ProtectedRoute allowedRoles={['VET']}>
+                <VetRequestApprovalPage />
               </ProtectedRoute>
             }
           />

@@ -4,16 +4,21 @@ import com.example.foreverhome.domain.profile.*;
 import com.example.foreverhome.domain.user.User;
 import com.example.foreverhome.domain.user.UserRole;
 import com.example.foreverhome.repository.*;
+import com.example.foreverhome.service.S3StorageService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.util.List;
-import java.util.UUID;
+import java.io.*;
+import java.util.*;
 
 /**
  * Seeds test accounts when test mode is enabled.
@@ -34,6 +39,8 @@ public class TestDataSeeder implements CommandLineRunner {
     private final VetRepository vetRepository;
     private final RescueOrganizationRepository rescueOrgRepository;
     private final JdbcTemplate jdbcTemplate;
+    private final S3StorageService storageService;
+    private final ResourceLoader resourceLoader;
 
     public TestDataSeeder(UserRepository userRepository,
                           PasswordEncoder passwordEncoder,
@@ -41,7 +48,9 @@ public class TestDataSeeder implements CommandLineRunner {
                           AdopterRepository adopterRepository,
                           VetRepository vetRepository,
                           RescueOrganizationRepository rescueOrgRepository,
-                          JdbcTemplate jdbcTemplate) {
+                          JdbcTemplate jdbcTemplate,
+                          S3StorageService storageService,
+                          ResourceLoader resourceLoader) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.fosterRepository = fosterRepository;
@@ -49,6 +58,8 @@ public class TestDataSeeder implements CommandLineRunner {
         this.vetRepository = vetRepository;
         this.rescueOrgRepository = rescueOrgRepository;
         this.jdbcTemplate = jdbcTemplate;
+        this.storageService = storageService;
+        this.resourceLoader = resourceLoader;
     }
 
     @Override
@@ -108,8 +119,11 @@ public class TestDataSeeder implements CommandLineRunner {
 
         logger.info("Test account seeding complete. All accounts use password: {}", TEST_PASSWORD);
 
-        // Seed sample pets
+        // Seed sample pets with images
         seedPets();
+
+        // Seed a vet approval request (if not already exists)
+        seedVetApprovalRequests();
     }
 
     private void seedPets() {
@@ -117,6 +131,8 @@ public class TestDataSeeder implements CommandLineRunner {
         Integer petCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM pets", Integer.class);
         if (petCount != null && petCount > 0) {
             logger.debug("Pets already exist, skipping pet seeding");
+            // Still check if images need to be seeded
+            seedPetImagesIfNeeded();
             return;
         }
 
@@ -139,102 +155,212 @@ public class TestDataSeeder implements CommandLineRunner {
 
         logger.info("Seeding sample pets for multiple fosters...");
 
+        // Store pet IDs for image association
+        List<PetSeed> petSeeds = new ArrayList<>();
+
         // === Sarah Mitchell (foster@test.com) - 1 pet in DRAFT status ===
+        UUID bellaId = UUID.randomUUID();
         jdbcTemplate.update("""
             INSERT INTO pets (id, name, species, breed, age, age_unit, sex, size, description, microchip_id,
                 status, foster_id, rescue_org_id, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
             """,
-            UUID.randomUUID(), "Bella", "DOG", "Beagle", 6, "MONTHS", "FEMALE", "MEDIUM",
+            bellaId, "Bella", "DOG", "Beagle", 6, "MONTHS", "FEMALE", "MEDIUM",
             "Adorable beagle puppy learning basic commands. Loves treats and belly rubs.",
             "CHIP-DOG-001", "DRAFT", foster1Id, null);
+        petSeeds.add(new PetSeed(bellaId, "DOG", "dog-1.jpg"));
 
         // === James Rodriguez (foster2@test.com) - 2 pets in PENDING_RESCUE status ===
+        UUID maxId = UUID.randomUUID();
         jdbcTemplate.update("""
             INSERT INTO pets (id, name, species, breed, age, age_unit, sex, size, description, microchip_id,
                 status, foster_id, rescue_org_id, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
             """,
-            UUID.randomUUID(), "Max", "DOG", "Golden Retriever", 3, "YEARS", "MALE", "LARGE",
+            maxId, "Max", "DOG", "Golden Retriever", 3, "YEARS", "MALE", "LARGE",
             "Friendly and energetic golden retriever who loves to play fetch and swim. Great with kids and other dogs.",
             "CHIP-DOG-002", "PENDING_RESCUE", foster2Id, rescueOrgId);
+        petSeeds.add(new PetSeed(maxId, "DOG", "dog-2.jpg"));
 
+        UUID shadowId = UUID.randomUUID();
         jdbcTemplate.update("""
             INSERT INTO pets (id, name, species, breed, age, age_unit, sex, size, description, microchip_id,
                 status, foster_id, rescue_org_id, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
             """,
-            UUID.randomUUID(), "Shadow", "CAT", "Black Shorthair", 4, "YEARS", "MALE", "MEDIUM",
+            shadowId, "Shadow", "CAT", "Black Shorthair", 4, "YEARS", "MALE", "MEDIUM",
             "Mysterious and elegant black cat. Independent but affectionate once he trusts you.",
             "CHIP-CAT-001", "PENDING_RESCUE", foster2Id, rescueOrgId);
+        petSeeds.add(new PetSeed(shadowId, "CAT", "cat-1.jpg"));
 
         // === Emily Chen (foster3@test.com) - 2 pets in PENDING_VET status ===
+        UUID lunaId = UUID.randomUUID();
         jdbcTemplate.update("""
             INSERT INTO pets (id, name, species, breed, age, age_unit, sex, size, description, microchip_id,
                 status, foster_id, rescue_org_id, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
             """,
-            UUID.randomUUID(), "Luna", "CAT", "Siamese", 1, "YEARS", "FEMALE", "SMALL",
+            lunaId, "Luna", "CAT", "Siamese", 1, "YEARS", "FEMALE", "SMALL",
             "Beautiful Siamese kitten with bright blue eyes. Playful and affectionate.",
             "CHIP-CAT-002", "PENDING_VET", foster3Id, rescueOrgId);
+        petSeeds.add(new PetSeed(lunaId, "CAT", "cat-2.jpg"));
 
+        UUID rockyId = UUID.randomUUID();
         jdbcTemplate.update("""
             INSERT INTO pets (id, name, species, breed, age, age_unit, sex, size, description, microchip_id,
                 status, foster_id, rescue_org_id, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
             """,
-            UUID.randomUUID(), "Rocky", "DOG", "German Shepherd Mix", 2, "YEARS", "MALE", "LARGE",
+            rockyId, "Rocky", "DOG", "German Shepherd Mix", 2, "YEARS", "MALE", "LARGE",
             "Loyal and protective companion. Well-trained and good on leash. Looking for an active family.",
             "CHIP-DOG-003", "PENDING_VET", foster3Id, rescueOrgId);
+        petSeeds.add(new PetSeed(rockyId, "DOG", "dog-3.jpg"));
 
         // === Michael Thompson (foster4@test.com) - 3 pets in AVAILABLE status ===
+        UUID charlieId = UUID.randomUUID();
         jdbcTemplate.update("""
             INSERT INTO pets (id, name, species, breed, age, age_unit, sex, size, description, microchip_id,
                 status, foster_id, rescue_org_id, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
             """,
-            UUID.randomUUID(), "Charlie", "DOG", "Labrador Mix", 2, "YEARS", "MALE", "LARGE",
+            charlieId, "Charlie", "DOG", "Labrador Mix", 2, "YEARS", "MALE", "LARGE",
             "Happy-go-lucky lab mix. Loves everyone and everything. House trained and great with other pets.",
             "CHIP-DOG-004", "AVAILABLE", foster4Id, rescueOrgId);
+        petSeeds.add(new PetSeed(charlieId, "DOG", "dog-4.jpg"));
 
+        UUID whiskersId = UUID.randomUUID();
         jdbcTemplate.update("""
             INSERT INTO pets (id, name, species, breed, age, age_unit, sex, size, description, microchip_id,
                 status, foster_id, rescue_org_id, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
             """,
-            UUID.randomUUID(), "Whiskers", "CAT", "Tabby", 5, "YEARS", "FEMALE", "SMALL",
+            whiskersId, "Whiskers", "CAT", "Tabby", 5, "YEARS", "FEMALE", "SMALL",
             "Sweet and gentle tabby cat who loves to curl up in sunny spots. Good with other cats and calm dogs.",
             "CHIP-CAT-003", "AVAILABLE", foster4Id, rescueOrgId);
+        petSeeds.add(new PetSeed(whiskersId, "CAT", "cat-3.jpg"));
 
+        UUID dukeId = UUID.randomUUID();
         jdbcTemplate.update("""
             INSERT INTO pets (id, name, species, breed, age, age_unit, sex, size, description, microchip_id,
                 status, foster_id, rescue_org_id, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
             """,
-            UUID.randomUUID(), "Duke", "DOG", "Boxer", 4, "YEARS", "MALE", "LARGE",
+            dukeId, "Duke", "DOG", "Boxer", 4, "YEARS", "MALE", "LARGE",
             "Energetic and loyal boxer. Great guard dog but gentle with family. Needs a home with a yard.",
             "CHIP-DOG-005", "AVAILABLE", foster4Id, rescueOrgId);
+        petSeeds.add(new PetSeed(dukeId, "DOG", "dog-5.jpg"));
 
         // === Rachel Anderson (foster5@test.com) - 2 pets: 1 IN_PROGRESS, 1 ADOPTED ===
+        UUID daisyId = UUID.randomUUID();
         jdbcTemplate.update("""
             INSERT INTO pets (id, name, species, breed, age, age_unit, sex, size, description, microchip_id,
                 status, foster_id, rescue_org_id, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
             """,
-            UUID.randomUUID(), "Daisy", "DOG", "Poodle Mix", 3, "YEARS", "FEMALE", "SMALL",
+            daisyId, "Daisy", "DOG", "Poodle Mix", 3, "YEARS", "FEMALE", "SMALL",
             "Smart and hypoallergenic poodle mix. Currently in adoption process with a wonderful family.",
             "CHIP-DOG-006", "IN_PROGRESS", foster5Id, rescueOrgId);
+        petSeeds.add(new PetSeed(daisyId, "DOG", "dog-6.jpg"));
 
+        UUID oliverId = UUID.randomUUID();
         jdbcTemplate.update("""
             INSERT INTO pets (id, name, species, breed, age, age_unit, sex, size, description, microchip_id,
                 status, foster_id, rescue_org_id, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
             """,
-            UUID.randomUUID(), "Oliver", "CAT", "Orange Tabby", 2, "YEARS", "MALE", "MEDIUM",
+            oliverId, "Oliver", "CAT", "Orange Tabby", 2, "YEARS", "MALE", "MEDIUM",
             "Friendly orange tabby who found his forever home. A true success story!",
             "CHIP-CAT-004", "ADOPTED", foster5Id, rescueOrgId);
+        petSeeds.add(new PetSeed(oliverId, "CAT", "cat-4.jpg"));
 
         logger.info("Created 10 sample pets across 5 fosters with various statuses");
+
+        // Upload images for each pet
+        seedPetImages(petSeeds);
+    }
+
+    private void seedPetImagesIfNeeded() {
+        // Check if pet_images already has entries
+        Integer imageCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM pet_images", Integer.class);
+        if (imageCount != null && imageCount > 0) {
+            logger.debug("Pet images already exist, skipping image seeding");
+            return;
+        }
+
+        // Get all pets and seed images for them
+        List<Map<String, Object>> pets = jdbcTemplate.queryForList(
+            "SELECT id, species FROM pets"
+        );
+
+        if (pets.isEmpty()) {
+            return;
+        }
+
+        // Map species to appropriate demo images
+        int dogIndex = 1;
+        int catIndex = 1;
+        List<PetSeed> petSeeds = new ArrayList<>();
+
+        for (Map<String, Object> pet : pets) {
+            UUID petId = (UUID) pet.get("id");
+            String species = (String) pet.get("species");
+
+            String imageFile;
+            if ("DOG".equals(species)) {
+                imageFile = "dog-" + dogIndex + ".jpg";
+                dogIndex = (dogIndex % 6) + 1; // Cycle through 1-6
+            } else {
+                imageFile = "cat-" + catIndex + ".jpg";
+                catIndex = (catIndex % 4) + 1; // Cycle through 1-4
+            }
+            petSeeds.add(new PetSeed(petId, species, imageFile));
+        }
+
+        seedPetImages(petSeeds);
+    }
+
+    private void seedPetImages(List<PetSeed> petSeeds) {
+        logger.info("Uploading demo images to S3 for {} pets...", petSeeds.size());
+
+        PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
+
+        for (PetSeed seed : petSeeds) {
+            try {
+                Resource imageResource = resolver.getResource("classpath:demo-images/" + seed.imageFile());
+
+                if (!imageResource.exists()) {
+                    logger.warn("Demo image not found: {}", seed.imageFile());
+                    continue;
+                }
+
+                // Create a MultipartFile from the resource
+                byte[] imageBytes = imageResource.getInputStream().readAllBytes();
+                MultipartFile multipartFile = new ByteArrayMultipartFile(
+                    seed.imageFile(),
+                    seed.imageFile(),
+                    "image/jpeg",
+                    imageBytes
+                );
+
+                // Upload to S3
+                String folder = "pets/" + seed.petId();
+                String s3Key = storageService.uploadFile(multipartFile, folder);
+
+                // Create pet_images record
+                jdbcTemplate.update("""
+                    INSERT INTO pet_images (id, pet_id, s3_key, is_primary, display_order, uploaded_at)
+                    VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                    """,
+                    UUID.randomUUID(), seed.petId(), s3Key, true, 0);
+
+                logger.debug("Uploaded image for pet {}: {}", seed.petId(), s3Key);
+
+            } catch (IOException e) {
+                logger.error("Failed to upload image for pet {}: {}", seed.petId(), e.getMessage());
+            }
+        }
+
+        logger.info("Completed uploading demo images to S3");
     }
 
     private UUID getFosterId(String email) {
@@ -368,5 +494,125 @@ public class TestDataSeeder implements CommandLineRunner {
         }
     }
 
+    private void seedVetApprovalRequests() {
+        // Check if vet_approval_requests table exists (migration V23)
+        try {
+            Integer tableCount = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'vet_approval_requests'",
+                Integer.class);
+            if (tableCount == null || tableCount == 0) {
+                logger.debug("vet_approval_requests table does not exist yet, skipping approval request seeding");
+                return;
+            }
+        } catch (Exception e) {
+            logger.debug("Failed to check vet_approval_requests table: {}", e.getMessage());
+            return;
+        }
+
+        // Check if requests already exist
+        Integer requestCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM vet_approval_requests", Integer.class);
+        if (requestCount != null && requestCount > 0) {
+            logger.debug("Vet approval requests already exist, skipping seeding");
+            return;
+        }
+
+        // Get the vet and rescue org IDs
+        UUID vetId = getVetId("vet@test.com");
+        UUID rescueOrgId = getRescueOrgId("rescue@test.com");
+
+        if (vetId == null || rescueOrgId == null) {
+            logger.warn("Cannot seed vet approval requests: vet or rescue org not found");
+            return;
+        }
+
+        // The test vet is already approved by the test rescue org via vet_approvals
+        // But we can create a sample PENDING request to show the approval request workflow
+        // We'll skip this since the test vet is already approved
+
+        logger.info("Test vet is already approved by test rescue org - no pending requests to seed");
+    }
+
+    private UUID getVetId(String email) {
+        try {
+            return jdbcTemplate.queryForObject(
+                "SELECT v.id FROM vets v JOIN app_users u ON v.user_id = u.id WHERE u.email = ?",
+                UUID.class, email);
+        } catch (Exception e) {
+            logger.warn("Vet not found for email: {}", email);
+            return null;
+        }
+    }
+
+    private UUID getRescueOrgId(String email) {
+        try {
+            return jdbcTemplate.queryForObject(
+                "SELECT r.id FROM rescue_organizations r JOIN app_users u ON r.user_id = u.id WHERE u.email = ?",
+                UUID.class, email);
+        } catch (Exception e) {
+            logger.warn("Rescue org not found for email: {}", email);
+            return null;
+        }
+    }
+
     private record TestAccount(String email, String name, UserRole role, String firstName, String lastName) {}
+    private record PetSeed(UUID petId, String species, String imageFile) {}
+
+    /**
+     * Simple MultipartFile implementation for seeding demo images.
+     */
+    private static class ByteArrayMultipartFile implements MultipartFile {
+        private final String name;
+        private final String originalFilename;
+        private final String contentType;
+        private final byte[] content;
+
+        public ByteArrayMultipartFile(String name, String originalFilename, String contentType, byte[] content) {
+            this.name = name;
+            this.originalFilename = originalFilename;
+            this.contentType = contentType;
+            this.content = content;
+        }
+
+        @Override
+        public String getName() {
+            return name;
+        }
+
+        @Override
+        public String getOriginalFilename() {
+            return originalFilename;
+        }
+
+        @Override
+        public String getContentType() {
+            return contentType;
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return content == null || content.length == 0;
+        }
+
+        @Override
+        public long getSize() {
+            return content != null ? content.length : 0;
+        }
+
+        @Override
+        public byte[] getBytes() {
+            return content;
+        }
+
+        @Override
+        public InputStream getInputStream() {
+            return new ByteArrayInputStream(content);
+        }
+
+        @Override
+        public void transferTo(File dest) throws IOException {
+            try (FileOutputStream fos = new FileOutputStream(dest)) {
+                fos.write(content);
+            }
+        }
+    }
 }

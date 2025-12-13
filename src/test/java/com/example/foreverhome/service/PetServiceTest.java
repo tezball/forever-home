@@ -57,11 +57,14 @@ class PetServiceTest {
     @Mock
     private MetricsService metricsService;
 
+    @Mock
+    private S3StorageService storageService;
+
     private PetService petService;
 
     @BeforeEach
     void setUp() {
-        petService = new PetService(petRepository, petImageRepository, fosterRepository, notificationService, vetApprovalService, statusHistoryRepository, metricsService);
+        petService = new PetService(petRepository, petImageRepository, fosterRepository, notificationService, vetApprovalService, statusHistoryRepository, metricsService, storageService);
     }
 
     @Nested

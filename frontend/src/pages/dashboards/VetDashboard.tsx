@@ -150,9 +150,14 @@ export function VetDashboard() {
           <h1 className="text-3xl font-bold text-gray-900">Veterinarian Dashboard</h1>
           <p className="text-gray-600">Welcome back, {user?.name}</p>
         </div>
-        <Link to="/vet/history">
-          <Button variant="outline">View Sign-Off History</Button>
-        </Link>
+        <div className="flex gap-4">
+          <Link to="/vet/approvals">
+            <Button variant="outline">Request Approvals</Button>
+          </Link>
+          <Link to="/vet/history">
+            <Button variant="outline">View Sign-Off History</Button>
+          </Link>
+        </div>
       </div>
 
       {/* Microchip Lookup */}

@@ -13,6 +13,7 @@ import com.example.foreverhome.repository.AdopterRepository;
 import com.example.foreverhome.repository.AdoptionApplicationRepository;
 import com.example.foreverhome.repository.AdoptionRepository;
 import com.example.foreverhome.repository.PetRepository;
+import com.example.foreverhome.repository.VetSignOffRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +28,7 @@ public class AdoptionService {
     private final AdoptionRepository adoptionRepository;
     private final PetRepository petRepository;
     private final AdopterRepository adopterRepository;
+    private final VetSignOffRepository vetSignOffRepository;
     private final NotificationService notificationService;
     private final MetricsService metricsService;
 
@@ -34,12 +36,14 @@ public class AdoptionService {
                            AdoptionRepository adoptionRepository,
                            PetRepository petRepository,
                            AdopterRepository adopterRepository,
+                           VetSignOffRepository vetSignOffRepository,
                            NotificationService notificationService,
                            MetricsService metricsService) {
         this.applicationRepository = applicationRepository;
         this.adoptionRepository = adoptionRepository;
         this.petRepository = petRepository;
         this.adopterRepository = adopterRepository;
+        this.vetSignOffRepository = vetSignOffRepository;
         this.notificationService = notificationService;
         this.metricsService = metricsService;
     }
@@ -201,14 +205,21 @@ public class AdoptionService {
             throw new InvalidStatusTransitionException("Application must be approved before finalizing");
         }
 
+        // Get the vet sign-off for this pet to record the vet in the adoption
+        UUID vetId = vetSignOffRepository.findByPetId(pet.getId())
+                .map(signOff -> signOff.getVetId())
+                .orElseThrow(() -> new InvalidStatusTransitionException("Pet must have vet sign-off before finalizing adoption"));
+
         pet.finalizeAdoption();
         petRepository.save(pet);
 
         Adoption adoption = Adoption.create(
                 application.getPetId(),
-                application.getAdopterId(),
                 pet.getFosterId(),
-                rescueOrgId
+                application.getAdopterId(),
+                rescueOrgId,
+                vetId,
+                applicationId
         );
         Adoption saved = adoptionRepository.save(adoption);
 

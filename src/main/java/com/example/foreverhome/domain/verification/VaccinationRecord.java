@@ -1,6 +1,8 @@
 package com.example.foreverhome.domain.verification;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Transient;
+import org.springframework.data.domain.Persistable;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
@@ -12,10 +14,13 @@ import java.util.UUID;
  * Individual vaccination entry within a vet signoff.
  */
 @Table("vaccination_records")
-public class VaccinationRecord {
+public class VaccinationRecord implements Persistable<UUID> {
 
     @Id
     private UUID id;
+
+    @Transient
+    private boolean isNew = true;
 
     @Column("signoff_id")
     private UUID signOffId;
@@ -86,6 +91,15 @@ public class VaccinationRecord {
         }
         LocalDate threshold = LocalDate.now().plusDays(daysThreshold);
         return expirationDate.isBefore(threshold);
+    }
+
+    @Override
+    public boolean isNew() {
+        return isNew;
+    }
+
+    public void markNotNew() {
+        this.isNew = false;
     }
 
     @Override

@@ -34,6 +34,7 @@ public class PetService {
     private final VetApprovalService vetApprovalService;
     private final PetStatusHistoryRepository statusHistoryRepository;
     private final MetricsService metricsService;
+    private final S3StorageService storageService;
 
     public PetService(PetRepository petRepository,
                       PetImageRepository petImageRepository,
@@ -41,7 +42,8 @@ public class PetService {
                       NotificationService notificationService,
                       VetApprovalService vetApprovalService,
                       PetStatusHistoryRepository statusHistoryRepository,
-                      MetricsService metricsService) {
+                      MetricsService metricsService,
+                      S3StorageService storageService) {
         this.petRepository = petRepository;
         this.petImageRepository = petImageRepository;
         this.fosterRepository = fosterRepository;
@@ -49,6 +51,7 @@ public class PetService {
         this.vetApprovalService = vetApprovalService;
         this.statusHistoryRepository = statusHistoryRepository;
         this.metricsService = metricsService;
+        this.storageService = storageService;
     }
 
     private void recordStatusChange(UUID petId, PetStatus fromStatus, PetStatus toStatus, UUID changedBy, String notes) {
@@ -65,7 +68,7 @@ public class PetService {
     private PetDto toPetDtoWithImages(Pet pet) {
         List<String> imageUrls = petImageRepository.findByPetIdOrderByDisplayOrder(pet.getId())
                 .stream()
-                .map(PetImage::getUrl)
+                .map(img -> storageService.getPublicUrl(img.getS3Key()))
                 .toList();
         return PetDto.from(pet, imageUrls);
     }
@@ -350,7 +353,7 @@ public class PetService {
         boolean canSignOff = pet.getStatus() == PetStatus.PENDING_VET;
         List<String> imageUrls = petImageRepository.findByPetIdOrderByDisplayOrder(pet.getId())
                 .stream()
-                .map(PetImage::getUrl)
+                .map(img -> storageService.getPublicUrl(img.getS3Key()))
                 .toList();
         return PetDto.fromForVet(pet, imageUrls, canSignOff);
     }

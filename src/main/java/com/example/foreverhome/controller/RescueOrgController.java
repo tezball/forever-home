@@ -3,8 +3,11 @@ package com.example.foreverhome.controller;
 import com.example.foreverhome.domain.profile.RescueOrganization;
 import com.example.foreverhome.domain.profile.Vet;
 import com.example.foreverhome.domain.verification.VetApproval;
+import com.example.foreverhome.domain.verification.VetApprovalRequest;
 import com.example.foreverhome.repository.RescueOrganizationRepository;
+import com.example.foreverhome.repository.VetRepository;
 import com.example.foreverhome.security.UserPrincipal;
+import com.example.foreverhome.service.VetApprovalRequestService;
 import com.example.foreverhome.service.VetApprovalService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -12,6 +15,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -24,12 +28,18 @@ import java.util.UUID;
 public class RescueOrgController {
 
     private final VetApprovalService vetApprovalService;
+    private final VetApprovalRequestService vetApprovalRequestService;
     private final RescueOrganizationRepository rescueOrganizationRepository;
+    private final VetRepository vetRepository;
 
     public RescueOrgController(VetApprovalService vetApprovalService,
-                               RescueOrganizationRepository rescueOrganizationRepository) {
+                               VetApprovalRequestService vetApprovalRequestService,
+                               RescueOrganizationRepository rescueOrganizationRepository,
+                               VetRepository vetRepository) {
         this.vetApprovalService = vetApprovalService;
+        this.vetApprovalRequestService = vetApprovalRequestService;
         this.rescueOrganizationRepository = rescueOrganizationRepository;
+        this.vetRepository = vetRepository;
     }
 
     /**
@@ -78,6 +88,58 @@ public class RescueOrgController {
         return ResponseEntity.noContent().build();
     }
 
+    // ========== Vet Approval Request Endpoints ==========
+
+    /**
+     * Get all pending approval requests from vets.
+     */
+    @GetMapping("/approval-requests")
+    public ResponseEntity<List<VetApprovalRequestResponse>> getPendingApprovalRequests(
+            @AuthenticationPrincipal UserPrincipal principal) {
+        List<VetApprovalRequest> requests = vetApprovalRequestService.getPendingRequestsForRescueOrg(principal.userId());
+        List<VetApprovalRequestResponse> response = requests.stream()
+                .map(request -> {
+                    Vet vet = vetRepository.findById(request.getVetId()).orElse(null);
+                    return VetApprovalRequestResponse.from(request, vet);
+                })
+                .toList();
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Get the count of pending approval requests.
+     */
+    @GetMapping("/approval-requests/count")
+    public ResponseEntity<ApprovalRequestCountResponse> getPendingApprovalRequestCount(
+            @AuthenticationPrincipal UserPrincipal principal) {
+        long count = vetApprovalRequestService.countPendingRequestsForRescueOrg(principal.userId());
+        return ResponseEntity.ok(new ApprovalRequestCountResponse(count));
+    }
+
+    /**
+     * Approve a vet's approval request.
+     */
+    @PostMapping("/approval-requests/{requestId}/approve")
+    public ResponseEntity<VetApprovalResponse> approveApprovalRequest(
+            @PathVariable UUID requestId,
+            @AuthenticationPrincipal UserPrincipal principal) {
+        VetApproval approval = vetApprovalRequestService.approveRequest(principal.userId(), requestId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(VetApprovalResponse.from(approval));
+    }
+
+    /**
+     * Reject a vet's approval request.
+     */
+    @PostMapping("/approval-requests/{requestId}/reject")
+    public ResponseEntity<Void> rejectApprovalRequest(
+            @PathVariable UUID requestId,
+            @RequestBody(required = false) RejectRequestBody requestBody,
+            @AuthenticationPrincipal UserPrincipal principal) {
+        String reason = requestBody != null ? requestBody.reason() : null;
+        vetApprovalRequestService.rejectRequest(principal.userId(), requestId, reason);
+        return ResponseEntity.noContent().build();
+    }
+
     /**
      * Get list of all verified rescue organizations (public endpoint for vets to discover rescues).
      */
@@ -90,6 +152,11 @@ public class RescueOrgController {
                 .toList();
         return ResponseEntity.ok(response);
     }
+
+    // Request DTOs
+    record RejectRequestBody(
+            String reason
+    ) {}
 
     // Response DTOs
     record VetResponse(
@@ -161,4 +228,36 @@ public class RescueOrgController {
             );
         }
     }
+
+    record VetApprovalRequestResponse(
+            UUID id,
+            UUID vetId,
+            String vetClinicName,
+            String vetLicenseNumber,
+            String vetPhone,
+            String vetCity,
+            String vetState,
+            String status,
+            String message,
+            Instant requestedAt
+    ) {
+        static VetApprovalRequestResponse from(VetApprovalRequest request, Vet vet) {
+            String city = vet != null && vet.getAddress() != null ? vet.getAddress().city() : null;
+            String state = vet != null && vet.getAddress() != null ? vet.getAddress().state() : null;
+            return new VetApprovalRequestResponse(
+                    request.getId(),
+                    request.getVetId(),
+                    vet != null ? vet.getClinicName() : "Unknown",
+                    vet != null ? vet.getLicenseNumber() : null,
+                    vet != null ? vet.getPhone() : null,
+                    city,
+                    state,
+                    request.getStatus().name(),
+                    request.getMessage(),
+                    request.getRequestedAt()
+            );
+        }
+    }
+
+    record ApprovalRequestCountResponse(long count) {}
 }

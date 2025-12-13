@@ -41,14 +41,14 @@ public class PetImageService {
     @Transactional(readOnly = true)
     public List<PetImageDto> getImagesForPet(UUID petId) {
         return petImageRepository.findByPetIdOrderByDisplayOrder(petId).stream()
-                .map(PetImageDto::from)
+                .map(this::toDto)
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public List<String> getImageUrlsForPet(UUID petId) {
         return petImageRepository.findByPetIdOrderByDisplayOrder(petId).stream()
-                .map(PetImage::getUrl)
+                .map(image -> storageService.getPublicUrl(image.getS3Key()))
                 .toList();
     }
 
@@ -64,15 +64,15 @@ public class PetImageService {
         }
 
         String folder = PET_IMAGES_FOLDER + "/" + petId;
-        String imageUrl = storageService.uploadFile(file, folder);
+        String s3Key = storageService.uploadFile(file, folder);
 
         boolean isPrimary = currentCount == 0;
         int displayOrder = currentCount;
 
-        PetImage image = PetImage.create(petId, imageUrl, isPrimary, displayOrder);
+        PetImage image = PetImage.create(petId, s3Key, isPrimary, displayOrder);
         PetImage savedImage = petImageRepository.save(image);
 
-        return PetImageDto.from(savedImage);
+        return toDto(savedImage);
     }
 
     public void deleteImage(UUID imageId, UUID userId) {
@@ -80,8 +80,8 @@ public class PetImageService {
         Pet pet = findPetOrThrow(image.getPetId());
         verifyOwnership(pet, userId);
 
-        // Delete from S3
-        storageService.deleteFile(image.getUrl());
+        // Delete from S3 using the key directly
+        storageService.deleteFile(image.getS3Key());
 
         boolean wasPrimary = image.isPrimary();
         UUID petId = image.getPetId();
@@ -115,7 +115,7 @@ public class PetImageService {
         image.setPrimary(true);
         PetImage savedImage = petImageRepository.save(image);
 
-        return PetImageDto.from(savedImage);
+        return toDto(savedImage);
     }
 
     public List<PetImageDto> reorderImages(UUID petId, UUID userId, List<UUID> imageIds) {
@@ -139,7 +139,7 @@ public class PetImageService {
         }
 
         return petImageRepository.findByPetIdOrderByDisplayOrder(petId).stream()
-                .map(PetImageDto::from)
+                .map(this::toDto)
                 .toList();
     }
 
@@ -152,6 +152,10 @@ public class PetImageService {
                 petImageRepository.save(image);
             }
         }
+    }
+
+    private PetImageDto toDto(PetImage image) {
+        return PetImageDto.from(image, storageService::getPublicUrl);
     }
 
     private Pet findPetOrThrow(UUID petId) {

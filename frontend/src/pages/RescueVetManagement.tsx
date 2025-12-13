@@ -15,13 +15,29 @@ interface Vet {
   verified: boolean;
 }
 
+interface VetApprovalRequest {
+  id: string;
+  vetId: string;
+  vetClinicName: string;
+  vetLicenseNumber: string | null;
+  vetPhone: string | null;
+  vetCity: string | null;
+  vetState: string | null;
+  status: string;
+  message: string | null;
+  requestedAt: string;
+}
+
 export function RescueVetManagement() {
   const [pendingVets, setPendingVets] = useState<Vet[]>([]);
   const [approvedVets, setApprovedVets] = useState<Vet[]>([]);
+  const [approvalRequests, setApprovalRequests] = useState<VetApprovalRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [rejectReason, setRejectReason] = useState('');
+  const [rejectingRequestId, setRejectingRequestId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchVets();
@@ -29,12 +45,14 @@ export function RescueVetManagement() {
 
   const fetchVets = async () => {
     try {
-      const [pendingRes, approvedRes] = await Promise.all([
+      const [pendingRes, approvedRes, requestsRes] = await Promise.all([
         apiClient.get<Vet[]>('/rescue-org/vets/pending'),
         apiClient.get<Vet[]>('/rescue-org/vets/approved'),
+        apiClient.get<VetApprovalRequest[]>('/rescue-org/approval-requests'),
       ]);
       setPendingVets(pendingRes.data);
       setApprovedVets(approvedRes.data);
+      setApprovalRequests(requestsRes.data);
     } catch {
       setError('Failed to load vets');
     } finally {
@@ -78,9 +96,61 @@ export function RescueVetManagement() {
     }
   };
 
+  const handleApproveRequest = async (request: VetApprovalRequest) => {
+    setActionLoading(request.id);
+    setError('');
+    try {
+      await apiClient.post(`/rescue-org/approval-requests/${request.id}/approve`);
+      setSuccessMessage(`${request.vetClinicName} has been approved`);
+      // Remove from requests and refresh approved list
+      setApprovalRequests((prev) => prev.filter((r) => r.id !== request.id));
+      const approvedRes = await apiClient.get<Vet[]>('/rescue-org/vets/approved');
+      setApprovedVets(approvedRes.data);
+      setTimeout(() => setSuccessMessage(''), 5000);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to approve request';
+      setError(errorMessage);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleRejectRequest = async (request: VetApprovalRequest) => {
+    setActionLoading(request.id);
+    setError('');
+    try {
+      await apiClient.post(`/rescue-org/approval-requests/${request.id}/reject`, {
+        reason: rejectReason || null,
+      });
+      setSuccessMessage(`Request from ${request.vetClinicName} has been rejected`);
+      setApprovalRequests((prev) => prev.filter((r) => r.id !== request.id));
+      setRejectingRequestId(null);
+      setRejectReason('');
+      setTimeout(() => setSuccessMessage(''), 5000);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to reject request';
+      setError(errorMessage);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   const formatLocation = (vet: Vet) => {
     if (vet.city && vet.state) return `${vet.city}, ${vet.state}`;
     return vet.city || vet.state || 'Location not specified';
+  };
+
+  const formatRequestLocation = (request: VetApprovalRequest) => {
+    if (request.vetCity && request.vetState) return `${request.vetCity}, ${request.vetState}`;
+    return request.vetCity || request.vetState || 'Location not specified';
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
   };
 
   return (
@@ -115,6 +185,94 @@ export function RescueVetManagement() {
         </div>
       ) : (
         <div className="space-y-8">
+          {/* Approval Requests */}
+          {approvalRequests.length > 0 && (
+            <section>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold text-gray-900">Approval Requests</h2>
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-warning-100 text-warning-800">
+                  {approvalRequests.length} pending
+                </span>
+              </div>
+              <div className="card divide-y divide-secondary-200">
+                {approvalRequests.map((request) => (
+                  <div key={request.id} className="p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-warning-100 rounded-full flex items-center justify-center">
+                          <svg className="w-6 h-6 text-warning-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                          </svg>
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900">{request.vetClinicName}</p>
+                          <p className="text-sm text-gray-500">{formatRequestLocation(request)}</p>
+                          {request.vetLicenseNumber && (
+                            <p className="text-xs text-gray-400">License: {request.vetLicenseNumber}</p>
+                          )}
+                          <p className="text-xs text-gray-400">Requested {formatDate(request.requestedAt)}</p>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setRejectingRequestId(request.id)}
+                          loading={actionLoading === request.id}
+                        >
+                          Reject
+                        </Button>
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          onClick={() => handleApproveRequest(request)}
+                          loading={actionLoading === request.id}
+                        >
+                          Approve
+                        </Button>
+                      </div>
+                    </div>
+                    {request.message && (
+                      <div className="mt-3 ml-16 text-sm text-gray-600 bg-gray-50 p-3 rounded">
+                        <span className="font-medium">Message:</span> {request.message}
+                      </div>
+                    )}
+                    {rejectingRequestId === request.id && (
+                      <div className="mt-3 ml-16 space-y-2">
+                        <textarea
+                          value={rejectReason}
+                          onChange={(e) => setRejectReason(e.target.value)}
+                          className="input min-h-16 w-full"
+                          placeholder="Reason for rejection (optional)..."
+                        />
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setRejectingRequestId(null);
+                              setRejectReason('');
+                            }}
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            variant="danger"
+                            size="sm"
+                            onClick={() => handleRejectRequest(request)}
+                            loading={actionLoading === request.id}
+                          >
+                            Confirm Rejection
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
           {/* Approved Vets */}
           <section>
             <div className="flex justify-between items-center mb-4">
