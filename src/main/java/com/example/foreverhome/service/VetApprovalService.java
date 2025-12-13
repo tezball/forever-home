@@ -1,5 +1,6 @@
 package com.example.foreverhome.service;
 
+import com.example.foreverhome.controller.VetController.ApprovedOrgResponse;
 import com.example.foreverhome.domain.profile.RescueOrganization;
 import com.example.foreverhome.domain.profile.Vet;
 import com.example.foreverhome.domain.verification.VetApproval;
@@ -139,6 +140,34 @@ public class VetApprovalService {
                 .map(approval -> rescueOrganizationRepository.findById(approval.getRescueOrgId()))
                 .filter(java.util.Optional::isPresent)
                 .map(java.util.Optional::get)
+                .toList();
+    }
+
+    /**
+     * Get all approved organizations with approval dates for a vet (for dashboard display).
+     */
+    @Transactional(readOnly = true)
+    public List<ApprovedOrgResponse> getApprovedOrgsWithDatesForVet(UUID vetUserId) {
+        Vet vet = vetRepository.findByUserId(vetUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("Vet profile not found for user"));
+
+        List<VetApproval> approvals = vetApprovalRepository.findByVetId(vet.getId());
+        return approvals.stream()
+                .map(approval -> {
+                    RescueOrganization org = rescueOrganizationRepository.findById(approval.getRescueOrgId())
+                            .orElse(null);
+                    if (org == null) return null;
+                    String city = org.getAddress() != null ? org.getAddress().city() : null;
+                    String state = org.getAddress() != null ? org.getAddress().state() : null;
+                    return new ApprovedOrgResponse(
+                            org.getId(),
+                            org.getName(),
+                            city,
+                            state,
+                            approval.getApprovedAt()
+                    );
+                })
+                .filter(java.util.Objects::nonNull)
                 .toList();
     }
 

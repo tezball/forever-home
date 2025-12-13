@@ -108,6 +108,16 @@ public class VetController {
     }
 
     /**
+     * Get all approved organizations with approval dates for dashboard display.
+     */
+    @GetMapping("/approved-organizations")
+    public ResponseEntity<List<ApprovedOrgResponse>> getApprovedOrganizations(
+            @AuthenticationPrincipal UserPrincipal principal) {
+        List<ApprovedOrgResponse> responses = vetApprovalService.getApprovedOrgsWithDatesForVet(principal.userId());
+        return ResponseEntity.ok(responses);
+    }
+
+    /**
      * Get all verified rescue organizations that the vet can request approval from.
      * Excludes organizations where the vet is already approved or has a pending request.
      */
@@ -298,4 +308,12 @@ public class VetController {
             );
         }
     }
+
+    public record ApprovedOrgResponse(
+            UUID id,
+            String name,
+            String city,
+            String state,
+            Instant approvedAt
+    ) {}
 }

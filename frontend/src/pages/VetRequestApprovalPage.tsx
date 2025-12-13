@@ -36,6 +36,9 @@ export function VetRequestApprovalPage() {
   const [requestMessage, setRequestMessage] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  // Search state
+  const [searchQuery, setSearchQuery] = useState('');
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -157,6 +160,13 @@ export function VetRequestApprovalPage() {
   const pendingRequests = myRequests.filter((r) => r.status === 'PENDING');
   const completedRequests = myRequests.filter((r) => r.status !== 'PENDING');
 
+  // Filter available orgs by search query
+  const filteredOrgs = availableOrgs.filter((org) =>
+    org.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (org.city && org.city.toLowerCase().includes(searchQuery.toLowerCase())) ||
+    (org.state && org.state.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
+
   return (
     <div className="container-app py-8">
       <div className="flex justify-between items-center mb-8">
@@ -240,9 +250,46 @@ export function VetRequestApprovalPage() {
               <h2 className="text-xl font-semibold text-gray-900">Available Organizations</h2>
               <span className="text-sm text-gray-500">{availableOrgs.length} available</span>
             </div>
+
+            {/* Search Input */}
+            {availableOrgs.length > 0 && (
+              <div className="mb-4">
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Search by organization name or location..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="input pl-10"
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                    >
+                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+                {searchQuery && (
+                  <p className="text-sm text-gray-500 mt-2">
+                    Showing {filteredOrgs.length} of {availableOrgs.length} organizations
+                  </p>
+                )}
+              </div>
+            )}
+
             {availableOrgs.length > 0 ? (
+              filteredOrgs.length > 0 ? (
               <div className="card divide-y divide-secondary-200">
-                {availableOrgs.map((org) => (
+                {filteredOrgs.map((org) => (
                   <div key={org.id} className="p-4 flex items-center justify-between">
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center">
@@ -265,6 +312,17 @@ export function VetRequestApprovalPage() {
                   </div>
                 ))}
               </div>
+              ) : (
+                <div className="card p-8 text-center text-gray-500">
+                  No organizations match your search "{searchQuery}".
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="block mt-2 text-sm text-primary-600 hover:text-primary-700 mx-auto"
+                  >
+                    Clear search
+                  </button>
+                </div>
+              )
             ) : (
               <div className="card p-8 text-center text-gray-500">
                 No organizations available to request approval from at this time.
