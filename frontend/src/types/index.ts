@@ -86,6 +86,7 @@ export interface AdoptionApplication {
   whyAdopt: string | null;
   submittedAt: string;
   reviewedAt: string | null;
+  rejectionReason: string | null;
 }
 
 export interface Notification {

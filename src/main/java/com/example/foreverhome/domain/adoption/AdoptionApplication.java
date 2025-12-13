@@ -1,6 +1,8 @@
 package com.example.foreverhome.domain.adoption;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Transient;
+import org.springframework.data.domain.Persistable;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
@@ -12,7 +14,7 @@ import java.util.UUID;
  * Formal request from an adopter to adopt a specific pet.
  */
 @Table("adoption_applications")
-public class AdoptionApplication {
+public class AdoptionApplication implements Persistable<UUID> {
 
     @Id
     private UUID id;
@@ -47,13 +49,16 @@ public class AdoptionApplication {
     @Column("rejection_reason")
     private String rejectionReason;
 
+    @Transient
+    private boolean isNew = false;
+
     protected AdoptionApplication() {
     }
 
     private AdoptionApplication(UUID id, UUID petId, UUID adopterId, ApplicationStatus status,
                                  String livingSituation, String petExperience, String whyAdopt,
                                  Instant submittedAt, Instant reviewedAt, UUID reviewedBy,
-                                 String rejectionReason) {
+                                 String rejectionReason, boolean isNew) {
         this.id = id;
         this.petId = petId;
         this.adopterId = adopterId;
@@ -65,6 +70,7 @@ public class AdoptionApplication {
         this.reviewedAt = reviewedAt;
         this.reviewedBy = reviewedBy;
         this.rejectionReason = rejectionReason;
+        this.isNew = isNew;
     }
 
     public static AdoptionApplication create(UUID petId, UUID adopterId, String message) {
@@ -75,7 +81,7 @@ public class AdoptionApplication {
             throw new IllegalArgumentException("adopterId cannot be null");
         }
         return new AdoptionApplication(UUID.randomUUID(), petId, adopterId, ApplicationStatus.SUBMITTED,
-                null, null, message, Instant.now(), null, null, null);
+                null, null, message, Instant.now(), null, null, null, true);
     }
 
     public static AdoptionApplication create(UUID petId, UUID adopterId, String livingSituation,
@@ -97,7 +103,12 @@ public class AdoptionApplication {
         }
 
         return new AdoptionApplication(UUID.randomUUID(), petId, adopterId, ApplicationStatus.SUBMITTED,
-                livingSituation, petExperience, whyAdopt, Instant.now(), null, null, null);
+                livingSituation, petExperience, whyAdopt, Instant.now(), null, null, null, true);
+    }
+
+    @Override
+    public boolean isNew() {
+        return isNew;
     }
 
     public UUID getId() { return id; }

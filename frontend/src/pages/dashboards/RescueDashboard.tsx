@@ -110,6 +110,7 @@ export function RescueDashboard() {
 
   const pendingApps = applications.filter((a) => a.status === 'SUBMITTED' || a.status === 'UNDER_REVIEW');
   const approvedApps = applications.filter((a) => a.status === 'APPROVED');
+  const rejectedApps = applications.filter((a) => a.status === 'REJECTED');
 
   const openViewApplication = (app: AdoptionApplication) => {
     setSelectedApplication(app);
@@ -153,7 +154,7 @@ export function RescueDashboard() {
       });
       setSuccessMessage(`Application for ${selectedApplication.petName} has been rejected`);
       setApplications((prev) =>
-        prev.map((a) => (a.id === selectedApplication.id ? { ...a, status: 'REJECTED' } : a))
+        prev.map((a) => (a.id === selectedApplication.id ? { ...a, status: 'REJECTED', rejectionReason: rejectReason, reviewedAt: new Date().toISOString() } : a))
       );
       setRejectApplicationModalOpen(false);
       setSelectedApplication(null);
@@ -389,6 +390,44 @@ export function RescueDashboard() {
                         Finalize Adoption
                       </Button>
                     </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Rejected Applications */}
+          {rejectedApps.length > 0 && (
+            <section>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold text-gray-900">Rejected Applications</h2>
+                <span className="text-sm text-gray-500">{rejectedApps.length} rejected</span>
+              </div>
+              <div className="card divide-y divide-secondary-200">
+                {rejectedApps.map((app) => (
+                  <div key={app.id} className="p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <div>
+                        <p className="font-medium text-gray-900">
+                          {app.adopterName} for{' '}
+                          <Link to={`/pets/${app.petId}`} className="text-primary-500 hover:underline">
+                            {app.petName}
+                          </Link>
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          Rejected {app.reviewedAt ? new Date(app.reviewedAt).toLocaleDateString() : ''}
+                        </p>
+                      </div>
+                      <span className="px-2 py-1 text-xs font-medium rounded-full bg-error-100 text-error-700">
+                        Rejected
+                      </span>
+                    </div>
+                    {app.rejectionReason && (
+                      <div className="mt-2 p-2 bg-error-50 border border-error-200 rounded text-sm">
+                        <span className="font-medium text-error-700">Reason: </span>
+                        <span className="text-error-600">{app.rejectionReason}</span>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

@@ -1,6 +1,8 @@
 package com.example.foreverhome.domain.adoption;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Transient;
+import org.springframework.data.domain.Persistable;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
@@ -12,7 +14,7 @@ import java.util.UUID;
  * Record of a completed adoption - the successful outcome.
  */
 @Table("adoptions")
-public class Adoption {
+public class Adoption implements Persistable<UUID> {
 
     @Id
     private UUID id;
@@ -38,11 +40,14 @@ public class Adoption {
     @Column("adopted_at")
     private Instant adoptedAt;
 
+    @Transient
+    private boolean isNew = false;
+
     protected Adoption() {
     }
 
     private Adoption(UUID id, UUID petId, UUID fosterId, UUID adopterId, UUID rescueOrgId,
-                     UUID vetId, UUID applicationId, Instant adoptedAt) {
+                     UUID vetId, UUID applicationId, Instant adoptedAt, boolean isNew) {
         this.id = id;
         this.petId = petId;
         this.fosterId = fosterId;
@@ -51,6 +56,7 @@ public class Adoption {
         this.vetId = vetId;
         this.applicationId = applicationId;
         this.adoptedAt = adoptedAt;
+        this.isNew = isNew;
     }
 
     public static Adoption create(UUID petId, UUID adopterId, UUID fosterId, UUID rescueOrgId) {
@@ -60,7 +66,7 @@ public class Adoption {
         if (rescueOrgId == null) throw new IllegalArgumentException("rescueOrgId cannot be null");
 
         return new Adoption(UUID.randomUUID(), petId, fosterId, adopterId, rescueOrgId,
-                null, null, Instant.now());
+                null, null, Instant.now(), true);
     }
 
     public static Adoption create(UUID petId, UUID fosterId, UUID adopterId, UUID rescueOrgId,
@@ -73,7 +79,12 @@ public class Adoption {
         if (applicationId == null) throw new IllegalArgumentException("applicationId cannot be null");
 
         return new Adoption(UUID.randomUUID(), petId, fosterId, adopterId, rescueOrgId,
-                vetId, applicationId, Instant.now());
+                vetId, applicationId, Instant.now(), true);
+    }
+
+    @Override
+    public boolean isNew() {
+        return isNew;
     }
 
     public UUID getId() { return id; }

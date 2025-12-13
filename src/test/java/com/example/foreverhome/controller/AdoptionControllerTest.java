@@ -3,12 +3,15 @@ package com.example.foreverhome.controller;
 import com.example.foreverhome.domain.adoption.Adoption;
 import com.example.foreverhome.domain.adoption.AdoptionApplication;
 import com.example.foreverhome.domain.adoption.ApplicationStatus;
+import com.example.foreverhome.domain.pet.Pet;
 import com.example.foreverhome.domain.profile.RescueOrganization;
 import com.example.foreverhome.domain.user.UserRole;
 import com.example.foreverhome.dto.adoption.FinalizeAdoptionRequest;
 import com.example.foreverhome.dto.adoption.RejectApplicationRequest;
 import com.example.foreverhome.dto.adoption.SubmitApplicationRequest;
 import com.example.foreverhome.exception.ResourceNotFoundException;
+import com.example.foreverhome.repository.PetImageRepository;
+import com.example.foreverhome.repository.PetRepository;
 import com.example.foreverhome.repository.RescueOrganizationRepository;
 import com.example.foreverhome.security.UserPrincipal;
 import com.example.foreverhome.service.AdoptionService;
@@ -40,6 +43,12 @@ class AdoptionControllerTest {
 
     @Mock
     private RescueOrganizationRepository rescueOrganizationRepository;
+
+    @Mock
+    private PetRepository petRepository;
+
+    @Mock
+    private PetImageRepository petImageRepository;
 
     @InjectMocks
     private AdoptionController adoptionController;
@@ -89,10 +98,18 @@ class AdoptionControllerTest {
         @DisplayName("should return applications for adopter")
         void shouldReturnApplicationsForAdopter() {
             AdoptionApplication application = mock(AdoptionApplication.class);
+            when(application.getPetId()).thenReturn(petId);
+            when(application.getStatus()).thenReturn(ApplicationStatus.SUBMITTED);
             List<AdoptionApplication> applications = List.of(application);
             when(adoptionService.getApplicationsForAdopter(userId)).thenReturn(applications);
 
-            ResponseEntity<List<AdoptionApplication>> response = adoptionController.getMyApplications(adopterPrincipal);
+            Pet pet = mock(Pet.class);
+            when(pet.getId()).thenReturn(petId);
+            when(pet.getName()).thenReturn("Charlie");
+            when(petRepository.findByIdIn(List.of(petId))).thenReturn(List.of(pet));
+            when(petImageRepository.findPrimaryImagesByPetIds(List.of(petId))).thenReturn(List.of());
+
+            ResponseEntity<List<AdoptionController.AdopterApplicationResponse>> response = adoptionController.getMyApplications(adopterPrincipal);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
             assertThat(response.getBody()).hasSize(1);
@@ -196,7 +213,7 @@ class AdoptionControllerTest {
             RejectApplicationRequest request = new RejectApplicationRequest("Does not meet our criteria");
             AdoptionApplication rejectedApplication = mock(AdoptionApplication.class);
             when(rejectedApplication.getStatus()).thenReturn(ApplicationStatus.REJECTED);
-            when(adoptionService.rejectApplication(applicationId, rescueOrgId, "Does not meet our criteria"))
+            when(adoptionService.rejectApplication(applicationId, rescueOrgId, userId, "Does not meet our criteria"))
                     .thenReturn(rejectedApplication);
 
             ResponseEntity<AdoptionApplication> response =

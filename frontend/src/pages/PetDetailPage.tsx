@@ -103,8 +103,11 @@ export function PetDetailPage() {
     }
   };
 
+  const [applyError, setApplyError] = useState('');
+
   const handleApply = async () => {
     setApplying(true);
+    setApplyError('');
     try {
       await apiClient.post('/applications', { petId: id, message: applicationMessage });
       setApplyModalOpen(false);
@@ -112,8 +115,13 @@ export function PetDetailPage() {
       setActiveApplicationCount(prev => prev + 1);
       setApplicationSuccess(true);
       setApplicationMessage('');
-    } catch {
-      setError('Failed to submit application. Please try again.');
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'response' in err) {
+        const response = (err as { response?: { data?: { message?: string } } }).response;
+        setApplyError(response?.data?.message || 'Failed to submit application. Please try again.');
+      } else {
+        setApplyError('Failed to submit application. Please try again.');
+      }
     } finally {
       setApplying(false);
     }
@@ -323,7 +331,10 @@ export function PetDetailPage() {
       {/* Apply Modal */}
       <Modal
         isOpen={applyModalOpen}
-        onClose={() => setApplyModalOpen(false)}
+        onClose={() => {
+          setApplyModalOpen(false);
+          setApplyError('');
+        }}
         title={`Apply to Adopt ${pet?.name}`}
       >
         <div className="space-y-4">
@@ -354,8 +365,17 @@ export function PetDetailPage() {
             </p>
           )}
 
+          {applyError && (
+            <div className="bg-error-50 border border-error-200 text-error-700 px-4 py-3 rounded">
+              {applyError}
+            </div>
+          )}
+
           <div className="flex gap-4 pt-4">
-            <Button variant="outline" onClick={() => setApplyModalOpen(false)} className="flex-1">
+            <Button variant="outline" onClick={() => {
+              setApplyModalOpen(false);
+              setApplyError('');
+            }} className="flex-1">
               Cancel
             </Button>
             <Button variant="primary" loading={applying} onClick={handleApply} className="flex-1">

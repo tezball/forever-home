@@ -19,6 +19,9 @@ public interface PetImageRepository extends CrudRepository<PetImage, UUID> {
     @Query("SELECT * FROM pet_images WHERE pet_id = :petId AND is_primary = true")
     Optional<PetImage> findPrimaryByPetId(@Param("petId") UUID petId);
 
+    @Query("SELECT * FROM pet_images WHERE pet_id IN (:petIds) AND is_primary = true")
+    List<PetImage> findPrimaryImagesByPetIds(@Param("petIds") List<UUID> petIds);
+
     @Query("SELECT COUNT(*) FROM pet_images WHERE pet_id = :petId")
     int countByPetId(@Param("petId") UUID petId);
 

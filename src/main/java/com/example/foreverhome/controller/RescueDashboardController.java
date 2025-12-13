@@ -143,7 +143,8 @@ public class RescueDashboardController {
             String petExperience,
             String whyAdopt,
             Instant submittedAt,
-            Instant reviewedAt
+            Instant reviewedAt,
+            String rejectionReason
     ) {
         static ApplicationResponse from(AdoptionApplication app, Pet pet, Adopter adopter) {
             return new ApplicationResponse(
@@ -159,7 +160,8 @@ public class RescueDashboardController {
                     app.getPetExperience(),
                     app.getWhyAdopt(),
                     app.getSubmittedAt(),
-                    app.getReviewedAt()
+                    app.getReviewedAt(),
+                    app.getRejectionReason()
             );
         }
     }

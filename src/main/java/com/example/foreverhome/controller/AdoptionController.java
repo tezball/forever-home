@@ -2,11 +2,15 @@ package com.example.foreverhome.controller;
 
 import com.example.foreverhome.domain.adoption.Adoption;
 import com.example.foreverhome.domain.adoption.AdoptionApplication;
+import com.example.foreverhome.domain.pet.Pet;
+import com.example.foreverhome.domain.pet.PetImage;
 import com.example.foreverhome.domain.profile.RescueOrganization;
 import com.example.foreverhome.dto.adoption.FinalizeAdoptionRequest;
 import com.example.foreverhome.dto.adoption.RejectApplicationRequest;
 import com.example.foreverhome.dto.adoption.SubmitApplicationRequest;
 import com.example.foreverhome.exception.ResourceNotFoundException;
+import com.example.foreverhome.repository.PetImageRepository;
+import com.example.foreverhome.repository.PetRepository;
 import com.example.foreverhome.repository.RescueOrganizationRepository;
 import com.example.foreverhome.security.UserPrincipal;
 import com.example.foreverhome.service.AdoptionService;
@@ -17,8 +21,11 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api")
@@ -26,11 +33,17 @@ public class AdoptionController {
 
     private final AdoptionService adoptionService;
     private final RescueOrganizationRepository rescueOrganizationRepository;
+    private final PetRepository petRepository;
+    private final PetImageRepository petImageRepository;
 
     public AdoptionController(AdoptionService adoptionService,
-                              RescueOrganizationRepository rescueOrganizationRepository) {
+                              RescueOrganizationRepository rescueOrganizationRepository,
+                              PetRepository petRepository,
+                              PetImageRepository petImageRepository) {
         this.adoptionService = adoptionService;
         this.rescueOrganizationRepository = rescueOrganizationRepository;
+        this.petRepository = petRepository;
+        this.petImageRepository = petImageRepository;
     }
 
     @PostMapping("/applications")
@@ -46,9 +59,64 @@ public class AdoptionController {
 
     @GetMapping("/applications")
     @PreAuthorize("hasRole('ADOPTER')")
-    public ResponseEntity<List<AdoptionApplication>> getMyApplications(
+    public ResponseEntity<List<AdopterApplicationResponse>> getMyApplications(
             @AuthenticationPrincipal UserPrincipal principal) {
-        return ResponseEntity.ok(adoptionService.getApplicationsForAdopter(principal.userId()));
+        List<AdoptionApplication> applications = adoptionService.getApplicationsForAdopter(principal.userId());
+
+        // Get all pet IDs and fetch pets in batch
+        List<UUID> petIds = applications.stream().map(AdoptionApplication::getPetId).distinct().toList();
+        Map<UUID, Pet> petMap = petIds.isEmpty() ? Map.of() :
+                petRepository.findByIdIn(petIds).stream().collect(Collectors.toMap(Pet::getId, p -> p));
+
+        // Get primary image for each pet
+        Map<UUID, String> petImageMap = petIds.isEmpty() ? Map.of() :
+                petImageRepository.findPrimaryImagesByPetIds(petIds).stream()
+                        .collect(Collectors.toMap(PetImage::getPetId, PetImage::getUrl, (a, b) -> a));
+
+        List<AdopterApplicationResponse> responses = applications.stream()
+                .map(app -> AdopterApplicationResponse.from(app, petMap.get(app.getPetId()), petImageMap.get(app.getPetId())))
+                .toList();
+
+        return ResponseEntity.ok(responses);
+    }
+
+    /**
+     * Response DTO for adopter's view of their applications.
+     */
+    public record AdopterApplicationResponse(
+            UUID id,
+            UUID petId,
+            String petName,
+            String petImageUrl,
+            UUID adopterId,
+            String adopterName,
+            String adopterPhone,
+            String status,
+            String livingSituation,
+            String petExperience,
+            String whyAdopt,
+            Instant submittedAt,
+            Instant reviewedAt,
+            String rejectionReason
+    ) {
+        static AdopterApplicationResponse from(AdoptionApplication app, Pet pet, String imageUrl) {
+            return new AdopterApplicationResponse(
+                    app.getId(),
+                    app.getPetId(),
+                    pet != null ? pet.getName() : "Unknown",
+                    imageUrl,
+                    app.getAdopterId(),
+                    null, // adopterName not needed for own applications
+                    null, // adopterPhone not needed for own applications
+                    app.getStatus().name(),
+                    app.getLivingSituation(),
+                    app.getPetExperience(),
+                    app.getWhyAdopt(),
+                    app.getSubmittedAt(),
+                    app.getReviewedAt(),
+                    app.getRejectionReason()
+            );
+        }
     }
 
     @GetMapping("/applications/check/{petId}")
@@ -86,7 +154,7 @@ public class AdoptionController {
             @AuthenticationPrincipal UserPrincipal principal,
             @Valid @RequestBody RejectApplicationRequest request) {
         RescueOrganization rescueOrg = getRescueOrgForUser(principal.userId());
-        AdoptionApplication application = adoptionService.rejectApplication(id, rescueOrg.getId(), request.reason());
+        AdoptionApplication application = adoptionService.rejectApplication(id, rescueOrg.getId(), principal.userId(), request.reason());
         return ResponseEntity.ok(application);
     }
 

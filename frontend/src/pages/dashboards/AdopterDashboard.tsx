@@ -136,11 +136,17 @@ export function AdopterDashboard() {
                         alt={app.petName}
                         className="w-14 h-14 rounded-lg object-cover flex-shrink-0"
                       />
-                      <div>
+                      <div className="flex-1">
                         <p className="font-medium text-gray-900">{app.petName}</p>
                         <p className="text-sm text-gray-500">
                           Applied {new Date(app.submittedAt).toLocaleDateString()}
                         </p>
+                        {app.status === 'REJECTED' && app.rejectionReason && (
+                          <div className="mt-2 p-2 bg-error-50 border border-error-200 rounded text-sm">
+                            <span className="font-medium text-error-700">Reason: </span>
+                            <span className="text-error-600">{app.rejectionReason}</span>
+                          </div>
+                        )}
                       </div>
                     </Link>
                     <div className="flex items-center gap-3">

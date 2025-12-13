@@ -5,9 +5,11 @@ import com.example.foreverhome.domain.adoption.AdoptionApplication;
 import com.example.foreverhome.domain.adoption.ApplicationStatus;
 import com.example.foreverhome.domain.pet.Pet;
 import com.example.foreverhome.domain.pet.PetStatus;
+import com.example.foreverhome.domain.profile.Adopter;
 import com.example.foreverhome.exception.AccessDeniedException;
 import com.example.foreverhome.exception.InvalidStatusTransitionException;
 import com.example.foreverhome.exception.ResourceNotFoundException;
+import com.example.foreverhome.repository.AdopterRepository;
 import com.example.foreverhome.repository.AdoptionApplicationRepository;
 import com.example.foreverhome.repository.AdoptionRepository;
 import com.example.foreverhome.repository.PetRepository;
@@ -24,22 +26,34 @@ public class AdoptionService {
     private final AdoptionApplicationRepository applicationRepository;
     private final AdoptionRepository adoptionRepository;
     private final PetRepository petRepository;
+    private final AdopterRepository adopterRepository;
     private final NotificationService notificationService;
     private final MetricsService metricsService;
 
     public AdoptionService(AdoptionApplicationRepository applicationRepository,
                            AdoptionRepository adoptionRepository,
                            PetRepository petRepository,
+                           AdopterRepository adopterRepository,
                            NotificationService notificationService,
                            MetricsService metricsService) {
         this.applicationRepository = applicationRepository;
         this.adoptionRepository = adoptionRepository;
         this.petRepository = petRepository;
+        this.adopterRepository = adopterRepository;
         this.notificationService = notificationService;
         this.metricsService = metricsService;
     }
 
-    public AdoptionApplication submitApplication(UUID adopterId, UUID petId, String message) {
+    /**
+     * Submit an adoption application for a pet.
+     * @param userId The user ID (not the adopter profile ID)
+     * @param petId The pet ID to apply for
+     * @param message Optional message from the adopter
+     */
+    public AdoptionApplication submitApplication(UUID userId, UUID petId, String message) {
+        Adopter adopter = getAdopterByUserId(userId);
+        UUID adopterId = adopter.getId();
+
         Pet pet = findPetOrThrow(petId);
 
         if (pet.getStatus() != PetStatus.AVAILABLE) {
@@ -75,13 +89,15 @@ public class AdoptionService {
     }
 
     @Transactional(readOnly = true)
-    public List<AdoptionApplication> getApplicationsForAdopter(UUID adopterId) {
-        return applicationRepository.findByAdopterId(adopterId);
+    public List<AdoptionApplication> getApplicationsForAdopter(UUID userId) {
+        Adopter adopter = getAdopterByUserId(userId);
+        return applicationRepository.findByAdopterId(adopter.getId());
     }
 
     @Transactional(readOnly = true)
-    public boolean hasActiveApplicationForPet(UUID adopterId, UUID petId) {
-        return applicationRepository.findByPetIdAndAdopterId(petId, adopterId)
+    public boolean hasActiveApplicationForPet(UUID userId, UUID petId) {
+        Adopter adopter = getAdopterByUserId(userId);
+        return applicationRepository.findByPetIdAndAdopterId(petId, adopter.getId())
                 .map(app -> app.getStatus() == ApplicationStatus.SUBMITTED ||
                             app.getStatus() == ApplicationStatus.UNDER_REVIEW ||
                             app.getStatus() == ApplicationStatus.APPROVED)
@@ -89,8 +105,9 @@ public class AdoptionService {
     }
 
     @Transactional(readOnly = true)
-    public int getActiveApplicationCount(UUID adopterId) {
-        return applicationRepository.countActiveByAdopterId(adopterId);
+    public int getActiveApplicationCount(UUID userId) {
+        Adopter adopter = getAdopterByUserId(userId);
+        return applicationRepository.countActiveByAdopterId(adopter.getId());
     }
 
     @Transactional(readOnly = true)
@@ -130,7 +147,7 @@ public class AdoptionService {
         return application;
     }
 
-    public AdoptionApplication rejectApplication(UUID applicationId, UUID rescueOrgId, String reason) {
+    public AdoptionApplication rejectApplication(UUID applicationId, UUID rescueOrgId, UUID reviewerUserId, String reason) {
         AdoptionApplication application = findApplicationOrThrow(applicationId);
         Pet pet = findPetOrThrow(application.getPetId());
 
@@ -142,7 +159,7 @@ public class AdoptionService {
             );
         }
 
-        application.reject();
+        application.reject(reviewerUserId, reason);
         AdoptionApplication saved = applicationRepository.save(application);
 
         // Record metric
@@ -156,10 +173,11 @@ public class AdoptionService {
         return saved;
     }
 
-    public void withdrawApplication(UUID applicationId, UUID adopterId) {
+    public void withdrawApplication(UUID applicationId, UUID userId) {
+        Adopter adopter = getAdopterByUserId(userId);
         AdoptionApplication application = findApplicationOrThrow(applicationId);
 
-        if (!application.getAdopterId().equals(adopterId)) {
+        if (!application.getAdopterId().equals(adopter.getId())) {
             throw new AccessDeniedException("You can only withdraw your own applications");
         }
 
@@ -206,8 +224,9 @@ public class AdoptionService {
     }
 
     @Transactional(readOnly = true)
-    public List<Adoption> getAdoptionsForAdopter(UUID adopterId) {
-        return adoptionRepository.findByAdopterId(adopterId);
+    public List<Adoption> getAdoptionsForAdopter(UUID userId) {
+        Adopter adopter = getAdopterByUserId(userId);
+        return adoptionRepository.findByAdopterId(adopter.getId());
     }
 
     @Transactional(readOnly = true)
@@ -251,5 +270,10 @@ public class AdoptionService {
         if (pet.getRescueOrgId() == null || !pet.getRescueOrgId().equals(rescueOrgId)) {
             throw new AccessDeniedException("This pet is not associated with your rescue organization");
         }
+    }
+
+    private Adopter getAdopterByUserId(UUID userId) {
+        return adopterRepository.findByUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Adopter profile not found for user"));
     }
 }

@@ -72,11 +72,15 @@ public class TestDataSeeder implements CommandLineRunner {
         logger.info("Database schema ready - seeding test accounts");
 
         List<TestAccount> testAccounts = List.of(
-            new TestAccount("admin@test.com", "Test Admin", UserRole.ADMIN),
-            new TestAccount("foster@test.com", "Test Foster", UserRole.FOSTER),
-            new TestAccount("adopter@test.com", "Test Adopter", UserRole.ADOPTER),
-            new TestAccount("vet@test.com", "Test Vet", UserRole.VET),
-            new TestAccount("rescue@test.com", "Test Rescue Org", UserRole.RESCUE_ORG)
+            new TestAccount("admin@test.com", "Test Admin", UserRole.ADMIN, null, null),
+            new TestAccount("foster@test.com", "Sarah", UserRole.FOSTER, "Sarah", "Mitchell"),
+            new TestAccount("foster2@test.com", "James", UserRole.FOSTER, "James", "Rodriguez"),
+            new TestAccount("foster3@test.com", "Emily", UserRole.FOSTER, "Emily", "Chen"),
+            new TestAccount("foster4@test.com", "Michael", UserRole.FOSTER, "Michael", "Thompson"),
+            new TestAccount("foster5@test.com", "Rachel", UserRole.FOSTER, "Rachel", "Anderson"),
+            new TestAccount("adopter@test.com", "Test Adopter", UserRole.ADOPTER, null, null),
+            new TestAccount("vet@test.com", "Test Vet", UserRole.VET, null, null),
+            new TestAccount("rescue@test.com", "Test Rescue Org", UserRole.RESCUE_ORG, null, null)
         );
 
         String encodedPassword = passwordEncoder.encode(TEST_PASSWORD);
@@ -116,62 +120,26 @@ public class TestDataSeeder implements CommandLineRunner {
             return;
         }
 
-        // Get the foster and rescue org IDs
-        UUID fosterId = jdbcTemplate.queryForObject(
-            "SELECT f.id FROM fosters f JOIN app_users u ON f.user_id = u.id WHERE u.email = ?",
-            UUID.class, "foster@test.com");
+        // Get the rescue org ID
         UUID rescueOrgId = jdbcTemplate.queryForObject(
             "SELECT r.id FROM rescue_organizations r JOIN app_users u ON r.user_id = u.id WHERE u.email = ?",
             UUID.class, "rescue@test.com");
 
-        if (fosterId == null || rescueOrgId == null) {
-            logger.warn("Cannot seed pets: foster or rescue org not found");
+        if (rescueOrgId == null) {
+            logger.warn("Cannot seed pets: rescue org not found");
             return;
         }
 
-        logger.info("Seeding sample pets...");
+        // Get all foster IDs
+        UUID foster1Id = getFosterId("foster@test.com");   // Sarah Mitchell
+        UUID foster2Id = getFosterId("foster2@test.com");  // James Rodriguez
+        UUID foster3Id = getFosterId("foster3@test.com");  // Emily Chen
+        UUID foster4Id = getFosterId("foster4@test.com");  // Michael Thompson
+        UUID foster5Id = getFosterId("foster5@test.com");  // Rachel Anderson
 
-        // Pet 1: Available dog (linked to rescue, vet signed off)
-        jdbcTemplate.update("""
-            INSERT INTO pets (id, name, species, breed, age, age_unit, sex, size, description, microchip_id,
-                status, foster_id, rescue_org_id, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-            """,
-            UUID.randomUUID(), "Max", "DOG", "Golden Retriever", 3, "YEARS", "MALE", "LARGE",
-            "Friendly and energetic golden retriever who loves to play fetch and swim. Great with kids and other dogs.",
-            "CHIP-DOG-001", "AVAILABLE", fosterId, rescueOrgId);
+        logger.info("Seeding sample pets for multiple fosters...");
 
-        // Pet 2: Available cat (linked to rescue)
-        jdbcTemplate.update("""
-            INSERT INTO pets (id, name, species, breed, age, age_unit, sex, size, description, microchip_id,
-                status, foster_id, rescue_org_id, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-            """,
-            UUID.randomUUID(), "Whiskers", "CAT", "Tabby", 2, "YEARS", "FEMALE", "SMALL",
-            "Sweet and gentle tabby cat who loves to curl up in sunny spots. Good with other cats.",
-            "CHIP-CAT-001", "AVAILABLE", fosterId, rescueOrgId);
-
-        // Pet 3: Pending vet sign-off (linked to rescue, awaiting vet)
-        jdbcTemplate.update("""
-            INSERT INTO pets (id, name, species, breed, age, age_unit, sex, size, description, microchip_id,
-                status, foster_id, rescue_org_id, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-            """,
-            UUID.randomUUID(), "Luna", "CAT", "Siamese", 1, "YEARS", "FEMALE", "SMALL",
-            "Beautiful Siamese kitten with bright blue eyes. Playful and affectionate.",
-            "CHIP-CAT-002", "PENDING_VET", fosterId, rescueOrgId);
-
-        // Pet 4: Pending rescue review (not yet accepted by rescue)
-        jdbcTemplate.update("""
-            INSERT INTO pets (id, name, species, breed, age, age_unit, sex, size, description, microchip_id,
-                status, foster_id, rescue_org_id, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-            """,
-            UUID.randomUUID(), "Rocky", "DOG", "German Shepherd Mix", 4, "YEARS", "MALE", "LARGE",
-            "Loyal and protective companion. Well-trained and good on leash.",
-            "CHIP-DOG-002", "PENDING_RESCUE", fosterId, rescueOrgId);
-
-        // Pet 5: Draft (not submitted yet)
+        // === Sarah Mitchell (foster@test.com) - 1 pet in DRAFT status ===
         jdbcTemplate.update("""
             INSERT INTO pets (id, name, species, breed, age, age_unit, sex, size, description, microchip_id,
                 status, foster_id, rescue_org_id, created_at, updated_at)
@@ -179,39 +147,105 @@ public class TestDataSeeder implements CommandLineRunner {
             """,
             UUID.randomUUID(), "Bella", "DOG", "Beagle", 6, "MONTHS", "FEMALE", "MEDIUM",
             "Adorable beagle puppy learning basic commands. Loves treats and belly rubs.",
-            "CHIP-DOG-003", "DRAFT", fosterId, null);
+            "CHIP-DOG-001", "DRAFT", foster1Id, null);
 
-        // Pet 6: Available dog for adoption applications
+        // === James Rodriguez (foster2@test.com) - 2 pets in PENDING_RESCUE status ===
+        jdbcTemplate.update("""
+            INSERT INTO pets (id, name, species, breed, age, age_unit, sex, size, description, microchip_id,
+                status, foster_id, rescue_org_id, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+            """,
+            UUID.randomUUID(), "Max", "DOG", "Golden Retriever", 3, "YEARS", "MALE", "LARGE",
+            "Friendly and energetic golden retriever who loves to play fetch and swim. Great with kids and other dogs.",
+            "CHIP-DOG-002", "PENDING_RESCUE", foster2Id, rescueOrgId);
+
+        jdbcTemplate.update("""
+            INSERT INTO pets (id, name, species, breed, age, age_unit, sex, size, description, microchip_id,
+                status, foster_id, rescue_org_id, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+            """,
+            UUID.randomUUID(), "Shadow", "CAT", "Black Shorthair", 4, "YEARS", "MALE", "MEDIUM",
+            "Mysterious and elegant black cat. Independent but affectionate once he trusts you.",
+            "CHIP-CAT-001", "PENDING_RESCUE", foster2Id, rescueOrgId);
+
+        // === Emily Chen (foster3@test.com) - 2 pets in PENDING_VET status ===
+        jdbcTemplate.update("""
+            INSERT INTO pets (id, name, species, breed, age, age_unit, sex, size, description, microchip_id,
+                status, foster_id, rescue_org_id, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+            """,
+            UUID.randomUUID(), "Luna", "CAT", "Siamese", 1, "YEARS", "FEMALE", "SMALL",
+            "Beautiful Siamese kitten with bright blue eyes. Playful and affectionate.",
+            "CHIP-CAT-002", "PENDING_VET", foster3Id, rescueOrgId);
+
+        jdbcTemplate.update("""
+            INSERT INTO pets (id, name, species, breed, age, age_unit, sex, size, description, microchip_id,
+                status, foster_id, rescue_org_id, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+            """,
+            UUID.randomUUID(), "Rocky", "DOG", "German Shepherd Mix", 2, "YEARS", "MALE", "LARGE",
+            "Loyal and protective companion. Well-trained and good on leash. Looking for an active family.",
+            "CHIP-DOG-003", "PENDING_VET", foster3Id, rescueOrgId);
+
+        // === Michael Thompson (foster4@test.com) - 3 pets in AVAILABLE status ===
         jdbcTemplate.update("""
             INSERT INTO pets (id, name, species, breed, age, age_unit, sex, size, description, microchip_id,
                 status, foster_id, rescue_org_id, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
             """,
             UUID.randomUUID(), "Charlie", "DOG", "Labrador Mix", 2, "YEARS", "MALE", "LARGE",
-            "Happy-go-lucky lab mix. Loves everyone and everything. House trained.",
-            "CHIP-DOG-004", "AVAILABLE", fosterId, rescueOrgId);
+            "Happy-go-lucky lab mix. Loves everyone and everything. House trained and great with other pets.",
+            "CHIP-DOG-004", "AVAILABLE", foster4Id, rescueOrgId);
 
-        // Pet 7: Available cat
         jdbcTemplate.update("""
             INSERT INTO pets (id, name, species, breed, age, age_unit, sex, size, description, microchip_id,
                 status, foster_id, rescue_org_id, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
             """,
-            UUID.randomUUID(), "Oliver", "CAT", "Orange Tabby", 5, "YEARS", "MALE", "MEDIUM",
-            "Relaxed senior cat looking for a quiet home. Lap cat who loves chin scratches.",
-            "CHIP-CAT-003", "AVAILABLE", fosterId, rescueOrgId);
+            UUID.randomUUID(), "Whiskers", "CAT", "Tabby", 5, "YEARS", "FEMALE", "SMALL",
+            "Sweet and gentle tabby cat who loves to curl up in sunny spots. Good with other cats and calm dogs.",
+            "CHIP-CAT-003", "AVAILABLE", foster4Id, rescueOrgId);
 
-        // Pet 8: In-progress adoption
+        jdbcTemplate.update("""
+            INSERT INTO pets (id, name, species, breed, age, age_unit, sex, size, description, microchip_id,
+                status, foster_id, rescue_org_id, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+            """,
+            UUID.randomUUID(), "Duke", "DOG", "Boxer", 4, "YEARS", "MALE", "LARGE",
+            "Energetic and loyal boxer. Great guard dog but gentle with family. Needs a home with a yard.",
+            "CHIP-DOG-005", "AVAILABLE", foster4Id, rescueOrgId);
+
+        // === Rachel Anderson (foster5@test.com) - 2 pets: 1 IN_PROGRESS, 1 ADOPTED ===
         jdbcTemplate.update("""
             INSERT INTO pets (id, name, species, breed, age, age_unit, sex, size, description, microchip_id,
                 status, foster_id, rescue_org_id, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
             """,
             UUID.randomUUID(), "Daisy", "DOG", "Poodle Mix", 3, "YEARS", "FEMALE", "SMALL",
-            "Smart and hypoallergenic poodle mix. Currently in adoption process.",
-            "CHIP-DOG-005", "IN_PROGRESS", fosterId, rescueOrgId);
+            "Smart and hypoallergenic poodle mix. Currently in adoption process with a wonderful family.",
+            "CHIP-DOG-006", "IN_PROGRESS", foster5Id, rescueOrgId);
 
-        logger.info("Created 8 sample pets with various statuses");
+        jdbcTemplate.update("""
+            INSERT INTO pets (id, name, species, breed, age, age_unit, sex, size, description, microchip_id,
+                status, foster_id, rescue_org_id, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+            """,
+            UUID.randomUUID(), "Oliver", "CAT", "Orange Tabby", 2, "YEARS", "MALE", "MEDIUM",
+            "Friendly orange tabby who found his forever home. A true success story!",
+            "CHIP-CAT-004", "ADOPTED", foster5Id, rescueOrgId);
+
+        logger.info("Created 10 sample pets across 5 fosters with various statuses");
+    }
+
+    private UUID getFosterId(String email) {
+        try {
+            return jdbcTemplate.queryForObject(
+                "SELECT f.id FROM fosters f JOIN app_users u ON f.user_id = u.id WHERE u.email = ?",
+                UUID.class, email);
+        } catch (Exception e) {
+            logger.warn("Foster not found for email: {}", email);
+            return null;
+        }
     }
 
     private void createProfile(User user, TestAccount account) {
@@ -219,12 +253,14 @@ public class TestDataSeeder implements CommandLineRunner {
         switch (account.role()) {
             case FOSTER -> {
                 UUID id = UUID.randomUUID();
+                String firstName = account.firstName() != null ? account.firstName() : "Test";
+                String lastName = account.lastName() != null ? account.lastName() : "Foster";
                 jdbcTemplate.update("""
                     INSERT INTO fosters (id, user_id, first_name, last_name, phone,
                         address_street, address_city, address_state, address_postal_code, address_country)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
-                    id, user.getId(), "Test", "Foster", "555-0101",
+                    id, user.getId(), firstName, lastName, "555-0101",
                     "123 Test Street", "Test City", "TS", "12345", "USA");
             }
             case ADOPTER -> {
@@ -272,12 +308,14 @@ public class TestDataSeeder implements CommandLineRunner {
             case FOSTER -> {
                 if (fosterRepository.findByUserId(user.getId()).isEmpty()) {
                     UUID id = UUID.randomUUID();
+                    String firstName = account.firstName() != null ? account.firstName() : "Test";
+                    String lastName = account.lastName() != null ? account.lastName() : "Foster";
                     jdbcTemplate.update("""
                         INSERT INTO fosters (id, user_id, first_name, last_name, phone,
                             address_street, address_city, address_state, address_postal_code, address_country)
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                         """,
-                        id, user.getId(), "Test", "Foster", "555-0101",
+                        id, user.getId(), firstName, lastName, "555-0101",
                         "123 Test Street", "Test City", "TS", "12345", "USA");
                     logger.info("Created missing Foster profile for: {}", account.email());
                 }
@@ -330,5 +368,5 @@ public class TestDataSeeder implements CommandLineRunner {
         }
     }
 
-    private record TestAccount(String email, String name, UserRole role) {}
+    private record TestAccount(String email, String name, UserRole role, String firstName, String lastName) {}
 }
