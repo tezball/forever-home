@@ -74,4 +74,43 @@ public interface PetRepository extends CrudRepository<Pet, UUID> {
 
     @Query("SELECT * FROM pets WHERE status = :status AND rescue_org_id IN (:rescueOrgIds) ORDER BY created_at DESC")
     List<Pet> findByStatusAndRescueOrgIdIn(@Param("status") PetStatus status, @Param("rescueOrgIds") List<UUID> rescueOrgIds);
+
+    // Paginated queries
+    @Query("""
+        SELECT * FROM pets
+        WHERE status = 'AVAILABLE'
+          AND (:species IS NULL OR species = :species)
+          AND (:size IS NULL OR size = :size)
+          AND (:sex IS NULL OR sex = :sex)
+          AND (:minAge IS NULL OR age >= :minAge)
+          AND (:maxAge IS NULL OR age <= :maxAge)
+        ORDER BY created_at DESC
+        LIMIT :limit OFFSET :offset
+        """)
+    List<Pet> findAvailableWithFiltersPageable(
+            @Param("species") String species,
+            @Param("size") String size,
+            @Param("sex") String sex,
+            @Param("minAge") Integer minAge,
+            @Param("maxAge") Integer maxAge,
+            @Param("limit") int limit,
+            @Param("offset") int offset
+    );
+
+    @Query("""
+        SELECT COUNT(*) FROM pets
+        WHERE status = 'AVAILABLE'
+          AND (:species IS NULL OR species = :species)
+          AND (:size IS NULL OR size = :size)
+          AND (:sex IS NULL OR sex = :sex)
+          AND (:minAge IS NULL OR age >= :minAge)
+          AND (:maxAge IS NULL OR age <= :maxAge)
+        """)
+    long countAvailableWithFilters(
+            @Param("species") String species,
+            @Param("size") String size,
+            @Param("sex") String sex,
+            @Param("minAge") Integer minAge,
+            @Param("maxAge") Integer maxAge
+    );
 }

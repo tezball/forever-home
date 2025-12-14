@@ -12,10 +12,28 @@ interface PlatformStats {
 }
 
 export function HomePage() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const [featuredPets, setFeaturedPets] = useState<Pet[]>([]);
   const [stats, setStats] = useState<PlatformStats | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const getRoleSpecificCTA = () => {
+    if (!user) return null;
+    switch (user.role) {
+      case 'FOSTER':
+        return { text: 'List a Pet', link: '/foster/pets/new' };
+      case 'ADOPTER':
+        return { text: 'My Dashboard', link: '/adopter/dashboard' };
+      case 'VET':
+        return { text: 'Vet Dashboard', link: '/vet/dashboard' };
+      case 'RESCUE_ORG':
+        return { text: 'Rescue Dashboard', link: '/rescue/dashboard' };
+      case 'ADMIN':
+        return { text: 'Admin Dashboard', link: '/admin/dashboard' };
+      default:
+        return null;
+    }
+  };
 
   useEffect(() => {
     const fetchHomeData = async () => {
@@ -61,7 +79,15 @@ export function HomePage() {
                   Browse Pets
                 </Button>
               </Link>
-              {!isAuthenticated && (
+              {isAuthenticated ? (
+                getRoleSpecificCTA() && (
+                  <Link to={getRoleSpecificCTA()!.link}>
+                    <Button variant="outline" size="lg">
+                      {getRoleSpecificCTA()!.text}
+                    </Button>
+                  </Link>
+                )
+              ) : (
                 <Link to="/register">
                   <Button variant="outline" size="lg">
                     Get Started

@@ -26,3 +26,4 @@ export { VerifyEmailPage } from './VerifyEmailPage';
 export { VetRequestApprovalPage } from './VetRequestApprovalPage';
 export { ProfilePage } from './ProfilePage';
 export { FaqPage } from './FaqPage';
+export { AboutPage } from './AboutPage';

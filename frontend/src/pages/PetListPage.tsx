@@ -1,7 +1,17 @@
 import { useState, useEffect } from 'react';
-import { PetCard, Select, Input } from '../components';
+import { PetCard, Select, Input, ErrorDisplay, getErrorMessage } from '../components';
 import type { Pet, Species, PetSize, PetSex } from '../types';
 import apiClient from '../api/client';
+
+interface PagedResponse<T> {
+  content: T[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+  first: boolean;
+  last: boolean;
+}
 
 const speciesOptions = [
   { value: '', label: 'All Species' },
@@ -22,10 +32,15 @@ const sexOptions = [
   { value: 'FEMALE', label: 'Female' },
 ];
 
+const PAGE_SIZE = 12;
+
 export function PetListPage() {
   const [pets, setPets] = useState<Pet[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
   const [filters, setFilters] = useState({
     species: '' as Species | '',
     size: '' as PetSize | '',
@@ -34,8 +49,13 @@ export function PetListPage() {
   });
 
   useEffect(() => {
-    fetchPets();
+    // Reset to first page when filters change
+    setCurrentPage(0);
   }, [filters.species, filters.size, filters.sex]);
+
+  useEffect(() => {
+    fetchPets();
+  }, [filters.species, filters.size, filters.sex, currentPage]);
 
   const fetchPets = async () => {
     setLoading(true);
@@ -45,11 +65,15 @@ export function PetListPage() {
       if (filters.species) params.append('species', filters.species);
       if (filters.size) params.append('size', filters.size);
       if (filters.sex) params.append('sex', filters.sex);
+      params.append('page', currentPage.toString());
+      params.append('pageSize', PAGE_SIZE.toString());
 
-      const response = await apiClient.get<Pet[]>(`/pets?${params.toString()}`);
-      setPets(response.data);
-    } catch {
-      setError('Failed to load pets. Please try again.');
+      const response = await apiClient.get<PagedResponse<Pet>>(`/pets?${params.toString()}`);
+      setPets(response.data.content);
+      setTotalPages(response.data.totalPages);
+      setTotalElements(response.data.totalElements);
+    } catch (err) {
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -66,6 +90,11 @@ export function PetListPage() {
     }
     return true;
   });
+
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   return (
     <div className="container-app py-8">
@@ -112,9 +141,11 @@ export function PetListPage() {
           <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary-500 border-t-transparent" />
         </div>
       ) : error && pets.length === 0 ? (
-        <div className="text-center py-12">
-          <p className="text-error-500">{error}</p>
-        </div>
+        <ErrorDisplay
+          title="Unable to load pets"
+          message={error}
+          onRetry={fetchPets}
+        />
       ) : filteredPets.length === 0 ? (
         <div className="text-center py-12">
           <div className="text-6xl mb-4">🐾</div>
@@ -138,13 +169,82 @@ export function PetListPage() {
       ) : (
         <>
           <p className="text-sm text-gray-500 mb-4">
-            Showing {filteredPets.length} pet{filteredPets.length !== 1 ? 's' : ''}
+            Showing {filteredPets.length} of {totalElements} pet{totalElements !== 1 ? 's' : ''}
+            {totalPages > 1 && ` (Page ${currentPage + 1} of ${totalPages})`}
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredPets.map((pet) => (
               <PetCard key={pet.id} pet={pet} />
             ))}
           </div>
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="mt-8 flex justify-center items-center gap-2">
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 0}
+                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Previous
+              </button>
+
+              <div className="flex gap-1">
+                {/* Show first page */}
+                {currentPage > 2 && (
+                  <>
+                    <button
+                      onClick={() => handlePageChange(0)}
+                      className="px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                    >
+                      1
+                    </button>
+                    {currentPage > 3 && <span className="px-2 py-2 text-gray-500">...</span>}
+                  </>
+                )}
+
+                {/* Show pages around current page */}
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  const pageNum = Math.max(0, Math.min(currentPage - 2, totalPages - 5)) + i;
+                  if (pageNum < 0 || pageNum >= totalPages) return null;
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => handlePageChange(pageNum)}
+                      className={`px-3 py-2 border rounded-md text-sm font-medium ${
+                        pageNum === currentPage
+                          ? 'border-primary-500 bg-primary-500 text-white'
+                          : 'border-gray-300 text-gray-700 bg-white hover:bg-gray-50'
+                      }`}
+                    >
+                      {pageNum + 1}
+                    </button>
+                  );
+                })}
+
+                {/* Show last page */}
+                {currentPage < totalPages - 3 && (
+                  <>
+                    {currentPage < totalPages - 4 && <span className="px-2 py-2 text-gray-500">...</span>}
+                    <button
+                      onClick={() => handlePageChange(totalPages - 1)}
+                      className="px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                    >
+                      {totalPages}
+                    </button>
+                  </>
+                )}
+              </div>
+
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage >= totalPages - 1}
+                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Next
+              </button>
+            </div>
+          )}
         </>
       )}
     </div>

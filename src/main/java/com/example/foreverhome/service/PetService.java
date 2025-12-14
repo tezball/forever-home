@@ -6,6 +6,7 @@ import com.example.foreverhome.domain.pet.PetImage;
 import com.example.foreverhome.domain.pet.PetStatus;
 import com.example.foreverhome.domain.pet.PetStatusHistory;
 import com.example.foreverhome.domain.profile.Foster;
+import com.example.foreverhome.dto.PagedResponse;
 import com.example.foreverhome.dto.pet.CreatePetRequest;
 import com.example.foreverhome.dto.pet.PetDto;
 import com.example.foreverhome.dto.pet.UpdatePetRequest;
@@ -123,6 +124,20 @@ public class PetService {
         return petRepository.findAvailableWithFilters(species, size, sex, minAge, maxAge).stream()
                 .map(this::toPetDtoWithImages)
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public PagedResponse<PetDto> getAvailablePetsPaged(String species, String size, String sex,
+                                                        Integer minAge, Integer maxAge,
+                                                        int page, int size_) {
+        int offset = page * size_;
+        List<PetDto> pets = petRepository.findAvailableWithFiltersPageable(
+                species, size, sex, minAge, maxAge, size_, offset
+        ).stream().map(this::toPetDtoWithImages).toList();
+
+        long total = petRepository.countAvailableWithFilters(species, size, sex, minAge, maxAge);
+
+        return PagedResponse.of(pets, page, size_, total);
     }
 
     @Transactional(readOnly = true)

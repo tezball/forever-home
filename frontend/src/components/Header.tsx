@@ -9,6 +9,7 @@ export function Header() {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown when route changes
@@ -26,18 +27,26 @@ export function Header() {
     };
 
     if (userDropdownOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
+      // Use 'click' instead of 'mousedown' to avoid race condition with toggle button
+      document.addEventListener('click', handleClickOutside);
     }
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('click', handleClickOutside);
     };
   }, [userDropdownOpen]);
 
   const handleLogout = async () => {
+    if (loggingOut) return; // Prevent double-clicks
+    setLoggingOut(true);
     setUserDropdownOpen(false);
-    await logout();
-    navigate('/');
+    setMobileMenuOpen(false);
+    try {
+      await logout();
+      navigate('/');
+    } finally {
+      setLoggingOut(false);
+    }
   };
 
   const getDashboardLink = () => {
@@ -81,7 +90,10 @@ export function Header() {
                 <NotificationBell />
                 <div className="relative" ref={dropdownRef}>
                   <button
-                    onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setUserDropdownOpen(!userDropdownOpen);
+                    }}
                     className="flex items-center gap-2 text-gray-600 hover:text-primary-500"
                   >
                     <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
@@ -118,10 +130,12 @@ export function Header() {
                         Settings
                       </Link>
                       <button
+                        type="button"
                         onClick={handleLogout}
-                        className="block w-full text-left px-4 py-2 text-sm text-error-500 hover:bg-secondary-100"
+                        disabled={loggingOut}
+                        className="block w-full text-left px-4 py-2 text-sm text-error-500 hover:bg-secondary-100 cursor-pointer disabled:opacity-50 disabled:cursor-wait"
                       >
-                        Sign Out
+                        {loggingOut ? 'Signing out...' : 'Sign Out'}
                       </button>
                     </div>
                   )}
@@ -207,10 +221,12 @@ export function Header() {
                     Settings
                   </Link>
                   <button
-                    onClick={() => { handleLogout(); setMobileMenuOpen(false); }}
-                    className="px-4 py-2 text-left text-error-500 hover:bg-secondary-100 rounded"
+                    type="button"
+                    onClick={handleLogout}
+                    disabled={loggingOut}
+                    className="px-4 py-2 text-left text-error-500 hover:bg-secondary-100 rounded cursor-pointer disabled:opacity-50 disabled:cursor-wait"
                   >
-                    Sign Out
+                    {loggingOut ? 'Signing out...' : 'Sign Out'}
                   </button>
                 </>
               ) : (

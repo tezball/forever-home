@@ -2,6 +2,7 @@ package com.example.foreverhome.controller;
 
 import com.example.foreverhome.domain.pet.PetStatusHistory;
 import com.example.foreverhome.domain.profile.RescueOrganization;
+import com.example.foreverhome.dto.PagedResponse;
 import com.example.foreverhome.dto.pet.CreatePetRequest;
 import com.example.foreverhome.dto.pet.DeclinePetRequest;
 import com.example.foreverhome.dto.pet.PetDto;
@@ -43,17 +44,18 @@ public class PetController {
     }
 
     @GetMapping
-    public ResponseEntity<List<PetDto>> getAvailablePets(
+    public ResponseEntity<PagedResponse<PetDto>> getAvailablePets(
             @RequestParam(required = false) String species,
             @RequestParam(required = false) String size,
             @RequestParam(required = false) String sex,
             @RequestParam(required = false) Integer minAge,
-            @RequestParam(required = false) Integer maxAge) {
-        // If any filters are provided, use the filtered query
-        if (species != null || size != null || sex != null || minAge != null || maxAge != null) {
-            return ResponseEntity.ok(petService.getAvailablePetsWithFilters(species, size, sex, minAge, maxAge));
-        }
-        return ResponseEntity.ok(petService.getAvailablePets());
+            @RequestParam(required = false) Integer maxAge,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "12") int pageSize) {
+        // Limit page size to prevent abuse
+        int effectivePageSize = Math.min(pageSize, 50);
+        return ResponseEntity.ok(petService.getAvailablePetsPaged(
+                species, size, sex, minAge, maxAge, page, effectivePageSize));
     }
 
     @GetMapping("/featured")

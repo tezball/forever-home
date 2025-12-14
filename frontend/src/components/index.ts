@@ -10,5 +10,6 @@ export { ImageCarousel } from './ImageCarousel';
 export { PetTimeline } from './PetTimeline';
 export { NotificationBell } from './NotificationBell';
 export { ErrorBoundary } from './ErrorBoundary';
+export { ErrorDisplay, getErrorMessage } from './ErrorDisplay';
 export { LoadingSpinner } from './LoadingSpinner';
 export { Breadcrumb, BackToDashboard } from './Breadcrumb';
