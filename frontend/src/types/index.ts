@@ -5,7 +5,7 @@ export type Species = 'DOG' | 'CAT';
 export type PetSize = 'SMALL' | 'MEDIUM' | 'LARGE';
 export type PetSex = 'MALE' | 'FEMALE';
 export type AgeUnit = 'MONTHS' | 'YEARS';
-export type ApplicationStatus = 'SUBMITTED' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED' | 'WITHDRAWN';
+export type ApplicationStatus = 'SUBMITTED' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED' | 'WITHDRAWN' | 'FINALIZED';
 
 export interface User {
   id: string;

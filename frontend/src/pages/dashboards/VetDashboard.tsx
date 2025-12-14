@@ -265,15 +265,38 @@ export function VetDashboard() {
           </div>
         ) : (
           <div className="text-center py-6 bg-gray-50 rounded-lg">
-            <div className="w-12 h-12 bg-success-100 rounded-full flex items-center justify-center mx-auto mb-3">
-              <svg className="w-6 h-6 text-success-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-            <p className="text-gray-600">No pets awaiting sign-off</p>
-            <p className="text-sm text-gray-500 mt-1">
-              Use the microchip lookup below to find a specific pet
-            </p>
+            {approvedOrgs.length === 0 ? (
+              <>
+                <div className="w-12 h-12 bg-warning-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <svg className="w-6 h-6 text-warning-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <p className="text-gray-700 font-medium mb-2">Getting Started</p>
+                <p className="text-gray-600 text-sm mb-4 max-w-md mx-auto">
+                  To see pets here, you need to be approved by at least one rescue organization.
+                  Request approval from rescue organizations you work with.
+                </p>
+                <Link to="/vet/approvals">
+                  <Button variant="primary" size="sm">Request Approval</Button>
+                </Link>
+              </>
+            ) : (
+              <>
+                <div className="w-12 h-12 bg-success-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <svg className="w-6 h-6 text-success-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <p className="text-gray-700 font-medium">All caught up!</p>
+                <p className="text-gray-600 text-sm mt-1">
+                  No pets are currently awaiting your sign-off from your {approvedOrgs.length} approved organization{approvedOrgs.length > 1 ? 's' : ''}.
+                </p>
+                <p className="text-gray-500 text-sm mt-2">
+                  Use the microchip lookup below to find a specific pet.
+                </p>
+              </>
+            )}
           </div>
         )}
       </div>

@@ -81,6 +81,8 @@ export function AdopterDashboard() {
         return <span className="px-3 py-1 text-xs font-semibold rounded-full bg-warning-100 text-warning-800">Under Review</span>;
       case 'APPROVED':
         return <span className="px-3 py-1 text-xs font-semibold rounded-full bg-success-100 text-success-800">Approved</span>;
+      case 'FINALIZED':
+        return <span className="px-3 py-1 text-xs font-semibold rounded-full bg-primary-100 text-primary-800">Adopted!</span>;
       case 'REJECTED':
         return <span className="px-3 py-1 text-xs font-semibold rounded-full bg-error-100 text-error-800">Rejected</span>;
       case 'WITHDRAWN':

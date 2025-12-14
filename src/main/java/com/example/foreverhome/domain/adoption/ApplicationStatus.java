@@ -11,7 +11,8 @@ public enum ApplicationStatus {
     UNDER_REVIEW,
     APPROVED,
     REJECTED,
-    WITHDRAWN;
+    WITHDRAWN,
+    FINALIZED;
 
     private static final Set<ApplicationStatus> ACTIVE = EnumSet.of(SUBMITTED, UNDER_REVIEW);
     private static final Set<ApplicationStatus> WITHDRAWABLE = EnumSet.of(SUBMITTED, UNDER_REVIEW);
@@ -42,7 +43,8 @@ public enum ApplicationStatus {
         return switch (this) {
             case SUBMITTED -> target == UNDER_REVIEW || target == APPROVED || target == REJECTED || target == WITHDRAWN;
             case UNDER_REVIEW -> target == APPROVED || target == REJECTED || target == WITHDRAWN;
-            case APPROVED, REJECTED, WITHDRAWN -> false;
+            case APPROVED -> target == FINALIZED;
+            case REJECTED, WITHDRAWN, FINALIZED -> false;
         };
     }
 }

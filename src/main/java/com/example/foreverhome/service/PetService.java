@@ -99,6 +99,9 @@ public class PetService {
         );
         Pet savedPet = petRepository.save(pet);
 
+        // Record initial status in history
+        recordStatusChange(savedPet.getId(), null, PetStatus.DRAFT, userId, "Pet registered by foster");
+
         // Record metric
         metricsService.recordPetRegistration(request.species().name());
 

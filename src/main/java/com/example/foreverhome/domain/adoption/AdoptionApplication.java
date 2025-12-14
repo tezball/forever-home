@@ -184,6 +184,18 @@ public class AdoptionApplication implements Persistable<UUID> {
         this.status = ApplicationStatus.WITHDRAWN;
     }
 
+    /**
+     * Marks the application as finalized after adoption completion.
+     * Can only be called when status is APPROVED.
+     */
+    public void markAsFinalized() {
+        if (!status.canTransitionTo(ApplicationStatus.FINALIZED)) {
+            throw new IllegalStateException("Cannot finalize from status: " + status);
+        }
+        this.status = ApplicationStatus.FINALIZED;
+        this.reviewedAt = Instant.now();
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

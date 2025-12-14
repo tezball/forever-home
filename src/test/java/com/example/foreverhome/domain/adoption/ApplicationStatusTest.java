@@ -14,16 +14,17 @@ class ApplicationStatusTest {
     class GivenAllDefinedStatuses {
 
         @Test
-        @DisplayName("should have exactly 5 statuses")
-        void shouldHaveExactlyFiveStatuses() {
+        @DisplayName("should have exactly 6 statuses")
+        void shouldHaveExactlySixStatuses() {
             assertThat(ApplicationStatus.values())
-                    .hasSize(5)
+                    .hasSize(6)
                     .containsExactlyInAnyOrder(
                             ApplicationStatus.SUBMITTED,
                             ApplicationStatus.UNDER_REVIEW,
                             ApplicationStatus.APPROVED,
                             ApplicationStatus.REJECTED,
-                            ApplicationStatus.WITHDRAWN
+                            ApplicationStatus.WITHDRAWN,
+                            ApplicationStatus.FINALIZED
                     );
         }
     }
@@ -61,6 +62,12 @@ class ApplicationStatusTest {
         void withdrawnShouldNotBeActive() {
             assertThat(ApplicationStatus.WITHDRAWN.isActive()).isFalse();
         }
+
+        @Test
+        @DisplayName("FINALIZED status should not be active")
+        void finalizedShouldNotBeActive() {
+            assertThat(ApplicationStatus.FINALIZED.isActive()).isFalse();
+        }
     }
 
     @Nested
@@ -92,12 +99,23 @@ class ApplicationStatusTest {
         }
 
         @Test
-        @DisplayName("APPROVED cannot transition to any other status")
-        void approvedCannotTransition() {
+        @DisplayName("APPROVED can only transition to FINALIZED")
+        void approvedCanOnlyTransitionToFinalized() {
+            assertThat(ApplicationStatus.APPROVED.canTransitionTo(ApplicationStatus.FINALIZED)).isTrue();
             assertThat(ApplicationStatus.APPROVED.canTransitionTo(ApplicationStatus.SUBMITTED)).isFalse();
             assertThat(ApplicationStatus.APPROVED.canTransitionTo(ApplicationStatus.UNDER_REVIEW)).isFalse();
             assertThat(ApplicationStatus.APPROVED.canTransitionTo(ApplicationStatus.REJECTED)).isFalse();
             assertThat(ApplicationStatus.APPROVED.canTransitionTo(ApplicationStatus.WITHDRAWN)).isFalse();
+        }
+
+        @Test
+        @DisplayName("FINALIZED cannot transition to any other status")
+        void finalizedCannotTransition() {
+            assertThat(ApplicationStatus.FINALIZED.canTransitionTo(ApplicationStatus.SUBMITTED)).isFalse();
+            assertThat(ApplicationStatus.FINALIZED.canTransitionTo(ApplicationStatus.UNDER_REVIEW)).isFalse();
+            assertThat(ApplicationStatus.FINALIZED.canTransitionTo(ApplicationStatus.APPROVED)).isFalse();
+            assertThat(ApplicationStatus.FINALIZED.canTransitionTo(ApplicationStatus.REJECTED)).isFalse();
+            assertThat(ApplicationStatus.FINALIZED.canTransitionTo(ApplicationStatus.WITHDRAWN)).isFalse();
         }
     }
 
@@ -121,6 +139,12 @@ class ApplicationStatusTest {
         @DisplayName("APPROVED status does not allow withdrawal")
         void approvedDoesNotAllowWithdrawal() {
             assertThat(ApplicationStatus.APPROVED.canWithdraw()).isFalse();
+        }
+
+        @Test
+        @DisplayName("FINALIZED status does not allow withdrawal")
+        void finalizedDoesNotAllowWithdrawal() {
+            assertThat(ApplicationStatus.FINALIZED.canWithdraw()).isFalse();
         }
     }
 }

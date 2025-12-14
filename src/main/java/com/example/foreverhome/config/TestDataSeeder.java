@@ -287,11 +287,11 @@ public class TestDataSeeder implements CommandLineRunner {
         UUID adopterId = getAdopterId("adopter@test.com");
         UUID vetId = getVetId("vet@test.com");
         if (adopterId != null && vetId != null) {
-            // First create the adoption application
+            // First create the adoption application (FINALIZED since Oliver is already ADOPTED)
             UUID applicationId = UUID.randomUUID();
             jdbcTemplate.update("""
                 INSERT INTO adoption_applications (id, pet_id, adopter_id, status, living_situation, pet_experience, why_adopt, submitted_at, reviewed_at)
-                VALUES (?, ?, ?, 'APPROVED', 'House with yard', 'Previous cat owner', 'Looking for a friendly companion', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                VALUES (?, ?, ?, 'FINALIZED', 'House with yard', 'Previous cat owner', 'Looking for a friendly companion', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                 """,
                 applicationId, oliverId, adopterId);
 
@@ -323,6 +323,92 @@ public class TestDataSeeder implements CommandLineRunner {
 
         // Upload images for each pet
         seedPetImages(petSeeds);
+
+        // Seed status history for each pet
+        seedPetStatusHistory();
+    }
+
+    private void seedPetStatusHistory() {
+        // Check if status history already exists
+        Integer historyCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM pet_status_history", Integer.class);
+        if (historyCount != null && historyCount > 0) {
+            logger.debug("Pet status history already exists, skipping seeding");
+            return;
+        }
+
+        logger.info("Seeding pet status history...");
+
+        // Get rescue org user ID for rescue-related status changes
+        UUID rescueOrgUserId = getUserIdByEmail("rescue@test.com");
+        UUID vetUserId = getUserIdByEmail("vet@test.com");
+
+        // Query all pets with their current status and foster user ID
+        List<Map<String, Object>> pets = jdbcTemplate.queryForList("""
+            SELECT p.id, p.status, p.foster_id, f.user_id as foster_user_id
+            FROM pets p
+            JOIN fosters f ON p.foster_id = f.id
+            """);
+
+        for (Map<String, Object> pet : pets) {
+            UUID petId = (UUID) pet.get("id");
+            String status = (String) pet.get("status");
+            UUID fosterUserId = (UUID) pet.get("foster_user_id");
+
+            // Always record initial DRAFT status
+            insertStatusHistory(petId, null, "DRAFT", fosterUserId, "Pet registered by foster");
+
+            // Add additional history based on current status
+            switch (status) {
+                case "DRAFT":
+                    // Only initial DRAFT entry needed
+                    break;
+                case "PENDING_RESCUE":
+                    insertStatusHistory(petId, "DRAFT", "PENDING_RESCUE", fosterUserId, "Submitted for rescue review");
+                    break;
+                case "PENDING_VET":
+                    insertStatusHistory(petId, "DRAFT", "PENDING_RESCUE", fosterUserId, "Submitted for rescue review");
+                    insertStatusHistory(petId, "PENDING_RESCUE", "PENDING_VET", rescueOrgUserId, "Accepted by rescue organization");
+                    break;
+                case "AVAILABLE":
+                    insertStatusHistory(petId, "DRAFT", "PENDING_RESCUE", fosterUserId, "Submitted for rescue review");
+                    insertStatusHistory(petId, "PENDING_RESCUE", "PENDING_VET", rescueOrgUserId, "Accepted by rescue organization");
+                    insertStatusHistory(petId, "PENDING_VET", "AVAILABLE", vetUserId, "Signed off by veterinarian");
+                    break;
+                case "IN_PROGRESS":
+                    insertStatusHistory(petId, "DRAFT", "PENDING_RESCUE", fosterUserId, "Submitted for rescue review");
+                    insertStatusHistory(petId, "PENDING_RESCUE", "PENDING_VET", rescueOrgUserId, "Accepted by rescue organization");
+                    insertStatusHistory(petId, "PENDING_VET", "AVAILABLE", vetUserId, "Signed off by veterinarian");
+                    insertStatusHistory(petId, "AVAILABLE", "IN_PROGRESS", rescueOrgUserId, "Adoption application approved");
+                    break;
+                case "ADOPTED":
+                    insertStatusHistory(petId, "DRAFT", "PENDING_RESCUE", fosterUserId, "Submitted for rescue review");
+                    insertStatusHistory(petId, "PENDING_RESCUE", "PENDING_VET", rescueOrgUserId, "Accepted by rescue organization");
+                    insertStatusHistory(petId, "PENDING_VET", "AVAILABLE", vetUserId, "Signed off by veterinarian");
+                    insertStatusHistory(petId, "AVAILABLE", "IN_PROGRESS", rescueOrgUserId, "Adoption application approved");
+                    insertStatusHistory(petId, "IN_PROGRESS", "ADOPTED", rescueOrgUserId, "Adoption finalized");
+                    break;
+            }
+        }
+
+        logger.info("Pet status history seeding complete for {} pets", pets.size());
+    }
+
+    private void insertStatusHistory(UUID petId, String fromStatus, String toStatus, UUID changedBy, String notes) {
+        jdbcTemplate.update("""
+            INSERT INTO pet_status_history (id, pet_id, from_status, to_status, changed_by, changed_at, notes)
+            VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP - INTERVAL '1 day' * (RANDOM() * 7 + 1), ?)
+            """,
+            UUID.randomUUID(), petId, fromStatus, toStatus, changedBy, notes);
+    }
+
+    private UUID getUserIdByEmail(String email) {
+        try {
+            return jdbcTemplate.queryForObject(
+                "SELECT id FROM app_users WHERE email = ?", UUID.class, email);
+        } catch (Exception e) {
+            logger.warn("User not found for email: {}", email);
+            return null;
+        }
     }
 
     private void seedVetSignOffs(UUID vetId, UUID charlieId, UUID whiskersId, UUID dukeId, UUID daisyId, UUID oliverId) {

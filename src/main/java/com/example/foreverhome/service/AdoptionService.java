@@ -213,6 +213,10 @@ public class AdoptionService {
         pet.finalizeAdoption();
         petRepository.save(pet);
 
+        // Update application status to FINALIZED
+        application.markAsFinalized();
+        applicationRepository.save(application);
+
         Adoption adoption = Adoption.create(
                 application.getPetId(),
                 pet.getFosterId(),
