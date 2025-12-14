@@ -160,6 +160,7 @@ public class TestDataSeeder implements CommandLineRunner {
 
         // === Sarah Mitchell (foster@test.com) - 1 pet in DRAFT status ===
         UUID bellaId = UUID.randomUUID();
+        String bellaMicrochip = "CHIP-DOG-001";
         jdbcTemplate.update("""
             INSERT INTO pets (id, name, species, breed, age, age_unit, sex, size, description, microchip_id,
                 status, foster_id, rescue_org_id, created_at, updated_at)
@@ -167,11 +168,12 @@ public class TestDataSeeder implements CommandLineRunner {
             """,
             bellaId, "Bella", "DOG", "Beagle", 6, "MONTHS", "FEMALE", "MEDIUM",
             "Adorable beagle puppy learning basic commands. Loves treats and belly rubs.",
-            "CHIP-DOG-001", "DRAFT", foster1Id, null);
-        petSeeds.add(new PetSeed(bellaId, "DOG", "dog-1.jpg"));
+            bellaMicrochip, "DRAFT", foster1Id, null);
+        petSeeds.add(new PetSeed(bellaId, bellaMicrochip, "DOG", "dog-1.jpg"));
 
         // === James Rodriguez (foster2@test.com) - 2 pets in PENDING_RESCUE status ===
         UUID maxId = UUID.randomUUID();
+        String maxMicrochip = "CHIP-DOG-002";
         jdbcTemplate.update("""
             INSERT INTO pets (id, name, species, breed, age, age_unit, sex, size, description, microchip_id,
                 status, foster_id, rescue_org_id, created_at, updated_at)
@@ -179,10 +181,11 @@ public class TestDataSeeder implements CommandLineRunner {
             """,
             maxId, "Max", "DOG", "Golden Retriever", 3, "YEARS", "MALE", "LARGE",
             "Friendly and energetic golden retriever who loves to play fetch and swim. Great with kids and other dogs.",
-            "CHIP-DOG-002", "PENDING_RESCUE", foster2Id, rescueOrgId);
-        petSeeds.add(new PetSeed(maxId, "DOG", "dog-2.jpg"));
+            maxMicrochip, "PENDING_RESCUE", foster2Id, rescueOrgId);
+        petSeeds.add(new PetSeed(maxId, maxMicrochip, "DOG", "dog-2.jpg"));
 
         UUID shadowId = UUID.randomUUID();
+        String shadowMicrochip = "CHIP-CAT-001";
         jdbcTemplate.update("""
             INSERT INTO pets (id, name, species, breed, age, age_unit, sex, size, description, microchip_id,
                 status, foster_id, rescue_org_id, created_at, updated_at)
@@ -190,11 +193,12 @@ public class TestDataSeeder implements CommandLineRunner {
             """,
             shadowId, "Shadow", "CAT", "Black Shorthair", 4, "YEARS", "MALE", "MEDIUM",
             "Mysterious and elegant black cat. Independent but affectionate once he trusts you.",
-            "CHIP-CAT-001", "PENDING_RESCUE", foster2Id, rescueOrgId);
-        petSeeds.add(new PetSeed(shadowId, "CAT", "cat-1.jpg"));
+            shadowMicrochip, "PENDING_RESCUE", foster2Id, rescueOrgId);
+        petSeeds.add(new PetSeed(shadowId, shadowMicrochip, "CAT", "cat-1.jpg"));
 
         // === Emily Chen (foster3@test.com) - 2 pets in PENDING_VET status ===
         UUID lunaId = UUID.randomUUID();
+        String lunaMicrochip = "CHIP-CAT-002";
         jdbcTemplate.update("""
             INSERT INTO pets (id, name, species, breed, age, age_unit, sex, size, description, microchip_id,
                 status, foster_id, rescue_org_id, created_at, updated_at)
@@ -202,10 +206,11 @@ public class TestDataSeeder implements CommandLineRunner {
             """,
             lunaId, "Luna", "CAT", "Siamese", 1, "YEARS", "FEMALE", "SMALL",
             "Beautiful Siamese kitten with bright blue eyes. Playful and affectionate.",
-            "CHIP-CAT-002", "PENDING_VET", foster3Id, rescueOrgId);
-        petSeeds.add(new PetSeed(lunaId, "CAT", "cat-2.jpg"));
+            lunaMicrochip, "PENDING_VET", foster3Id, rescueOrgId);
+        petSeeds.add(new PetSeed(lunaId, lunaMicrochip, "CAT", "cat-2.jpg"));
 
         UUID rockyId = UUID.randomUUID();
+        String rockyMicrochip = "CHIP-DOG-003";
         jdbcTemplate.update("""
             INSERT INTO pets (id, name, species, breed, age, age_unit, sex, size, description, microchip_id,
                 status, foster_id, rescue_org_id, created_at, updated_at)
@@ -213,11 +218,12 @@ public class TestDataSeeder implements CommandLineRunner {
             """,
             rockyId, "Rocky", "DOG", "German Shepherd Mix", 2, "YEARS", "MALE", "LARGE",
             "Loyal and protective companion. Well-trained and good on leash. Looking for an active family.",
-            "CHIP-DOG-003", "PENDING_VET", foster3Id, rescueOrgId);
-        petSeeds.add(new PetSeed(rockyId, "DOG", "dog-3.jpg"));
+            rockyMicrochip, "PENDING_VET", foster3Id, rescueOrgId);
+        petSeeds.add(new PetSeed(rockyId, rockyMicrochip, "DOG", "dog-3.jpg"));
 
         // === Michael Thompson (foster4@test.com) - 3 pets in AVAILABLE status ===
         UUID charlieId = UUID.randomUUID();
+        String charlieMicrochip = "CHIP-DOG-004";
         jdbcTemplate.update("""
             INSERT INTO pets (id, name, species, breed, age, age_unit, sex, size, description, microchip_id,
                 status, foster_id, rescue_org_id, created_at, updated_at)
@@ -225,10 +231,11 @@ public class TestDataSeeder implements CommandLineRunner {
             """,
             charlieId, "Charlie", "DOG", "Labrador Mix", 2, "YEARS", "MALE", "LARGE",
             "Happy-go-lucky lab mix. Loves everyone and everything. House trained and great with other pets.",
-            "CHIP-DOG-004", "AVAILABLE", foster4Id, rescueOrgId);
-        petSeeds.add(new PetSeed(charlieId, "DOG", "dog-4.jpg"));
+            charlieMicrochip, "AVAILABLE", foster4Id, rescueOrgId);
+        petSeeds.add(new PetSeed(charlieId, charlieMicrochip, "DOG", "dog-4.jpg"));
 
         UUID whiskersId = UUID.randomUUID();
+        String whiskersMicrochip = "CHIP-CAT-003";
         jdbcTemplate.update("""
             INSERT INTO pets (id, name, species, breed, age, age_unit, sex, size, description, microchip_id,
                 status, foster_id, rescue_org_id, created_at, updated_at)
@@ -236,10 +243,11 @@ public class TestDataSeeder implements CommandLineRunner {
             """,
             whiskersId, "Whiskers", "CAT", "Tabby", 5, "YEARS", "FEMALE", "SMALL",
             "Sweet and gentle tabby cat who loves to curl up in sunny spots. Good with other cats and calm dogs.",
-            "CHIP-CAT-003", "AVAILABLE", foster4Id, rescueOrgId);
-        petSeeds.add(new PetSeed(whiskersId, "CAT", "cat-3.jpg"));
+            whiskersMicrochip, "AVAILABLE", foster4Id, rescueOrgId);
+        petSeeds.add(new PetSeed(whiskersId, whiskersMicrochip, "CAT", "cat-3.jpg"));
 
         UUID dukeId = UUID.randomUUID();
+        String dukeMicrochip = "CHIP-DOG-005";
         jdbcTemplate.update("""
             INSERT INTO pets (id, name, species, breed, age, age_unit, sex, size, description, microchip_id,
                 status, foster_id, rescue_org_id, created_at, updated_at)
@@ -247,11 +255,12 @@ public class TestDataSeeder implements CommandLineRunner {
             """,
             dukeId, "Duke", "DOG", "Boxer", 4, "YEARS", "MALE", "LARGE",
             "Energetic and loyal boxer. Great guard dog but gentle with family. Needs a home with a yard.",
-            "CHIP-DOG-005", "AVAILABLE", foster4Id, rescueOrgId);
-        petSeeds.add(new PetSeed(dukeId, "DOG", "dog-5.jpg"));
+            dukeMicrochip, "AVAILABLE", foster4Id, rescueOrgId);
+        petSeeds.add(new PetSeed(dukeId, dukeMicrochip, "DOG", "dog-5.jpg"));
 
         // === Rachel Anderson (foster5@test.com) - 2 pets: 1 IN_PROGRESS, 1 ADOPTED ===
         UUID daisyId = UUID.randomUUID();
+        String daisyMicrochip = "CHIP-DOG-006";
         jdbcTemplate.update("""
             INSERT INTO pets (id, name, species, breed, age, age_unit, sex, size, description, microchip_id,
                 status, foster_id, rescue_org_id, created_at, updated_at)
@@ -259,10 +268,11 @@ public class TestDataSeeder implements CommandLineRunner {
             """,
             daisyId, "Daisy", "DOG", "Poodle Mix", 3, "YEARS", "FEMALE", "SMALL",
             "Smart and hypoallergenic poodle mix. Currently in adoption process with a wonderful family.",
-            "CHIP-DOG-006", "IN_PROGRESS", foster5Id, rescueOrgId);
-        petSeeds.add(new PetSeed(daisyId, "DOG", "dog-6.jpg"));
+            daisyMicrochip, "IN_PROGRESS", foster5Id, rescueOrgId);
+        petSeeds.add(new PetSeed(daisyId, daisyMicrochip, "DOG", "dog-6.jpg"));
 
         UUID oliverId = UUID.randomUUID();
+        String oliverMicrochip = "CHIP-CAT-004";
         jdbcTemplate.update("""
             INSERT INTO pets (id, name, species, breed, age, age_unit, sex, size, description, microchip_id,
                 status, foster_id, rescue_org_id, created_at, updated_at)
@@ -270,8 +280,8 @@ public class TestDataSeeder implements CommandLineRunner {
             """,
             oliverId, "Oliver", "CAT", "Orange Tabby", 2, "YEARS", "MALE", "MEDIUM",
             "Friendly orange tabby who found his forever home. A true success story!",
-            "CHIP-CAT-004", "ADOPTED", foster5Id, rescueOrgId);
-        petSeeds.add(new PetSeed(oliverId, "CAT", "cat-4.jpg"));
+            oliverMicrochip, "ADOPTED", foster5Id, rescueOrgId);
+        petSeeds.add(new PetSeed(oliverId, oliverMicrochip, "CAT", "cat-4.jpg"));
 
         logger.info("Created 10 sample pets across 5 fosters with various statuses");
 
@@ -289,7 +299,7 @@ public class TestDataSeeder implements CommandLineRunner {
 
         // Get all pets and seed images for them
         List<Map<String, Object>> pets = jdbcTemplate.queryForList(
-            "SELECT id, species FROM pets"
+            "SELECT id, microchip_id, species FROM pets"
         );
 
         if (pets.isEmpty()) {
@@ -303,6 +313,7 @@ public class TestDataSeeder implements CommandLineRunner {
 
         for (Map<String, Object> pet : pets) {
             UUID petId = (UUID) pet.get("id");
+            String microchipId = (String) pet.get("microchip_id");
             String species = (String) pet.get("species");
 
             String imageFile;
@@ -313,7 +324,7 @@ public class TestDataSeeder implements CommandLineRunner {
                 imageFile = "cat-" + catIndex + ".jpg";
                 catIndex = (catIndex % 4) + 1; // Cycle through 1-4
             }
-            petSeeds.add(new PetSeed(petId, species, imageFile));
+            petSeeds.add(new PetSeed(petId, microchipId, species, imageFile));
         }
 
         seedPetImages(petSeeds);
@@ -342,9 +353,10 @@ public class TestDataSeeder implements CommandLineRunner {
                     imageBytes
                 );
 
-                // Upload to S3
-                String folder = "pets/" + seed.petId();
-                String s3Key = storageService.uploadFile(multipartFile, folder);
+                // Upload to S3 using microchip ID for folder and sequential number for filename
+                // Format: pets/<microchip_id>/1.jpg
+                String s3Key = "pets/" + seed.microchipId() + "/1.jpg";
+                storageService.uploadFileWithKey(multipartFile, s3Key);
 
                 // Create pet_images record
                 jdbcTemplate.update("""
@@ -353,7 +365,7 @@ public class TestDataSeeder implements CommandLineRunner {
                     """,
                     UUID.randomUUID(), seed.petId(), s3Key, true, 0);
 
-                logger.debug("Uploaded image for pet {}: {}", seed.petId(), s3Key);
+                logger.debug("Uploaded image for pet {} (microchip {}): {}", seed.petId(), seed.microchipId(), s3Key);
 
             } catch (IOException e) {
                 logger.error("Failed to upload image for pet {}: {}", seed.petId(), e.getMessage());
@@ -555,7 +567,7 @@ public class TestDataSeeder implements CommandLineRunner {
     }
 
     private record TestAccount(String email, String name, UserRole role, String firstName, String lastName) {}
-    private record PetSeed(UUID petId, String species, String imageFile) {}
+    private record PetSeed(UUID petId, String microchipId, String species, String imageFile) {}
 
     /**
      * Simple MultipartFile implementation for seeding demo images.

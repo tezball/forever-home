@@ -65,6 +65,21 @@ public class S3StorageService {
         String extension = getFileExtension(file.getOriginalFilename());
         String key = folder + "/" + UUID.randomUUID() + extension;
 
+        return uploadFileWithKey(file, key);
+    }
+
+    /**
+     * Uploads a file to S3 with a specific key (not the full URL).
+     * The key can be used with {@link #getPublicUrl(String)} to construct a URL.
+     *
+     * @param file the file to upload
+     * @param key  the full S3 key (e.g., "pets/CHIP123/1.jpg")
+     * @return the S3 key for the uploaded file
+     * @throws StorageException if the upload fails
+     */
+    public String uploadFileWithKey(MultipartFile file, String key) {
+        validateFile(file);
+
         try {
             logger.info("Uploading file to S3: bucket={}, key={}, contentType={}, size={}",
                     bucketName, key, file.getContentType(), file.getSize());

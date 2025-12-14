@@ -70,6 +70,9 @@ export function Header() {
             <Link to="/rescues" className="text-gray-600 hover:text-primary-500 transition-colors">
               Rescues
             </Link>
+            <Link to="/faq" className="text-gray-600 hover:text-primary-500 transition-colors">
+              FAQ
+            </Link>
             {isAuthenticated ? (
               <>
                 <Link to={getDashboardLink()} className="text-gray-600 hover:text-primary-500 transition-colors">
@@ -172,6 +175,13 @@ export function Header() {
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Rescues
+              </Link>
+              <Link
+                to="/faq"
+                className="px-4 py-2 text-gray-600 hover:bg-secondary-100 rounded"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                FAQ
               </Link>
               {isAuthenticated ? (
                 <>

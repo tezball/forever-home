@@ -63,8 +63,11 @@ public class PetImageService {
             );
         }
 
-        String folder = PET_IMAGES_FOLDER + "/" + petId;
-        String s3Key = storageService.uploadFile(file, folder);
+        // Use microchip number for folder and sequential number for filename
+        String extension = getFileExtension(file.getOriginalFilename());
+        int imageNumber = currentCount + 1;
+        String s3Key = PET_IMAGES_FOLDER + "/" + pet.getMicrochipId() + "/" + imageNumber + extension;
+        storageService.uploadFileWithKey(file, s3Key);
 
         boolean isPrimary = currentCount == 0;
         int displayOrder = currentCount;
@@ -73,6 +76,13 @@ public class PetImageService {
         PetImage savedImage = petImageRepository.save(image);
 
         return toDto(savedImage);
+    }
+
+    private String getFileExtension(String filename) {
+        if (filename == null || !filename.contains(".")) {
+            return ".jpg"; // Default extension
+        }
+        return filename.substring(filename.lastIndexOf("."));
     }
 
     public void deleteImage(UUID imageId, UUID userId) {

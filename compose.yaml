@@ -16,19 +16,18 @@ services:
       retries: 5
 
   localstack:
-    image: localstack/localstack:latest
+    # Using localstack-persist for S3 data persistence in Community Edition
+    # See: https://github.com/GREsau/localstack-persist
+    image: gresau/localstack-persist:4
     environment:
       - SERVICES=s3,ses
       - DEBUG=1
       - AWS_DEFAULT_REGION=us-east-1
-      # Enable persistence to survive container restarts
-      - PERSISTENCE=1
-      # Ensure data directory is consistent
-      - DATA_DIR=/var/lib/localstack/data
     ports:
       - '4566:4566'
     volumes:
-      - ./localstack-data:/var/lib/localstack
+      # Persisted data is stored at /persisted-data in the container
+      - ./localstack-data:/persisted-data
       - ./scripts/localstack-init.sh:/etc/localstack/init/ready.d/init.sh
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]

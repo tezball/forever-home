@@ -62,10 +62,11 @@ public class SecurityConfig {
                 // SPA frontend routes - allow all non-API routes for client-side routing
                 // These are served by SpaWebConfig which returns index.html
                 .requestMatchers(
-                    "/login", "/register", "/forgot-password", "/reset-password",
+                    "/login", "/register", "/forgot-password", "/reset-password", "/verify-email/**",
                     "/pets", "/pets/**",
                     "/rescues", "/rescues/**",
-                    "/contact", "/privacy", "/help", "/about",
+                    "/vets", "/vets/**",
+                    "/faq", "/contact", "/privacy", "/help", "/about",
                     "/profile", "/settings", "/notifications",
                     "/adopter/**", "/foster/**", "/rescue/**", "/vet/**", "/admin/**"
                 ).permitAll()
