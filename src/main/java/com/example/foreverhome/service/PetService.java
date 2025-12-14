@@ -6,6 +6,9 @@ import com.example.foreverhome.domain.pet.PetImage;
 import com.example.foreverhome.domain.pet.PetStatus;
 import com.example.foreverhome.domain.pet.PetStatusHistory;
 import com.example.foreverhome.domain.profile.Foster;
+import com.example.foreverhome.domain.profile.Vet;
+import com.example.foreverhome.domain.verification.HealthStatus;
+import com.example.foreverhome.domain.verification.VetSignOff;
 import com.example.foreverhome.dto.PagedResponse;
 import com.example.foreverhome.dto.pet.CreatePetRequest;
 import com.example.foreverhome.dto.pet.PetDto;
@@ -18,9 +21,12 @@ import com.example.foreverhome.repository.FosterRepository;
 import com.example.foreverhome.repository.PetImageRepository;
 import com.example.foreverhome.repository.PetRepository;
 import com.example.foreverhome.repository.PetStatusHistoryRepository;
+import com.example.foreverhome.repository.VetRepository;
+import com.example.foreverhome.repository.VetSignOffRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -36,6 +42,8 @@ public class PetService {
     private final PetStatusHistoryRepository statusHistoryRepository;
     private final MetricsService metricsService;
     private final S3StorageService storageService;
+    private final VetRepository vetRepository;
+    private final VetSignOffRepository vetSignOffRepository;
 
     public PetService(PetRepository petRepository,
                       PetImageRepository petImageRepository,
@@ -44,7 +52,9 @@ public class PetService {
                       VetApprovalService vetApprovalService,
                       PetStatusHistoryRepository statusHistoryRepository,
                       MetricsService metricsService,
-                      S3StorageService storageService) {
+                      S3StorageService storageService,
+                      VetRepository vetRepository,
+                      VetSignOffRepository vetSignOffRepository) {
         this.petRepository = petRepository;
         this.petImageRepository = petImageRepository;
         this.fosterRepository = fosterRepository;
@@ -53,6 +63,8 @@ public class PetService {
         this.statusHistoryRepository = statusHistoryRepository;
         this.metricsService = metricsService;
         this.storageService = storageService;
+        this.vetRepository = vetRepository;
+        this.vetSignOffRepository = vetSignOffRepository;
     }
 
     private void recordStatusChange(UUID petId, PetStatus fromStatus, PetStatus toStatus, UUID changedBy, String notes) {
@@ -296,7 +308,7 @@ public class PetService {
         return PetDto.from(savedPet);
     }
 
-    public PetDto signOffByVet(UUID petId, UUID vetUserId) {
+    public PetDto signOffByVet(UUID petId, UUID vetUserId, VetSignOffRequest request) {
         Pet pet = findPetOrThrow(petId);
 
         if (!pet.canTransitionTo(PetStatus.AVAILABLE)) {
@@ -304,6 +316,20 @@ public class PetService {
                     pet.getStatus().name(), PetStatus.AVAILABLE.name()
             );
         }
+
+        // Get the Vet entity to record in the sign-off
+        Vet vet = vetRepository.findByUserId(vetUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("Vet profile", "userId: " + vetUserId));
+
+        // Create and save VetSignOff record
+        VetSignOff signOff = VetSignOff.create(
+                petId,
+                vet.getId(),
+                LocalDate.now(), // neutered date - using today as the confirmation date
+                HealthStatus.GOOD, // all sign-offs are GOOD since we validate isHealthy=true
+                request.healthNotes()
+        );
+        vetSignOffRepository.save(signOff);
 
         PetStatus fromStatus = pet.getStatus();
         pet.signOffByVet();
@@ -449,7 +475,7 @@ public class PetService {
             throw new InvalidStatusTransitionException("Pet must be healthy before sign-off");
         }
 
-        return signOffByVet(petId, vetUserId);
+        return signOffByVet(petId, vetUserId, request);
     }
 
     /**

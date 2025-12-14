@@ -14,6 +14,8 @@ import com.example.foreverhome.repository.FosterRepository;
 import com.example.foreverhome.repository.PetImageRepository;
 import com.example.foreverhome.repository.PetRepository;
 import com.example.foreverhome.repository.PetStatusHistoryRepository;
+import com.example.foreverhome.repository.VetRepository;
+import com.example.foreverhome.repository.VetSignOffRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -60,11 +62,17 @@ class PetServiceTest {
     @Mock
     private S3StorageService storageService;
 
+    @Mock
+    private VetRepository vetRepository;
+
+    @Mock
+    private VetSignOffRepository vetSignOffRepository;
+
     private PetService petService;
 
     @BeforeEach
     void setUp() {
-        petService = new PetService(petRepository, petImageRepository, fosterRepository, notificationService, vetApprovalService, statusHistoryRepository, metricsService, storageService);
+        petService = new PetService(petRepository, petImageRepository, fosterRepository, notificationService, vetApprovalService, statusHistoryRepository, metricsService, storageService, vetRepository, vetSignOffRepository);
     }
 
     @Nested
