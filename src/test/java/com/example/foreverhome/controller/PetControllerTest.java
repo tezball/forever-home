@@ -7,6 +7,7 @@ import com.example.foreverhome.domain.pet.PetStatus;
 import com.example.foreverhome.domain.pet.Species;
 import com.example.foreverhome.domain.profile.RescueOrganization;
 import com.example.foreverhome.domain.user.UserRole;
+import com.example.foreverhome.dto.PagedResponse;
 import com.example.foreverhome.dto.pet.CreatePetRequest;
 import com.example.foreverhome.dto.pet.DeclinePetRequest;
 import com.example.foreverhome.dto.pet.PetDto;
@@ -91,38 +92,40 @@ class PetControllerTest {
         @DisplayName("should return all available pets without filters")
         void shouldReturnAllAvailablePetsWithoutFilters() {
             List<PetDto> pets = List.of(samplePetDto);
-            when(petService.getAvailablePets()).thenReturn(pets);
+            PagedResponse<PetDto> pagedResponse = PagedResponse.of(pets, 0, 12, 1);
+            when(petService.getAvailablePetsPaged(null, null, null, null, null, 0, 12)).thenReturn(pagedResponse);
 
-            ResponseEntity<List<PetDto>> response = petController.getAvailablePets(null, null, null, null, null);
+            ResponseEntity<PagedResponse<PetDto>> response = petController.getAvailablePets(null, null, null, null, null, 0, 12);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-            assertThat(response.getBody()).hasSize(1);
-            verify(petService).getAvailablePets();
-            verify(petService, never()).getAvailablePetsWithFilters(any(), any(), any(), any(), any());
+            assertThat(response.getBody().content()).hasSize(1);
+            verify(petService).getAvailablePetsPaged(null, null, null, null, null, 0, 12);
         }
 
         @Test
         @DisplayName("should return filtered pets when species filter provided")
         void shouldReturnFilteredPetsWithSpecies() {
             List<PetDto> pets = List.of(samplePetDto);
-            when(petService.getAvailablePetsWithFilters("DOG", null, null, null, null)).thenReturn(pets);
+            PagedResponse<PetDto> pagedResponse = PagedResponse.of(pets, 0, 12, 1);
+            when(petService.getAvailablePetsPaged("DOG", null, null, null, null, 0, 12)).thenReturn(pagedResponse);
 
-            ResponseEntity<List<PetDto>> response = petController.getAvailablePets("DOG", null, null, null, null);
+            ResponseEntity<PagedResponse<PetDto>> response = petController.getAvailablePets("DOG", null, null, null, null, 0, 12);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-            verify(petService).getAvailablePetsWithFilters("DOG", null, null, null, null);
+            verify(petService).getAvailablePetsPaged("DOG", null, null, null, null, 0, 12);
         }
 
         @Test
         @DisplayName("should return filtered pets with multiple filters")
         void shouldReturnFilteredPetsWithMultipleFilters() {
             List<PetDto> pets = List.of(samplePetDto);
-            when(petService.getAvailablePetsWithFilters("DOG", "LARGE", "MALE", 1, 5)).thenReturn(pets);
+            PagedResponse<PetDto> pagedResponse = PagedResponse.of(pets, 0, 12, 1);
+            when(petService.getAvailablePetsPaged("DOG", "LARGE", "MALE", 1, 5, 0, 12)).thenReturn(pagedResponse);
 
-            ResponseEntity<List<PetDto>> response = petController.getAvailablePets("DOG", "LARGE", "MALE", 1, 5);
+            ResponseEntity<PagedResponse<PetDto>> response = petController.getAvailablePets("DOG", "LARGE", "MALE", 1, 5, 0, 12);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-            verify(petService).getAvailablePetsWithFilters("DOG", "LARGE", "MALE", 1, 5);
+            verify(petService).getAvailablePetsPaged("DOG", "LARGE", "MALE", 1, 5, 0, 12);
         }
     }
 

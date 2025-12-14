@@ -15,11 +15,16 @@ const statusFilterOptions: { value: StatusFilter; label: string }[] = [
   { value: 'ADOPTED', label: 'Adopted' },
 ];
 
+interface ApprovalRequestCount {
+  count: number;
+}
+
 export function RescueDashboard() {
   const { user } = useAuth();
   const [pendingPets, setPendingPets] = useState<Pet[]>([]);
   const [activePets, setActivePets] = useState<Pet[]>([]);
   const [applications, setApplications] = useState<AdoptionApplication[]>([]);
+  const [vetRequestCount, setVetRequestCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [declineModalOpen, setDeclineModalOpen] = useState(false);
   const [selectedPet, setSelectedPet] = useState<Pet | null>(null);
@@ -45,19 +50,22 @@ export function RescueDashboard() {
 
   const fetchData = async () => {
     try {
-      const [pendingRes, activeRes, appsRes] = await Promise.all([
+      const [pendingRes, activeRes, appsRes, vetCountRes] = await Promise.all([
         apiClient.get<Pet[]>('/rescues/my/pending'),
         apiClient.get<Pet[]>('/rescues/my/pets'),
         apiClient.get<AdoptionApplication[]>('/rescues/my/applications'),
+        apiClient.get<ApprovalRequestCount>('/rescue-org/approval-requests/count'),
       ]);
       setPendingPets(pendingRes.data);
       setActivePets(activeRes.data);
       setApplications(appsRes.data);
+      setVetRequestCount(vetCountRes.data.count);
     } catch {
       // Demo data
       setPendingPets([]);
       setActivePets([]);
       setApplications([]);
+      setVetRequestCount(0);
     } finally {
       setLoading(false);
     }
@@ -132,6 +140,10 @@ export function RescueDashboard() {
       setSuccessMessage(`Application for ${app.petName} has been approved`);
       setApplications((prev) =>
         prev.map((a) => (a.id === app.id ? { ...a, status: 'APPROVED' } : a))
+      );
+      // Update pet status from AVAILABLE to IN_PROGRESS
+      setActivePets((prev) =>
+        prev.map((p) => (p.id === app.petId ? { ...p, status: 'IN_PROGRESS' } : p))
       );
       setViewApplicationModalOpen(false);
       setTimeout(() => setSuccessMessage(''), 5000);
@@ -220,9 +232,21 @@ export function RescueDashboard() {
 
   return (
     <div className="container-app py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Rescue Dashboard</h1>
-        <p className="text-gray-600">Welcome back, {user?.name}</p>
+      <div className="flex justify-between items-start mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Rescue Dashboard</h1>
+          <p className="text-gray-600">Welcome back, {user?.name}</p>
+        </div>
+        <Link to="/rescue/vets">
+          <Button variant="outline" className="relative">
+            Manage Vets
+            {vetRequestCount > 0 && (
+              <span className="absolute -top-2 -right-2 bg-warning-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                {vetRequestCount}
+              </span>
+            )}
+          </Button>
+        </Link>
       </div>
 
       {/* Success Message */}
@@ -240,7 +264,7 @@ export function RescueDashboard() {
       )}
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
         <div className="card p-4 text-center">
           <p className="text-3xl font-bold text-warning-600">{pendingPets.length}</p>
           <p className="text-sm text-gray-600">Pending Review</p>
@@ -257,6 +281,10 @@ export function RescueDashboard() {
           <p className="text-3xl font-bold text-info-500">{activePets.filter((p) => p.status === 'IN_PROGRESS').length}</p>
           <p className="text-sm text-gray-600">In Progress</p>
         </div>
+        <Link to="/rescue/vets" className="card p-4 text-center hover:bg-secondary-50 transition-colors">
+          <p className={`text-3xl font-bold ${vetRequestCount > 0 ? 'text-warning-600' : 'text-gray-400'}`}>{vetRequestCount}</p>
+          <p className="text-sm text-gray-600">Vet Requests</p>
+        </Link>
       </div>
 
       {loading ? (

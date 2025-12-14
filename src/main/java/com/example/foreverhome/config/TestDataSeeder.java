@@ -283,10 +283,76 @@ public class TestDataSeeder implements CommandLineRunner {
             oliverMicrochip, "ADOPTED", foster5Id, rescueOrgId);
         petSeeds.add(new PetSeed(oliverId, oliverMicrochip, "CAT", "cat-4.jpg"));
 
+        // Create adoption application and adoption record for Oliver (the ADOPTED pet)
+        UUID adopterId = getAdopterId("adopter@test.com");
+        UUID vetId = getVetId("vet@test.com");
+        if (adopterId != null && vetId != null) {
+            // First create the adoption application
+            UUID applicationId = UUID.randomUUID();
+            jdbcTemplate.update("""
+                INSERT INTO adoption_applications (id, pet_id, adopter_id, status, living_situation, pet_experience, why_adopt, submitted_at, reviewed_at)
+                VALUES (?, ?, ?, 'APPROVED', 'House with yard', 'Previous cat owner', 'Looking for a friendly companion', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                """,
+                applicationId, oliverId, adopterId);
+
+            // Then create the adoption record
+            UUID adoptionId = UUID.randomUUID();
+            jdbcTemplate.update("""
+                INSERT INTO adoptions (id, pet_id, foster_id, adopter_id, rescue_org_id, vet_id, application_id, adopted_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                """,
+                adoptionId, oliverId, foster5Id, adopterId, rescueOrgId, vetId, applicationId);
+            logger.info("Created adoption application and record for Oliver");
+        }
+
         logger.info("Created 10 sample pets across 5 fosters with various statuses");
+
+        // Add vet sign-offs for pets that need them (AVAILABLE, IN_PROGRESS, ADOPTED)
+        seedVetSignOffs(vetId, charlieId, whiskersId, dukeId, daisyId, oliverId);
+
+        // Add adoption application for Daisy (IN_PROGRESS pet)
+        if (adopterId != null) {
+            UUID daisyApplicationId = UUID.randomUUID();
+            jdbcTemplate.update("""
+                INSERT INTO adoption_applications (id, pet_id, adopter_id, status, living_situation, pet_experience, why_adopt, submitted_at, reviewed_at)
+                VALUES (?, ?, ?, 'APPROVED', 'House with yard', 'Previous dog owner', 'Looking for a small companion dog', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                """,
+                daisyApplicationId, daisyId, adopterId);
+            logger.info("Created adoption application for Daisy (IN_PROGRESS)");
+        }
 
         // Upload images for each pet
         seedPetImages(petSeeds);
+    }
+
+    private void seedVetSignOffs(UUID vetId, UUID charlieId, UUID whiskersId, UUID dukeId, UUID daisyId, UUID oliverId) {
+        if (vetId == null) {
+            logger.warn("Cannot seed vet sign-offs: vet not found");
+            return;
+        }
+
+        // Check if sign-offs already exist
+        Integer signOffCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM vet_signoffs", Integer.class);
+        if (signOffCount != null && signOffCount > 0) {
+            logger.debug("Vet sign-offs already exist, skipping seeding");
+            return;
+        }
+
+        logger.info("Seeding vet sign-offs for AVAILABLE, IN_PROGRESS, and ADOPTED pets...");
+
+        // Add sign-offs for all pets that should have them
+        List<UUID> petsNeedingSignOff = List.of(charlieId, whiskersId, dukeId, daisyId, oliverId);
+
+        for (UUID petId : petsNeedingSignOff) {
+            UUID signOffId = UUID.randomUUID();
+            jdbcTemplate.update("""
+                INSERT INTO vet_signoffs (id, pet_id, vet_id, neutered_date, health_status, health_notes, signed_off_at)
+                VALUES (?, ?, ?, CURRENT_DATE - INTERVAL '30 days', 'GOOD', NULL, CURRENT_TIMESTAMP)
+                """,
+                signOffId, petId, vetId);
+        }
+
+        logger.info("Created vet sign-offs for {} pets", petsNeedingSignOff.size());
     }
 
     private void seedPetImagesIfNeeded() {
@@ -382,6 +448,17 @@ public class TestDataSeeder implements CommandLineRunner {
                 UUID.class, email);
         } catch (Exception e) {
             logger.warn("Foster not found for email: {}", email);
+            return null;
+        }
+    }
+
+    private UUID getAdopterId(String email) {
+        try {
+            return jdbcTemplate.queryForObject(
+                "SELECT a.id FROM adopters a JOIN app_users u ON a.user_id = u.id WHERE u.email = ?",
+                UUID.class, email);
+        } catch (Exception e) {
+            logger.warn("Adopter not found for email: {}", email);
             return null;
         }
     }
