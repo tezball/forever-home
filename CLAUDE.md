@@ -60,6 +60,24 @@ Forever Home is a pet adoption platform that connects pet owners looking to reho
 ./mvnw gatling:test -DBASE_URL=http://localhost:8080 -DUSERS=20 -DRAMP_DURATION=30
 ```
 
+## S3 Storage Profiles
+
+```bash
+# Fully local (default) - uses LocalStack for S3
+./mvnw spring-boot:run
+
+# Mixed mode with AWS S3 (uses .env file for credentials)
+cp .env.example .env  # Then edit with your AWS credentials
+./scripts/run-with-aws-s3.sh
+
+# Or manually with environment variables
+export AWS_ACCESS_KEY_ID=your-key
+export AWS_SECRET_ACCESS_KEY=your-secret
+export AWS_REGION=eu-west-1
+export AWS_S3_BUCKET=your-bucket
+./mvnw spring-boot:run -Dspring-boot.run.profiles=s3-aws
+```
+
 ## Architecture
 
 Standard Spring Boot layered architecture:

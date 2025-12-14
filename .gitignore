@@ -40,3 +40,6 @@ frontend/node/
 
 ### LocalStack data (S3, SES) ###
 localstack-data/
+
+### Environment variables (contains secrets) ###
+.env
