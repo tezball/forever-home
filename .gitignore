@@ -37,3 +37,6 @@ src/main/resources/static/
 
 ### Frontend Maven plugin installed node ###
 frontend/node/
+
+### LocalStack data (S3, SES) ###
+localstack-data/

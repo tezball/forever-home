@@ -28,7 +28,7 @@ services:
     ports:
       - '4566:4566'
     volumes:
-      - localstack_data:/var/lib/localstack
+      - ./localstack-data:/var/lib/localstack
       - ./scripts/localstack-init.sh:/etc/localstack/init/ready.d/init.sh
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
@@ -106,7 +106,6 @@ services:
 
 volumes:
   postgres_data:
-  localstack_data:
   loki_data:
   grafana_data:
   prometheus_data:
