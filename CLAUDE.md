@@ -60,15 +60,46 @@ Forever Home is a pet adoption platform that connects pet owners looking to reho
 ./mvnw gatling:test -DBASE_URL=http://localhost:8080 -DUSERS=20 -DRAMP_DURATION=30
 ```
 
+## Development Script
+
+Use `./dev.sh` to manage local development environment:
+
+```bash
+# Start all services with LocalStack S3 (default)
+./dev.sh start
+
+# Start all services with real AWS S3
+./dev.sh start --s3
+
+# Stop all services (preserves data)
+./dev.sh stop
+
+# Stop and remove all data (fresh start)
+./dev.sh clean
+
+# Restart with clean data
+./dev.sh restart
+./dev.sh restart --s3    # With AWS S3
+
+# Check service status
+./dev.sh status
+
+# Run Gatling load tests
+./dev.sh gatling
+
+# Run Playwright E2E tests
+./dev.sh e2e
+```
+
 ## S3 Storage Profiles
 
 ```bash
-# Fully local (default) - uses LocalStack for S3
-./mvnw spring-boot:run
+# LocalStack S3 (default) - fully local, no AWS required
+./dev.sh start
 
-# Mixed mode with AWS S3 (uses .env file for credentials)
-cp .env.example .env  # Then edit with your AWS credentials
-./scripts/run-with-aws-s3.sh
+# AWS S3 mode - uses real AWS S3 (requires .env file)
+cp .env.example .env  # Edit with your AWS credentials
+./dev.sh start --s3
 
 # Or manually with environment variables
 export AWS_ACCESS_KEY_ID=your-key

@@ -12,6 +12,7 @@ NC='\033[0m'
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TERRAFORM_DIR="$PROJECT_ROOT/terraform"
+ENV_FILE="$PROJECT_ROOT/.env"
 APP_PORT=8080
 POSTGRES_PORT=5432
 LOCALSTACK_PORT=4566
@@ -20,6 +21,9 @@ GRAFANA_PORT=3000
 MAILPIT_UI_PORT=8025
 MAILPIT_SMTP_PORT=1025
 E2E_REPORT_DIR="$PROJECT_ROOT/frontend/playwright-report"
+
+# S3 mode: 'local' (LocalStack) or 'aws' (real AWS S3)
+S3_MODE="local"
 
 # Check if a port is in use (for local processes)
 port_in_use() {
@@ -65,6 +69,43 @@ check_prereqs() {
     fi
 }
 
+# Load and validate AWS credentials from .env file
+load_aws_credentials() {
+    if [ ! -f "$ENV_FILE" ]; then
+        echo -e "${RED}Error: .env file not found${NC}"
+        echo -e "Create one by copying .env.example:"
+        echo -e "  ${YELLOW}cp .env.example .env${NC}"
+        echo -e "Then edit .env with your AWS credentials"
+        return 1
+    fi
+
+    echo -e "${BLUE}[S3] Loading AWS credentials from .env...${NC}"
+    set -a
+    source "$ENV_FILE"
+    set +a
+
+    # Validate required variables
+    if [ -z "$AWS_ACCESS_KEY_ID" ] || [ "$AWS_ACCESS_KEY_ID" = "your-access-key-here" ]; then
+        echo -e "${RED}Error: AWS_ACCESS_KEY_ID not set in .env${NC}"
+        return 1
+    fi
+
+    if [ -z "$AWS_SECRET_ACCESS_KEY" ] || [ "$AWS_SECRET_ACCESS_KEY" = "your-secret-key-here" ]; then
+        echo -e "${RED}Error: AWS_SECRET_ACCESS_KEY not set in .env${NC}"
+        return 1
+    fi
+
+    # Set defaults if not provided
+    export AWS_REGION="${AWS_REGION:-eu-west-1}"
+    export AWS_S3_BUCKET="${AWS_S3_BUCKET:-forever-home-images-dev}"
+
+    echo -e "${GREEN}[S3] AWS Configuration:${NC}"
+    echo -e "     Region: $AWS_REGION"
+    echo -e "     Bucket: $AWS_S3_BUCKET"
+    echo -e "     Access Key: ${AWS_ACCESS_KEY_ID:0:4}****"
+    return 0
+}
+
 # Start Docker services
 start_docker() {
     echo -e "${BLUE}[Docker] Starting PostgreSQL, LocalStack, Loki, Grafana, Mailpit...${NC}"
@@ -95,13 +136,24 @@ stop_docker() {
 }
 
 # Start application (backend serves UI on port 8080)
+# Uses S3_MODE variable: 'local' (LocalStack) or 'aws' (real AWS S3)
 start_app() {
     if port_in_use $APP_PORT; then
         echo -e "${YELLOW}[App] Already running on port $APP_PORT${NC}"
     else
-        echo -e "${BLUE}[App] Starting Spring Boot (serves API + UI)...${NC}"
         cd "$PROJECT_ROOT"
-        ./mvnw spring-boot:run -q > /dev/null 2>&1 &
+
+        if [ "$S3_MODE" = "aws" ]; then
+            echo -e "${BLUE}[App] Starting Spring Boot with AWS S3 profile...${NC}"
+            # Use default,s3-aws profiles: default for logging, s3-aws for S3 config
+            # Export env vars so Spring Boot can resolve ${AWS_ACCESS_KEY_ID} etc.
+            export AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_REGION AWS_S3_BUCKET
+            ./mvnw spring-boot:run -Dspring-boot.run.profiles=default,s3-aws -Dmaven.test.skip=true -q > /dev/null 2>&1 &
+        else
+            echo -e "${BLUE}[App] Starting Spring Boot with LocalStack S3...${NC}"
+            ./mvnw spring-boot:run -q > /dev/null 2>&1 &
+        fi
+
         wait_for_port $APP_PORT "App" 60
     fi
 }
@@ -465,11 +517,36 @@ show_status() {
     echo
 }
 
+# Parse flags from arguments
+parse_flags() {
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --s3|--s3-aws)
+                S3_MODE="aws"
+                shift
+                ;;
+            *)
+                shift
+                ;;
+        esac
+    done
+}
+
 # Main command handler
 case "${1:-}" in
     start)
-        echo -e "${BLUE}=== Starting Forever Home ===${NC}"
-        check_prereqs
+        shift 2>/dev/null || true
+        parse_flags "$@"
+
+        if [ "$S3_MODE" = "aws" ]; then
+            echo -e "${BLUE}=== Starting Forever Home (AWS S3 Mode) ===${NC}"
+            check_prereqs
+            load_aws_credentials || exit 1
+        else
+            echo -e "${BLUE}=== Starting Forever Home (LocalStack S3) ===${NC}"
+            check_prereqs
+        fi
+
         start_docker
         start_app
         echo
@@ -489,7 +566,16 @@ case "${1:-}" in
         echo -e "${GREEN}All services stopped and data removed${NC}"
         ;;
     restart)
-        echo -e "${BLUE}=== Restarting Forever Home App (Clean) ===${NC}"
+        shift 2>/dev/null || true
+        parse_flags "$@"
+
+        if [ "$S3_MODE" = "aws" ]; then
+            echo -e "${BLUE}=== Restarting Forever Home (AWS S3 Mode, Clean) ===${NC}"
+            load_aws_credentials || exit 1
+        else
+            echo -e "${BLUE}=== Restarting Forever Home (LocalStack S3, Clean) ===${NC}"
+        fi
+
         stop_app
         stop_docker "clean"
         sleep 1
@@ -517,14 +603,17 @@ case "${1:-}" in
         echo "Usage: $0 {start|stop|clean|restart|status|gatling|e2e|deploy-aws}"
         echo
         echo "Commands:"
-        echo "  start                - Start all services (Docker + App on port 8080)"
+        echo "  start [--s3]         - Start all services (Docker + App on port 8080)"
         echo "  stop                 - Stop all services (preserves data)"
         echo "  clean                - Stop all services and remove all data (fresh start)"
-        echo "  restart              - Restart everything with clean data (stop + clean + start)"
+        echo "  restart [--s3]       - Restart everything with clean data (stop + clean + start)"
         echo "  status               - Show status of all services"
         echo "  gatling [SIM] [OPTS] - Run Gatling load tests"
         echo "  e2e [SUITE] [OPTS]   - Run Playwright E2E tests"
         echo "  deploy-aws [OPTS]    - Full deploy to AWS (Terraform + Docker + ECS)"
+        echo
+        echo "S3 Storage Options:"
+        echo "  --s3, --s3-aws       - Use real AWS S3 instead of LocalStack (requires .env)"
         echo
         echo "E2E test suites:"
         echo "  all        - Run ALL e2e tests (default)"
@@ -606,6 +695,20 @@ case "${1:-}" in
         echo "AWS deployment examples:"
         echo "  $0 deploy-aws                # Interactive deploy (prompts for Terraform approval)"
         echo "  $0 deploy-aws -y             # Auto-approve Terraform changes"
+        echo
+        echo "S3 Storage modes:"
+        echo "  Default (no flag)  - Uses LocalStack S3 (fully local, no AWS required)"
+        echo "  --s3 or --s3-aws   - Uses real AWS S3 (requires .env with credentials)"
+        echo
+        echo "S3 examples:"
+        echo "  $0 start                     # Start with LocalStack S3 (default)"
+        echo "  $0 start --s3                # Start with real AWS S3"
+        echo "  $0 restart --s3              # Restart with real AWS S3"
+        echo
+        echo "To set up AWS S3 mode:"
+        echo "  1. cp .env.example .env"
+        echo "  2. Edit .env with your AWS credentials"
+        echo "  3. Run: $0 start --s3"
         exit 1
         ;;
 esac

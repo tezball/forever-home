@@ -8,12 +8,16 @@ import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Exception;
+import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -30,8 +34,10 @@ import java.util.UUID;
 public class S3StorageService {
 
     private static final Logger logger = LoggerFactory.getLogger(S3StorageService.class);
+    private static final Duration PRESIGNED_URL_DURATION = Duration.ofHours(1);
 
     private final S3Client s3Client;
+    private final S3Presigner s3Presigner;
     private final String bucketName;
     private final String awsEndpoint;
     private final long maxFileSize;
@@ -39,11 +45,13 @@ public class S3StorageService {
 
     public S3StorageService(
             S3Client s3Client,
+            S3Presigner s3Presigner,
             @Value("${aws.s3.bucket}") String bucketName,
             @Value("${aws.endpoint:}") String awsEndpoint,
             @Value("${aws.s3.max-file-size:5242880}") long maxFileSize,
             @Value("${aws.s3.allowed-content-types:image/jpeg,image/png,image/gif,image/webp}") String allowedContentTypes) {
         this.s3Client = s3Client;
+        this.s3Presigner = s3Presigner;
         this.bucketName = bucketName;
         this.awsEndpoint = awsEndpoint;
         this.maxFileSize = maxFileSize;
@@ -133,10 +141,11 @@ public class S3StorageService {
     }
 
     /**
-     * Constructs a public URL for an S3 key based on the current environment configuration.
+     * Constructs a URL for an S3 key based on the current environment configuration.
+     * For LocalStack, returns a direct URL. For AWS S3, returns a presigned URL.
      *
      * @param s3Key the S3 key
-     * @return the public URL for accessing the file
+     * @return the URL for accessing the file
      */
     public String getPublicUrl(String s3Key) {
         if (s3Key == null || s3Key.isBlank()) {
@@ -147,8 +156,24 @@ public class S3StorageService {
             // LocalStack URL format: http://localhost:4566/bucket/key
             return awsEndpoint + "/" + bucketName + "/" + s3Key;
         }
-        // AWS S3 URL format: https://bucket.s3.amazonaws.com/key
-        return "https://" + bucketName + ".s3.amazonaws.com/" + s3Key;
+
+        // AWS S3: Generate presigned URL (required for private buckets)
+        try {
+            GetObjectRequest getObjectRequest = GetObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(s3Key)
+                    .build();
+
+            GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
+                    .signatureDuration(PRESIGNED_URL_DURATION)
+                    .getObjectRequest(getObjectRequest)
+                    .build();
+
+            return s3Presigner.presignGetObject(presignRequest).url().toString();
+        } catch (S3Exception e) {
+            logger.error("Failed to generate presigned URL for key {}: {}", s3Key, e.getMessage());
+            return null;
+        }
     }
 
     /**
