@@ -77,23 +77,23 @@ public class RateLimitFilter extends OncePerRequestFilter {
     }
 
     private Bucket createLoginBucket(String key) {
-        // 100 login attempts per minute (increased for load testing)
+        // 10 login attempts per minute per IP
         return Bucket.builder()
-                .addLimit(Bandwidth.simple(100, Duration.ofMinutes(1)))
+                .addLimit(Bandwidth.simple(10, Duration.ofMinutes(1)))
                 .build();
     }
 
     private Bucket createRegisterBucket(String key) {
-        // 100 registration attempts per minute (increased for load testing)
+        // 5 registration attempts per minute per IP
         return Bucket.builder()
-                .addLimit(Bandwidth.simple(100, Duration.ofMinutes(1)))
+                .addLimit(Bandwidth.simple(5, Duration.ofMinutes(1)))
                 .build();
     }
 
     private Bucket createPasswordResetBucket(String key) {
-        // 30 password reset attempts per minute (increased for load testing)
+        // 3 password reset attempts per minute per IP
         return Bucket.builder()
-                .addLimit(Bandwidth.simple(30, Duration.ofMinutes(1)))
+                .addLimit(Bandwidth.simple(3, Duration.ofMinutes(1)))
                 .build();
     }
 

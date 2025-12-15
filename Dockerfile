@@ -35,8 +35,8 @@ COPY src src
 # Copy frontend build into static resources
 COPY --from=frontend-builder /frontend/dist/ src/main/resources/static/
 
-# Build the application (skip tests for faster builds)
-RUN ./mvnw package -DskipTests -B
+# Build the application (skip tests and frontend plugin - frontend already built in stage 1)
+RUN ./mvnw package -DskipTests -Dskip.frontend=true -B
 
 # Stage 3: Runtime - minimal JRE image
 FROM eclipse-temurin:25-jre-alpine

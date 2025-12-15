@@ -78,6 +78,9 @@ class AuthServiceTest {
     @Mock
     private RescueOrganizationRepository rescueOrganizationRepository;
 
+    @Mock
+    private NotificationService notificationService;
+
     private EmailVerificationProperties verificationProperties;
 
     private AuthService authService;
@@ -98,7 +101,8 @@ class AuthServiceTest {
                 fosterRepository,
                 adopterRepository,
                 vetRepository,
-                rescueOrganizationRepository
+                rescueOrganizationRepository,
+                notificationService
         );
     }
 
@@ -194,7 +198,8 @@ class AuthServiceTest {
                     fosterRepository,
                     adopterRepository,
                     vetRepository,
-                    rescueOrganizationRepository
+                    rescueOrganizationRepository,
+                    notificationService
             );
 
             RegisterRequest request = new RegisterRequest(

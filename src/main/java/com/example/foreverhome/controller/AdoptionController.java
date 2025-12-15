@@ -141,6 +141,16 @@ public class AdoptionController {
         return ResponseEntity.ok(adoptionService.getApplicationsForPet(petId));
     }
 
+    @PutMapping("/applications/{id}/start-review")
+    @PreAuthorize("hasRole('RESCUE_ORG')")
+    public ResponseEntity<AdoptionApplication> startReview(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal UserPrincipal principal) {
+        RescueOrganization rescueOrg = getRescueOrgForUser(principal.userId());
+        AdoptionApplication application = adoptionService.startReview(id, rescueOrg.getId(), principal.userId());
+        return ResponseEntity.ok(application);
+    }
+
     @PutMapping("/applications/{id}/approve")
     @PreAuthorize("hasRole('RESCUE_ORG')")
     public ResponseEntity<AdoptionApplication> approveApplication(

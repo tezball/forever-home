@@ -252,6 +252,10 @@ resource "aws_ecs_task_definition" "app" {
           value = var.email_from
         },
         {
+          name  = "EMAIL_PROVIDER"
+          value = var.environment == "prod" ? "ses" : "console"
+        },
+        {
           name  = "FLYWAY_CLEAN_ON_START"
           value = tostring(var.reset_database_on_deploy)
         }

@@ -6,12 +6,14 @@ import com.example.foreverhome.domain.adoption.ApplicationStatus;
 import com.example.foreverhome.domain.pet.Pet;
 import com.example.foreverhome.domain.pet.PetStatus;
 import com.example.foreverhome.domain.profile.Adopter;
+import com.example.foreverhome.domain.profile.Foster;
 import com.example.foreverhome.exception.AccessDeniedException;
 import com.example.foreverhome.exception.InvalidStatusTransitionException;
 import com.example.foreverhome.exception.ResourceNotFoundException;
 import com.example.foreverhome.repository.AdopterRepository;
 import com.example.foreverhome.repository.AdoptionApplicationRepository;
 import com.example.foreverhome.repository.AdoptionRepository;
+import com.example.foreverhome.repository.FosterRepository;
 import com.example.foreverhome.repository.PetRepository;
 import com.example.foreverhome.repository.VetSignOffRepository;
 import org.springframework.stereotype.Service;
@@ -28,24 +30,30 @@ public class AdoptionService {
     private final AdoptionRepository adoptionRepository;
     private final PetRepository petRepository;
     private final AdopterRepository adopterRepository;
+    private final FosterRepository fosterRepository;
     private final VetSignOffRepository vetSignOffRepository;
     private final NotificationService notificationService;
     private final MetricsService metricsService;
+    private final FavoriteService favoriteService;
 
     public AdoptionService(AdoptionApplicationRepository applicationRepository,
                            AdoptionRepository adoptionRepository,
                            PetRepository petRepository,
                            AdopterRepository adopterRepository,
+                           FosterRepository fosterRepository,
                            VetSignOffRepository vetSignOffRepository,
                            NotificationService notificationService,
-                           MetricsService metricsService) {
+                           MetricsService metricsService,
+                           FavoriteService favoriteService) {
         this.applicationRepository = applicationRepository;
         this.adoptionRepository = adoptionRepository;
         this.petRepository = petRepository;
         this.adopterRepository = adopterRepository;
+        this.fosterRepository = fosterRepository;
         this.vetSignOffRepository = vetSignOffRepository;
         this.notificationService = notificationService;
         this.metricsService = metricsService;
+        this.favoriteService = favoriteService;
     }
 
     /**
@@ -79,9 +87,18 @@ public class AdoptionService {
         // Record metric
         metricsService.recordApplicationSubmitted();
 
+        // Notify adopter that their application was submitted
+        notificationService.notifyAdopterApplicationSubmitted(userId, pet.getName());
+
         // Notify rescue org
         if (pet.getRescueOrgId() != null) {
             notificationService.notifyNewApplication(pet.getRescueOrgId(), petId, pet.getName());
+        }
+
+        // Notify foster that someone applied for their pet
+        UUID fosterUserId = getFosterUserIdFromPet(pet);
+        if (fosterUserId != null) {
+            notificationService.notifyFosterApplicationReceived(fosterUserId, pet.getName());
         }
 
         return saved;
@@ -119,6 +136,33 @@ public class AdoptionService {
         return applicationRepository.findActiveByPetId(petId);
     }
 
+    /**
+     * Mark an application as under review.
+     */
+    public AdoptionApplication startReview(UUID applicationId, UUID rescueOrgId, UUID reviewerUserId) {
+        AdoptionApplication application = findApplicationOrThrow(applicationId);
+        Pet pet = findPetOrThrow(application.getPetId());
+
+        verifyRescueOrgOwnership(pet, rescueOrgId);
+
+        if (!application.canTransitionTo(ApplicationStatus.UNDER_REVIEW)) {
+            throw new InvalidStatusTransitionException(
+                    application.getStatus().name(), ApplicationStatus.UNDER_REVIEW.name()
+            );
+        }
+
+        application.markUnderReview(reviewerUserId);
+        AdoptionApplication saved = applicationRepository.save(application);
+
+        // Notify adopter that their application is under review
+        UUID adopterUserId = getAdopterUserId(application.getAdopterId());
+        if (adopterUserId != null) {
+            notificationService.notifyAdopterApplicationUnderReview(adopterUserId, pet.getName());
+        }
+
+        return saved;
+    }
+
     public AdoptionApplication approveApplication(UUID applicationId, UUID rescueOrgId) {
         AdoptionApplication application = findApplicationOrThrow(applicationId);
         Pet pet = findPetOrThrow(application.getPetId());
@@ -144,9 +188,18 @@ public class AdoptionService {
         rejectOtherApplications(application.getPetId(), applicationId);
 
         // Notify adopter
-        notificationService.notifyApplicationStatusChange(
-                application.getAdopterId(), pet.getName(), "Approved"
-        );
+        UUID adopterUserId = getAdopterUserId(application.getAdopterId());
+        if (adopterUserId != null) {
+            notificationService.notifyApplicationStatusChange(
+                    adopterUserId, pet.getName(), "Approved"
+            );
+        }
+
+        // Notify foster that adoption is in progress
+        UUID fosterUserId = getFosterUserIdFromPet(pet);
+        if (fosterUserId != null) {
+            notificationService.notifyFosterApplicationApproved(fosterUserId, pet.getName());
+        }
 
         return application;
     }
@@ -170,9 +223,12 @@ public class AdoptionService {
         metricsService.recordApplicationRejected();
 
         // Notify adopter
-        notificationService.notifyApplicationStatusChange(
-                application.getAdopterId(), pet.getName(), "Rejected"
-        );
+        UUID adopterUserId = getAdopterUserId(application.getAdopterId());
+        if (adopterUserId != null) {
+            notificationService.notifyApplicationStatusChange(
+                    adopterUserId, pet.getName(), "Rejected"
+            );
+        }
 
         return saved;
     }
@@ -230,10 +286,22 @@ public class AdoptionService {
         // Record metric
         metricsService.recordAdoptionCompleted();
 
-        // Notify all parties
-        notificationService.notifyApplicationStatusChange(
-                application.getAdopterId(), pet.getName(), "Finalized - Congratulations!"
-        );
+        // Notify adopter
+        UUID adopterUserId = getAdopterUserId(application.getAdopterId());
+        if (adopterUserId != null) {
+            notificationService.notifyApplicationStatusChange(
+                    adopterUserId, pet.getName(), "Finalized - Congratulations!"
+            );
+        }
+
+        // Notify foster that adoption is complete
+        UUID fosterUserId = getFosterUserIdFromPet(pet);
+        if (fosterUserId != null) {
+            notificationService.notifyFosterAdoptionComplete(fosterUserId, pet.getName());
+        }
+
+        // Notify users who favorited this pet that it has been adopted
+        favoriteService.notifyFavoritorsOfAdoption(pet.getId(), pet.getName());
 
         return saved;
     }
@@ -264,9 +332,12 @@ public class AdoptionService {
                 app.reject();
                 applicationRepository.save(app);
 
-                notificationService.notifyApplicationStatusChange(
-                        app.getAdopterId(), pet.getName(), "Rejected - Another applicant was selected"
-                );
+                UUID adopterUserId = getAdopterUserId(app.getAdopterId());
+                if (adopterUserId != null) {
+                    notificationService.notifyApplicationStatusChange(
+                            adopterUserId, pet.getName(), "Rejected - Another applicant was selected"
+                    );
+                }
             }
         }
     }
@@ -290,5 +361,28 @@ public class AdoptionService {
     private Adopter getAdopterByUserId(UUID userId) {
         return adopterRepository.findByUserId(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Adopter profile not found for user"));
+    }
+
+    /**
+     * Get the user ID for an adopter by their profile ID.
+     * Used to send notifications to the correct user.
+     */
+    private UUID getAdopterUserId(UUID adopterProfileId) {
+        return adopterRepository.findById(adopterProfileId)
+                .map(Adopter::getUserId)
+                .orElse(null);
+    }
+
+    /**
+     * Get the user ID for a foster by the pet's fosterId.
+     * Used to send notifications to the correct user.
+     */
+    private UUID getFosterUserIdFromPet(Pet pet) {
+        if (pet.getFosterId() == null) {
+            return null;
+        }
+        return fosterRepository.findById(pet.getFosterId())
+                .map(Foster::getUserId)
+                .orElse(null);
     }
 }

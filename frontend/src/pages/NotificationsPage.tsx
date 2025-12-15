@@ -169,13 +169,8 @@ export function NotificationsPage() {
           </div>
         ) : (
           <div className="card divide-y divide-gray-200">
-            {notifications.map((notification) => (
-              <div
-                key={notification.id}
-                className={`p-4 hover:bg-gray-50 transition-colors ${
-                  !notification.read ? 'bg-primary-50' : ''
-                }`}
-              >
+            {notifications.map((notification) => {
+              const content = (
                 <div className="flex gap-4">
                   {getNotificationIcon(notification.type)}
                   <div className="flex-1 min-w-0">
@@ -185,7 +180,11 @@ export function NotificationsPage() {
                       </h3>
                       {!notification.read && (
                         <button
-                          onClick={() => handleMarkAsRead(notification.id)}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleMarkAsRead(notification.id);
+                          }}
                           className="text-sm text-primary-500 hover:text-primary-600 whitespace-nowrap"
                         >
                           Mark read
@@ -195,13 +194,34 @@ export function NotificationsPage() {
                     <p className="text-gray-600 mt-1">
                       {notification.message}
                     </p>
-                    <p className="text-sm text-gray-400 mt-2">
-                      {formatTime(notification.createdAt)}
-                    </p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <p className="text-sm text-gray-400">
+                        {formatTime(notification.createdAt)}
+                      </p>
+                      {notification.link && (
+                        <span className="text-sm text-primary-500">
+                          View details →
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+
+              const className = `block p-4 hover:bg-gray-50 transition-colors ${
+                !notification.read ? 'bg-primary-50' : ''
+              }`;
+
+              return notification.link ? (
+                <Link key={notification.id} to={notification.link} className={className}>
+                  {content}
+                </Link>
+              ) : (
+                <div key={notification.id} className={className}>
+                  {content}
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

@@ -16,6 +16,7 @@ import com.example.foreverhome.repository.PetRepository;
 import com.example.foreverhome.repository.UserRepository;
 import com.example.foreverhome.service.EmailService;
 import com.example.foreverhome.service.ModerationService;
+import com.example.foreverhome.service.NotificationService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -36,11 +37,13 @@ public class AdminController {
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
     private final ModerationService moderationService;
+    private final NotificationService notificationService;
     private final UserJourneyLogger journeyLogger;
 
     public AdminController(UserRepository userRepository, PetRepository petRepository,
                           AdoptionRepository adoptionRepository, PasswordEncoder passwordEncoder,
                           EmailService emailService, ModerationService moderationService,
+                          NotificationService notificationService,
                           UserJourneyLogger journeyLogger) {
         this.userRepository = userRepository;
         this.petRepository = petRepository;
@@ -48,6 +51,7 @@ public class AdminController {
         this.passwordEncoder = passwordEncoder;
         this.emailService = emailService;
         this.moderationService = moderationService;
+        this.notificationService = notificationService;
         this.journeyLogger = journeyLogger;
     }
 
@@ -138,11 +142,19 @@ public class AdminController {
         journeyLogger.logAdminAction(UserJourneyLogger.ACTION_ADMIN_APPROVE_RESCUE, "USER", userId,
                 "Approved " + type + " account: " + user.getEmail());
 
+        // Notify rescue org that they've been verified
+        if (user.getRole() == UserRole.RESCUE_ORG) {
+            notificationService.notifyRescueOrgVerified(userId);
+        }
+
         return ResponseEntity.ok().build();
     }
 
     @PutMapping("/approvals/{type}/{id}/reject")
-    public ResponseEntity<Void> rejectUser(@PathVariable String type, @PathVariable String id) {
+    public ResponseEntity<Void> rejectUser(
+            @PathVariable String type,
+            @PathVariable String id,
+            @RequestBody(required = false) RejectRequest request) {
         var userId = java.util.UUID.fromString(id);
         var user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", userId));
@@ -150,11 +162,19 @@ public class AdminController {
         user.suspend();
         userRepository.save(user);
 
+        String reason = request != null ? request.reason() : null;
         journeyLogger.logAdminAction(UserJourneyLogger.ACTION_ADMIN_REJECT_RESCUE, "USER", userId,
-                "Rejected " + type + " account: " + user.getEmail());
+                "Rejected " + type + " account: " + user.getEmail() + (reason != null ? " - Reason: " + reason : ""));
+
+        // Notify rescue org that they've been rejected
+        if (user.getRole() == UserRole.RESCUE_ORG) {
+            notificationService.notifyRescueOrgRejected(userId, reason);
+        }
 
         return ResponseEntity.ok().build();
     }
+
+    record RejectRequest(String reason) {}
 
     @PutMapping("/users/{id}/suspend")
     public ResponseEntity<Void> suspendUser(@PathVariable String id) {

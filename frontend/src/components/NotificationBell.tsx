@@ -187,13 +187,8 @@ export function NotificationBell() {
                 <p>No notifications yet</p>
               </div>
             ) : (
-              notifications.map((notification) => (
-                <div
-                  key={notification.id}
-                  className={`px-4 py-3 border-b border-gray-100 hover:bg-gray-50 ${
-                    !notification.read ? 'bg-primary-50' : ''
-                  }`}
-                >
+              notifications.map((notification) => {
+                const content = (
                   <div className="flex gap-3">
                     {getNotificationIcon(notification.type)}
                     <div className="flex-1 min-w-0">
@@ -218,8 +213,27 @@ export function NotificationBell() {
                       </div>
                     </div>
                   </div>
-                </div>
-              ))
+                );
+
+                const className = `block px-4 py-3 border-b border-gray-100 hover:bg-gray-50 ${
+                  !notification.read ? 'bg-primary-50' : ''
+                }`;
+
+                return notification.link ? (
+                  <Link
+                    key={notification.id}
+                    to={notification.link}
+                    className={className}
+                    onClick={() => setIsOpen(false)}
+                  >
+                    {content}
+                  </Link>
+                ) : (
+                  <div key={notification.id} className={className}>
+                    {content}
+                  </div>
+                );
+              })
             )}
           </div>
 

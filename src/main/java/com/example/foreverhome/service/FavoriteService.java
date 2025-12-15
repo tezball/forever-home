@@ -119,4 +119,20 @@ public class FavoriteService {
             notificationService.notifyFavoriteAvailable(favorite.getAdopterId(), petName);
         }
     }
+
+    /**
+     * Notify all adopters who favorited a pet that it has been adopted.
+     */
+    public void notifyFavoritorsOfAdoption(UUID petId, String petName) {
+        List<Favorite> favorites = favoriteRepository.findByPetId(petId);
+        for (Favorite favorite : favorites) {
+            // Get the user ID from the adopter profile
+            UUID adopterUserId = adopterRepository.findById(favorite.getAdopterId())
+                    .map(Adopter::getUserId)
+                    .orElse(null);
+            if (adopterUserId != null) {
+                notificationService.notifyFavoritePetAdopted(adopterUserId, petName, petId);
+            }
+        }
+    }
 }

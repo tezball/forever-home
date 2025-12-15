@@ -53,6 +53,7 @@ public class AuthService {
     private final AdopterRepository adopterRepository;
     private final VetRepository vetRepository;
     private final RescueOrganizationRepository rescueOrganizationRepository;
+    private final NotificationService notificationService;
 
     public AuthService(UserRepository userRepository,
                        RefreshTokenRepository refreshTokenRepository,
@@ -65,7 +66,8 @@ public class AuthService {
                        FosterRepository fosterRepository,
                        AdopterRepository adopterRepository,
                        VetRepository vetRepository,
-                       RescueOrganizationRepository rescueOrganizationRepository) {
+                       RescueOrganizationRepository rescueOrganizationRepository,
+                       NotificationService notificationService) {
         this.userRepository = userRepository;
         this.refreshTokenRepository = refreshTokenRepository;
         this.jwtTokenProvider = jwtTokenProvider;
@@ -78,6 +80,7 @@ public class AuthService {
         this.adopterRepository = adopterRepository;
         this.vetRepository = vetRepository;
         this.rescueOrganizationRepository = rescueOrganizationRepository;
+        this.notificationService = notificationService;
     }
 
     public RegisterResponse register(RegisterRequest request) {
@@ -122,6 +125,11 @@ public class AuthService {
 
         // Record metric
         metricsService.recordUserRegistration(request.role().name());
+
+        // Notify admins if a rescue org registered (needs approval)
+        if (request.role() == UserRole.RESCUE_ORG) {
+            notificationService.notifyAdminsPendingApproval(request.name() != null ? request.name() : request.email());
+        }
 
         journeyLogger.logAuth(UserJourneyLogger.ACTION_REGISTER, request.email(), true,
             "User registered with role " + request.role());

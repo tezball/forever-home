@@ -3,9 +3,11 @@ package com.example.foreverhome.service;
 import com.example.foreverhome.domain.notification.Notification;
 import com.example.foreverhome.domain.notification.NotificationType;
 import com.example.foreverhome.domain.pet.Pet;
+import com.example.foreverhome.domain.profile.RescueOrganization;
 import com.example.foreverhome.domain.user.NotificationPreferences;
 import com.example.foreverhome.domain.user.User;
 import com.example.foreverhome.repository.NotificationRepository;
+import com.example.foreverhome.repository.RescueOrganizationRepository;
 import com.example.foreverhome.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -42,9 +44,11 @@ class NotificationServiceTest {
     private UserRepository userRepository;
 
     @Mock
+    private RescueOrganizationRepository rescueOrganizationRepository;
+
+    @Mock
     private EmailService emailService;
 
-    @InjectMocks
     private NotificationService notificationService;
 
     @Captor
@@ -56,6 +60,12 @@ class NotificationServiceTest {
 
     @BeforeEach
     void setUp() {
+        notificationService = new NotificationService(
+                notificationRepository,
+                userRepository,
+                rescueOrganizationRepository,
+                emailService
+        );
         userId = UUID.randomUUID();
         mockUser = mock(User.class);
         mockPet = mock(Pet.class);
@@ -246,6 +256,12 @@ class NotificationServiceTest {
         @Test
         @DisplayName("should create notification for new application")
         void shouldCreateNotificationForNewApplication() {
+            // Create a rescue org profile ID and mock the lookup
+            UUID rescueOrgProfileId = UUID.randomUUID();
+            RescueOrganization mockRescueOrg = mock(RescueOrganization.class);
+            when(mockRescueOrg.getUserId()).thenReturn(userId);
+            when(rescueOrganizationRepository.findById(rescueOrgProfileId)).thenReturn(Optional.of(mockRescueOrg));
+
             // Constructor order: emailStatusChanges, emailNewApplications, emailFavoriteUpdates, inAppEnabled
             NotificationPreferences prefs = new NotificationPreferences(false, true, false, true);
             when(mockUser.getNotificationPreferences()).thenReturn(prefs);
@@ -253,7 +269,7 @@ class NotificationServiceTest {
             when(userRepository.findById(userId)).thenReturn(Optional.of(mockUser));
 
             UUID petId = UUID.randomUUID();
-            notificationService.notifyNewApplication(userId, petId, "Buddy");
+            notificationService.notifyNewApplication(rescueOrgProfileId, petId, "Buddy");
 
             verify(notificationRepository).save(notificationCaptor.capture());
             Notification savedNotification = notificationCaptor.getValue();
@@ -264,13 +280,19 @@ class NotificationServiceTest {
         @Test
         @DisplayName("should send email when new applications preference enabled")
         void shouldSendEmailWhenNewApplicationsPreferenceEnabled() {
+            // Create a rescue org profile ID and mock the lookup
+            UUID rescueOrgProfileId = UUID.randomUUID();
+            RescueOrganization mockRescueOrg = mock(RescueOrganization.class);
+            when(mockRescueOrg.getUserId()).thenReturn(userId);
+            when(rescueOrganizationRepository.findById(rescueOrgProfileId)).thenReturn(Optional.of(mockRescueOrg));
+
             // Constructor order: emailStatusChanges, emailNewApplications, emailFavoriteUpdates, inAppEnabled
             NotificationPreferences prefs = new NotificationPreferences(false, true, false, true);
             when(mockUser.getNotificationPreferences()).thenReturn(prefs);
             when(mockUser.getEmail()).thenReturn("rescue@test.com");
             when(userRepository.findById(userId)).thenReturn(Optional.of(mockUser));
 
-            notificationService.notifyNewApplication(userId, UUID.randomUUID(), "Buddy");
+            notificationService.notifyNewApplication(rescueOrgProfileId, UUID.randomUUID(), "Buddy");
 
             verify(emailService).sendNotificationEmail(eq("rescue@test.com"), contains("Forever Home"), anyString());
         }

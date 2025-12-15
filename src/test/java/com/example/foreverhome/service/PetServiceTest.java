@@ -14,6 +14,7 @@ import com.example.foreverhome.repository.FosterRepository;
 import com.example.foreverhome.repository.PetImageRepository;
 import com.example.foreverhome.repository.PetRepository;
 import com.example.foreverhome.repository.PetStatusHistoryRepository;
+import com.example.foreverhome.repository.RescueOrganizationRepository;
 import com.example.foreverhome.repository.VetRepository;
 import com.example.foreverhome.repository.VetSignOffRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -48,6 +49,9 @@ class PetServiceTest {
     private FosterRepository fosterRepository;
 
     @Mock
+    private RescueOrganizationRepository rescueOrganizationRepository;
+
+    @Mock
     private NotificationService notificationService;
 
     @Mock
@@ -72,7 +76,7 @@ class PetServiceTest {
 
     @BeforeEach
     void setUp() {
-        petService = new PetService(petRepository, petImageRepository, fosterRepository, notificationService, vetApprovalService, statusHistoryRepository, metricsService, storageService, vetRepository, vetSignOffRepository);
+        petService = new PetService(petRepository, petImageRepository, fosterRepository, rescueOrganizationRepository, notificationService, vetApprovalService, statusHistoryRepository, metricsService, storageService, vetRepository, vetSignOffRepository);
     }
 
     @Nested

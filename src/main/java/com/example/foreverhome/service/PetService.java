@@ -6,6 +6,7 @@ import com.example.foreverhome.domain.pet.PetImage;
 import com.example.foreverhome.domain.pet.PetStatus;
 import com.example.foreverhome.domain.pet.PetStatusHistory;
 import com.example.foreverhome.domain.profile.Foster;
+import com.example.foreverhome.domain.profile.RescueOrganization;
 import com.example.foreverhome.domain.profile.Vet;
 import com.example.foreverhome.domain.verification.HealthStatus;
 import com.example.foreverhome.domain.verification.VetSignOff;
@@ -21,6 +22,7 @@ import com.example.foreverhome.repository.FosterRepository;
 import com.example.foreverhome.repository.PetImageRepository;
 import com.example.foreverhome.repository.PetRepository;
 import com.example.foreverhome.repository.PetStatusHistoryRepository;
+import com.example.foreverhome.repository.RescueOrganizationRepository;
 import com.example.foreverhome.repository.VetRepository;
 import com.example.foreverhome.repository.VetSignOffRepository;
 import org.springframework.stereotype.Service;
@@ -37,6 +39,7 @@ public class PetService {
     private final PetRepository petRepository;
     private final PetImageRepository petImageRepository;
     private final FosterRepository fosterRepository;
+    private final RescueOrganizationRepository rescueOrganizationRepository;
     private final NotificationService notificationService;
     private final VetApprovalService vetApprovalService;
     private final PetStatusHistoryRepository statusHistoryRepository;
@@ -48,6 +51,7 @@ public class PetService {
     public PetService(PetRepository petRepository,
                       PetImageRepository petImageRepository,
                       FosterRepository fosterRepository,
+                      RescueOrganizationRepository rescueOrganizationRepository,
                       NotificationService notificationService,
                       VetApprovalService vetApprovalService,
                       PetStatusHistoryRepository statusHistoryRepository,
@@ -58,6 +62,7 @@ public class PetService {
         this.petRepository = petRepository;
         this.petImageRepository = petImageRepository;
         this.fosterRepository = fosterRepository;
+        this.rescueOrganizationRepository = rescueOrganizationRepository;
         this.notificationService = notificationService;
         this.vetApprovalService = vetApprovalService;
         this.statusHistoryRepository = statusHistoryRepository;
@@ -282,7 +287,10 @@ public class PetService {
 
         recordStatusChange(petId, fromStatus, PetStatus.PENDING_VET, rescueUserId, "Accepted by rescue organization");
 
-        notificationService.notifyFosterPetAccepted(pet.getFosterId(), pet);
+        UUID fosterUserId = getFosterUserId(pet.getFosterId());
+        if (fosterUserId != null) {
+            notificationService.notifyFosterPetAccepted(fosterUserId, pet);
+        }
 
         return PetDto.from(savedPet);
     }
@@ -303,7 +311,10 @@ public class PetService {
 
         recordStatusChange(petId, fromStatus, PetStatus.DRAFT, rescueUserId, "Declined by rescue organization: " + reason);
 
-        notificationService.notifyFosterPetDeclined(pet.getFosterId(), pet, reason);
+        UUID fosterUserId = getFosterUserId(pet.getFosterId());
+        if (fosterUserId != null) {
+            notificationService.notifyFosterPetDeclined(fosterUserId, pet, reason);
+        }
 
         return PetDto.from(savedPet);
     }
@@ -340,7 +351,18 @@ public class PetService {
         // Record vet sign-off metric
         metricsService.recordVetSignOff(true);
 
-        notificationService.notifyFosterPetAvailable(pet.getFosterId(), pet);
+        UUID fosterUserId = getFosterUserId(pet.getFosterId());
+        if (fosterUserId != null) {
+            notificationService.notifyFosterPetAvailable(fosterUserId, pet);
+        }
+
+        // Notify rescue org that vet signed off on the pet
+        if (pet.getRescueOrgId() != null) {
+            UUID rescueOrgUserId = getRescueOrgUserId(pet.getRescueOrgId());
+            if (rescueOrgUserId != null) {
+                notificationService.notifyRescueOrgVetApproved(rescueOrgUserId, pet.getName());
+            }
+        }
 
         return PetDto.from(savedPet);
     }
@@ -363,7 +385,18 @@ public class PetService {
         // Record vet decline metric
         metricsService.recordVetSignOff(false);
 
-        notificationService.notifyFosterPetDeclined(pet.getFosterId(), pet, reason);
+        UUID fosterUserId = getFosterUserId(pet.getFosterId());
+        if (fosterUserId != null) {
+            notificationService.notifyFosterPetDeclined(fosterUserId, pet, reason);
+        }
+
+        // Notify rescue org that vet declined the pet
+        if (pet.getRescueOrgId() != null) {
+            UUID rescueOrgUserId = getRescueOrgUserId(pet.getRescueOrgId());
+            if (rescueOrgUserId != null) {
+                notificationService.notifyRescueOrgVetDeclined(rescueOrgUserId, pet.getName(), reason);
+            }
+        }
 
         return PetDto.from(savedPet);
     }
@@ -385,6 +418,14 @@ public class PetService {
         Pet savedPet = petRepository.save(pet);
 
         recordStatusChange(petId, fromStatus, PetStatus.WITHDRAWN, userId, "Withdrawn by foster");
+
+        // Notify rescue org if pet was associated with one
+        if (pet.getRescueOrgId() != null) {
+            UUID rescueOrgUserId = getRescueOrgUserId(pet.getRescueOrgId());
+            if (rescueOrgUserId != null) {
+                notificationService.notifyRescueOrgPetWithdrawn(rescueOrgUserId, pet);
+            }
+        }
 
         return PetDto.from(savedPet);
     }
@@ -446,6 +487,26 @@ public class PetService {
         if (pet.getRescueOrgId() == null || !pet.getRescueOrgId().equals(rescueOrgId)) {
             throw new AccessDeniedException("This pet is not associated with your rescue organization");
         }
+    }
+
+    /**
+     * Get the user ID for a foster by their profile ID.
+     * Used to send notifications to the correct user.
+     */
+    private UUID getFosterUserId(UUID fosterProfileId) {
+        return fosterRepository.findById(fosterProfileId)
+                .map(Foster::getUserId)
+                .orElse(null);
+    }
+
+    /**
+     * Get the user ID for a rescue organization by their profile ID.
+     * Used to send notifications to the correct user.
+     */
+    private UUID getRescueOrgUserId(UUID rescueOrgProfileId) {
+        return rescueOrganizationRepository.findById(rescueOrgProfileId)
+                .map(RescueOrganization::getUserId)
+                .orElse(null);
     }
 
     /**

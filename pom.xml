@@ -36,6 +36,7 @@
         <gatling-maven-plugin.version>4.10.1</gatling-maven-plugin.version>
         <frontend-maven-plugin.version>1.15.1</frontend-maven-plugin.version>
         <node.version>v20.19.0</node.version>
+        <skip.frontend>false</skip.frontend>
     </properties>
     <dependencies>
         <!-- Spring Boot Starters -->
@@ -229,6 +230,7 @@
                 <version>${frontend-maven-plugin.version}</version>
                 <configuration>
                     <workingDirectory>${project.basedir}/frontend</workingDirectory>
+                    <skip>${skip.frontend}</skip>
                 </configuration>
                 <executions>
                     <execution>
