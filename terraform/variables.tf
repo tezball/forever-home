@@ -115,7 +115,13 @@ variable "s3_bucket_name" {
 
 # Email Configuration
 variable "email_from" {
-  description = "Verified SES email address to send emails from"
+  description = "Email address to send emails from (domain must be verified in SES)"
+  type        = string
+  default     = ""
+}
+
+variable "ses_domain" {
+  description = "Domain to verify in SES for sending emails"
   type        = string
   default     = ""
 }

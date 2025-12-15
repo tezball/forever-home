@@ -249,11 +249,11 @@ resource "aws_ecs_task_definition" "app" {
         },
         {
           name  = "EMAIL_FROM"
-          value = var.email_from
+          value = var.email_from != "" ? var.email_from : (var.ses_domain != "" ? "noreply@${var.ses_domain}" : "")
         },
         {
           name  = "EMAIL_PROVIDER"
-          value = var.environment == "prod" ? "ses" : "console"
+          value = var.ses_domain != "" ? "ses" : "console"
         },
         {
           name  = "FLYWAY_CLEAN_ON_START"
