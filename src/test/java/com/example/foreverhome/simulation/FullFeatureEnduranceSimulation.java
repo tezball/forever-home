@@ -49,8 +49,8 @@ public class FullFeatureEnduranceSimulation extends Simulation {
     private static final String[] SIZES = {"SMALL", "MEDIUM", "LARGE"};
     private static final String[] SEXES = {"MALE", "FEMALE"};
     private static final String[] AGE_UNITS = {"MONTHS", "YEARS"};
-    private static final String[] DOG_BREEDS = {"Labrador", "Poodle", "Beagle", "Bulldog", "German Shepherd", "Golden Retriever"};
-    private static final String[] CAT_BREEDS = {"Siamese", "Persian", "Maine Coon", "Ragdoll", "Bengal", "Tabby"};
+    private static final String[] DOG_BREEDS = {"LABRADOR", "POODLE_MIX", "BEAGLE", "BULLDOG", "GERMAN_SHEPHERD", "GOLDEN_RETRIEVER"};
+    private static final String[] CAT_BREEDS = {"SIAMESE", "PERSIAN", "MAINE_COON", "RAGDOLL", "BENGAL", "TABBY"};
     private static final String[] PET_NAMES = {"Max", "Bella", "Charlie", "Lucy", "Cooper", "Daisy", "Buddy", "Luna", "Rocky", "Sadie"};
 
     // HTTP Protocol

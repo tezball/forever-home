@@ -2,6 +2,7 @@ package com.example.foreverhome.controller;
 
 import com.example.foreverhome.domain.adoption.AdoptionApplication;
 import com.example.foreverhome.domain.pet.AgeUnit;
+import com.example.foreverhome.domain.pet.Breed;
 import com.example.foreverhome.domain.pet.Pet;
 import com.example.foreverhome.domain.pet.PetSex;
 import com.example.foreverhome.domain.pet.PetSize;
@@ -211,7 +212,7 @@ class RescueDashboardControllerTest {
     }
 
     private Pet createPet(String name, UUID rescueOrgId) {
-        Pet pet = Pet.create(UUID.randomUUID(), name, Species.DOG, "Labrador", 2, AgeUnit.YEARS,
+        Pet pet = Pet.create(UUID.randomUUID(), name, Species.DOG, Breed.LABRADOR, 2, AgeUnit.YEARS,
                 PetSex.MALE, PetSize.LARGE, "MICRO123", "A friendly dog", "Healthy");
         setId(pet, UUID.randomUUID());
         return pet;

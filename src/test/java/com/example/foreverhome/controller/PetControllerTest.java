@@ -1,6 +1,7 @@
 package com.example.foreverhome.controller;
 
 import com.example.foreverhome.domain.pet.AgeUnit;
+import com.example.foreverhome.domain.pet.Breed;
 import com.example.foreverhome.domain.pet.PetSex;
 import com.example.foreverhome.domain.pet.PetSize;
 import com.example.foreverhome.domain.pet.PetStatus;
@@ -67,7 +68,7 @@ class PetControllerTest {
                 petId,
                 "Buddy",
                 Species.DOG,
-                "Labrador",
+                Breed.LABRADOR,
                 3,
                 AgeUnit.YEARS,
                 PetSex.MALE,
@@ -183,7 +184,7 @@ class PetControllerTest {
             CreatePetRequest request = new CreatePetRequest(
                     "Buddy",
                     Species.DOG,
-                    "Labrador",
+                    Breed.LABRADOR,
                     3,
                     AgeUnit.YEARS,
                     PetSex.MALE,
@@ -212,7 +213,7 @@ class PetControllerTest {
             UpdatePetRequest request = new UpdatePetRequest(
                     "Buddy Updated",
                     Species.DOG,
-                    "Labrador Mix",
+                    Breed.LABRADOR,
                     4,
                     AgeUnit.YEARS,
                     PetSex.MALE,
@@ -225,7 +226,7 @@ class PetControllerTest {
                     petId,
                     "Buddy Updated",
                     Species.DOG,
-                    "Labrador Mix",
+                    Breed.LABRADOR,
                     4,
                     AgeUnit.YEARS,
                     PetSex.MALE,

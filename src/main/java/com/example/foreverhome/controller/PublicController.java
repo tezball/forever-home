@@ -245,7 +245,7 @@ public class PublicController {
                     pet.getId(),
                     pet.getName(),
                     pet.getSpecies().name(),
-                    pet.getBreed(),
+                    pet.getBreed() != null ? pet.getBreed().name() : null,
                     pet.getAge(),
                     pet.getAgeUnit().name(),
                     pet.getSex().name(),

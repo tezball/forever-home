@@ -2,6 +2,7 @@ package com.example.foreverhome.controller;
 
 import com.example.foreverhome.domain.adoption.Favorite;
 import com.example.foreverhome.domain.pet.AgeUnit;
+import com.example.foreverhome.domain.pet.Breed;
 import com.example.foreverhome.domain.pet.PetSex;
 import com.example.foreverhome.domain.pet.PetSize;
 import com.example.foreverhome.domain.pet.PetStatus;
@@ -203,7 +204,7 @@ class FavoriteControllerTest {
                 UUID.randomUUID(),
                 name,
                 Species.DOG,
-                "Labrador",
+                Breed.LABRADOR,
                 2,
                 AgeUnit.YEARS,
                 PetSex.MALE,

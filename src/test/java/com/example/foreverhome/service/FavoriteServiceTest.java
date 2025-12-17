@@ -1,6 +1,7 @@
 package com.example.foreverhome.service;
 
 import com.example.foreverhome.domain.adoption.Favorite;
+import com.example.foreverhome.domain.pet.Breed;
 import com.example.foreverhome.domain.pet.Pet;
 import com.example.foreverhome.domain.pet.PetImage;
 import com.example.foreverhome.domain.pet.Species;
@@ -429,7 +430,7 @@ class FavoriteServiceTest {
                 UUID.randomUUID(),
                 "Buddy",
                 Species.DOG,
-                "Labrador",
+                Breed.LABRADOR,
                 2,
                 AgeUnit.YEARS,
                 PetSex.MALE,

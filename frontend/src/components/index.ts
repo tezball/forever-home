@@ -2,6 +2,7 @@ export { Button } from './Button';
 export { Input } from './Input';
 export { Textarea } from './Textarea';
 export { Select } from './Select';
+export { Combobox } from './Combobox';
 export { PetCard } from './PetCard';
 export { Header } from './Header';
 export { Modal } from './Modal';

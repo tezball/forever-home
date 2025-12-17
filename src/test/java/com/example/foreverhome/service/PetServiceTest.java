@@ -104,7 +104,7 @@ class PetServiceTest {
             CreatePetRequest request = new CreatePetRequest(
                     "Buddy",
                     Species.DOG,
-                    "Golden Retriever",
+                    Breed.GOLDEN_RETRIEVER,
                     3,
                     AgeUnit.YEARS,
                     PetSex.MALE,
@@ -139,7 +139,7 @@ class PetServiceTest {
             CreatePetRequest request = new CreatePetRequest(
                     "Buddy",
                     Species.DOG,
-                    "Golden Retriever",
+                    Breed.GOLDEN_RETRIEVER,
                     3,
                     AgeUnit.YEARS,
                     PetSex.MALE,
@@ -228,7 +228,7 @@ class PetServiceTest {
             UUID fosterId = UUID.randomUUID();
             Foster foster = createTestFoster(userId, fosterId);
             Pet pet = Pet.create(
-                    fosterId, "Buddy", Species.DOG, "Golden Retriever",
+                    fosterId, "Buddy", Species.DOG, Breed.GOLDEN_RETRIEVER,
                     3, AgeUnit.YEARS, PetSex.MALE, PetSize.LARGE,
                     "CHIP123456", "Description", null
             );
@@ -259,7 +259,7 @@ class PetServiceTest {
             UUID differentFosterId = UUID.randomUUID();
             Foster foster = createTestFoster(userId, fosterId);
             Pet pet = Pet.create(
-                    differentFosterId, "Buddy", Species.DOG, "Golden Retriever",
+                    differentFosterId, "Buddy", Species.DOG, Breed.GOLDEN_RETRIEVER,
                     3, AgeUnit.YEARS, PetSex.MALE, PetSize.LARGE,
                     "CHIP123456", "Description", null
             );
@@ -289,7 +289,7 @@ class PetServiceTest {
             UUID rescueOrgId = UUID.randomUUID();
             Foster foster = createTestFoster(userId, fosterId);
             Pet pet = Pet.create(
-                    fosterId, "Buddy", Species.DOG, "Golden Retriever",
+                    fosterId, "Buddy", Species.DOG, Breed.GOLDEN_RETRIEVER,
                     3, AgeUnit.YEARS, PetSex.MALE, PetSize.LARGE,
                     "CHIP123456", "Description", null
             );
@@ -315,7 +315,7 @@ class PetServiceTest {
             UUID rescueOrgId = UUID.randomUUID();
             Foster foster = createTestFoster(userId, fosterId);
             Pet pet = Pet.create(
-                    fosterId, "Buddy", Species.DOG, "Golden Retriever",
+                    fosterId, "Buddy", Species.DOG, Breed.GOLDEN_RETRIEVER,
                     3, AgeUnit.YEARS, PetSex.MALE, PetSize.LARGE,
                     "CHIP123456", "Description", null
             );
@@ -390,7 +390,7 @@ class PetServiceTest {
             UUID fosterId = UUID.randomUUID();
             Foster foster = createTestFoster(userId, fosterId);
             Pet pet = Pet.create(
-                    fosterId, "Buddy", Species.DOG, "Golden Retriever",
+                    fosterId, "Buddy", Species.DOG, Breed.GOLDEN_RETRIEVER,
                     3, AgeUnit.YEARS, PetSex.MALE, PetSize.LARGE,
                     "CHIP123456", "Description", null
             );
@@ -454,7 +454,7 @@ class PetServiceTest {
             CreatePetRequest request = new CreatePetRequest(
                     "Max",
                     Species.DOG,
-                    "Labrador",
+                    Breed.LABRADOR,
                     2,
                     AgeUnit.YEARS,
                     PetSex.MALE,
@@ -495,7 +495,7 @@ class PetServiceTest {
             CreatePetRequest request = new CreatePetRequest(
                     "Max",
                     Species.DOG,
-                    "Labrador",
+                    Breed.LABRADOR,
                     2,
                     AgeUnit.YEARS,
                     PetSex.MALE,
@@ -520,7 +520,7 @@ class PetServiceTest {
             CreatePetRequest request = new CreatePetRequest(
                     "Max",
                     Species.DOG,
-                    "Labrador",
+                    Breed.LABRADOR,
                     2,
                     AgeUnit.YEARS,
                     PetSex.MALE,
@@ -548,7 +548,7 @@ class PetServiceTest {
             CreatePetRequest request = new CreatePetRequest(
                     "Max",
                     Species.DOG,
-                    "Labrador",
+                    Breed.LABRADOR,
                     2,
                     AgeUnit.YEARS,
                     PetSex.MALE,
@@ -589,7 +589,7 @@ class PetServiceTest {
                     UUID.randomUUID(),
                     "Max",
                     Species.DOG,
-                    "Labrador",
+                    Breed.LABRADOR,
                     2,
                     AgeUnit.YEARS,
                     PetSex.MALE,
@@ -612,7 +612,7 @@ class PetServiceTest {
                 UUID.randomUUID(),
                 "Buddy",
                 Species.DOG,
-                "Golden Retriever",
+                Breed.GOLDEN_RETRIEVER,
                 3,
                 AgeUnit.YEARS,
                 PetSex.MALE,

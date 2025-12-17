@@ -136,10 +136,17 @@ public class TestDataSeeder implements CommandLineRunner {
         "Toby", "Bailey", "Milo", "Winston", "Murphy", "Oscar", "Finn", "Archie", "Bruno", "Leo"};
     private static final String[] CAT_NAMES = {"Luna", "Milo", "Oliver", "Leo", "Bella", "Lily", "Chloe", "Lucy", "Sophie", "Nala",
         "Willow", "Simba", "Whiskers", "Shadow", "Tiger", "Jasper", "Felix", "Ginger", "Midnight", "Pumpkin"};
-    private static final String[] DOG_BREEDS = {"Labrador", "Golden Retriever", "German Shepherd", "Beagle", "Boxer",
-        "Poodle Mix", "Husky", "Bulldog", "Rottweiler", "Doberman"};
-    private static final String[] CAT_BREEDS = {"Tabby", "Siamese", "Maine Coon", "Persian", "British Shorthair",
-        "Ragdoll", "Bengal", "Russian Blue", "Abyssinian", "Scottish Fold"};
+    private static final String[] DOG_BREEDS = {"LABRADOR", "GOLDEN_RETRIEVER", "GERMAN_SHEPHERD", "FRENCH_BULLDOG",
+        "BULLDOG", "BEAGLE", "POODLE", "POODLE_MIX", "ROTTWEILER", "YORKSHIRE_TERRIER", "BOXER", "DACHSHUND",
+        "HUSKY", "SIBERIAN_HUSKY", "GREAT_DANE", "DOBERMAN", "AUSTRALIAN_SHEPHERD", "CAVALIER_KING_CHARLES",
+        "SHIH_TZU", "BOSTON_TERRIER", "BERNESE_MOUNTAIN_DOG", "POMERANIAN", "HAVANESE", "SHETLAND_SHEEPDOG",
+        "CORGI", "PEMBROKE_WELSH_CORGI", "COCKER_SPANIEL", "BORDER_COLLIE", "CHIHUAHUA", "MINIATURE_SCHNAUZER",
+        "PIT_BULL", "MALTESE", "JACK_RUSSELL_TERRIER", "BICHON_FRISE", "MIXED_DOG"};
+    private static final String[] CAT_BREEDS = {"TABBY", "DOMESTIC_SHORTHAIR", "DOMESTIC_LONGHAIR", "SIAMESE",
+        "MAINE_COON", "PERSIAN", "RAGDOLL", "BENGAL", "BRITISH_SHORTHAIR", "ABYSSINIAN", "BIRMAN",
+        "ORIENTAL_SHORTHAIR", "SPHYNX", "DEVON_REX", "SCOTTISH_FOLD", "RUSSIAN_BLUE", "AMERICAN_SHORTHAIR",
+        "NORWEGIAN_FOREST_CAT", "EXOTIC_SHORTHAIR", "BURMESE", "TONKINESE", "HIMALAYAN", "TURKISH_ANGORA",
+        "RAGAMUFFIN", "MIXED_CAT"};
     private static final String[] SIZES = {"SMALL", "MEDIUM", "LARGE"};
     private static final String[] SEXES = {"MALE", "FEMALE"};
 
@@ -332,10 +339,11 @@ public class TestDataSeeder implements CommandLineRunner {
     /**
      * Generates a description for a pet based on its attributes.
      */
-    private String generateDescription(String name, String species, String breed, int age, String ageUnit, String sex) {
+    private String generateDescription(String name, String species, String breedEnum, int age, String ageUnit, String sex) {
         String pronoun = sex.equals("MALE") ? "He" : "She";
         String possessive = sex.equals("MALE") ? "his" : "her";
         String speciesWord = species.equals("DOG") ? "dog" : "cat";
+        String breed = formatBreedName(breedEnum);
 
         String[] descriptions = {
             name + " is a wonderful " + breed + " looking for " + possessive + " forever home. " + pronoun + " loves cuddles and playtime!",
@@ -346,6 +354,23 @@ public class TestDataSeeder implements CommandLineRunner {
         };
 
         return descriptions[Math.abs(name.hashCode()) % descriptions.length];
+    }
+
+    /**
+     * Converts a breed enum key to a human-readable display name.
+     * E.g., "GOLDEN_RETRIEVER" -> "Golden Retriever"
+     */
+    private String formatBreedName(String breedEnum) {
+        if (breedEnum == null || breedEnum.isBlank()) {
+            return "mixed breed";
+        }
+        String[] words = breedEnum.toLowerCase().split("_");
+        StringBuilder result = new StringBuilder();
+        for (String word : words) {
+            if (!result.isEmpty()) result.append(" ");
+            result.append(Character.toUpperCase(word.charAt(0))).append(word.substring(1));
+        }
+        return result.toString();
     }
 
     /**

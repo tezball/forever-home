@@ -1,5 +1,6 @@
 package com.example.foreverhome.service;
 
+import com.example.foreverhome.domain.pet.Breed;
 import com.example.foreverhome.domain.pet.Pet;
 import com.example.foreverhome.domain.pet.PetImage;
 import com.example.foreverhome.domain.pet.Species;
@@ -13,6 +14,7 @@ import com.example.foreverhome.exception.ResourceNotFoundException;
 import com.example.foreverhome.repository.FosterRepository;
 import com.example.foreverhome.repository.PetImageRepository;
 import com.example.foreverhome.repository.PetRepository;
+import com.example.foreverhome.repository.RescueOrganizationRepository;
 import com.example.foreverhome.service.PetImageService.ImageLimitExceededException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -50,13 +52,16 @@ class PetImageServiceTest {
     private FosterRepository fosterRepository;
 
     @Mock
+    private RescueOrganizationRepository rescueOrganizationRepository;
+
+    @Mock
     private S3StorageService storageService;
 
     private PetImageService petImageService;
 
     @BeforeEach
     void setUp() {
-        petImageService = new PetImageService(petImageRepository, petRepository, fosterRepository, storageService);
+        petImageService = new PetImageService(petImageRepository, petRepository, fosterRepository, rescueOrganizationRepository, storageService);
     }
 
     @Nested
@@ -412,7 +417,7 @@ class PetImageServiceTest {
 
     // Helper methods
     private Pet createPet(UUID petId, UUID fosterId) {
-        Pet pet = Pet.create(fosterId, "Buddy", Species.DOG, "Labrador", 2, AgeUnit.YEARS, PetSex.MALE, PetSize.LARGE,
+        Pet pet = Pet.create(fosterId, "Buddy", Species.DOG, Breed.LABRADOR, 2, AgeUnit.YEARS, PetSex.MALE, PetSize.LARGE,
                 "MICRO123", "A friendly dog", "Healthy");
         setId(pet, petId);
         return pet;

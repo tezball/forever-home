@@ -62,7 +62,7 @@ public class Adoption implements Persistable<UUID> {
     public static Adoption create(UUID petId, UUID adopterId, UUID fosterId, UUID rescueOrgId) {
         if (petId == null) throw new IllegalArgumentException("petId cannot be null");
         if (adopterId == null) throw new IllegalArgumentException("adopterId cannot be null");
-        if (fosterId == null) throw new IllegalArgumentException("fosterId cannot be null");
+        // fosterId can be null for rescue-owned pets
         if (rescueOrgId == null) throw new IllegalArgumentException("rescueOrgId cannot be null");
 
         return new Adoption(UUID.randomUUID(), petId, fosterId, adopterId, rescueOrgId,
@@ -72,7 +72,7 @@ public class Adoption implements Persistable<UUID> {
     public static Adoption create(UUID petId, UUID fosterId, UUID adopterId, UUID rescueOrgId,
                                    UUID vetId, UUID applicationId) {
         if (petId == null) throw new IllegalArgumentException("petId cannot be null");
-        if (fosterId == null) throw new IllegalArgumentException("fosterId cannot be null");
+        // fosterId can be null for rescue-owned pets
         if (adopterId == null) throw new IllegalArgumentException("adopterId cannot be null");
         if (rescueOrgId == null) throw new IllegalArgumentException("rescueOrgId cannot be null");
         if (vetId == null) throw new IllegalArgumentException("vetId cannot be null");

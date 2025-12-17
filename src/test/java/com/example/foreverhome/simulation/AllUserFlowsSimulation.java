@@ -59,7 +59,7 @@ public class AllUserFlowsSimulation extends Simulation {
     private static final String[] SEXES = {"MALE", "FEMALE"};
     private static final String[] AGE_UNITS = {"MONTHS", "YEARS"};
     private static final String[] PET_NAMES = {"Max", "Bella", "Charlie", "Luna", "Cooper", "Daisy", "Buddy", "Sadie"};
-    private static final String[] BREEDS = {"Labrador", "Poodle", "Persian", "Siamese", "Beagle", "Golden Retriever"};
+    private static final String[] BREEDS = {"LABRADOR", "POODLE_MIX", "PERSIAN", "SIAMESE", "BEAGLE", "GOLDEN_RETRIEVER"};
 
     // HTTP Protocol
     private final HttpProtocolBuilder httpProtocol = http

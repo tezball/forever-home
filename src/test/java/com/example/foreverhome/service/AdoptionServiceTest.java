@@ -4,6 +4,7 @@ import com.example.foreverhome.domain.adoption.Adoption;
 import com.example.foreverhome.domain.adoption.AdoptionApplication;
 import com.example.foreverhome.domain.adoption.ApplicationStatus;
 import com.example.foreverhome.domain.pet.AgeUnit;
+import com.example.foreverhome.domain.pet.Breed;
 import com.example.foreverhome.domain.pet.Pet;
 import com.example.foreverhome.domain.pet.PetSex;
 import com.example.foreverhome.domain.pet.PetSize;
@@ -1055,7 +1056,7 @@ class AdoptionServiceTest {
                 UUID.randomUUID(),
                 "Buddy",
                 Species.DOG,
-                "Golden Retriever",
+                Breed.GOLDEN_RETRIEVER,
                 3,
                 AgeUnit.YEARS,
                 PetSex.MALE,
@@ -1071,7 +1072,7 @@ class AdoptionServiceTest {
                 fosterId,
                 "Buddy",
                 Species.DOG,
-                "Golden Retriever",
+                Breed.GOLDEN_RETRIEVER,
                 3,
                 AgeUnit.YEARS,
                 PetSex.MALE,

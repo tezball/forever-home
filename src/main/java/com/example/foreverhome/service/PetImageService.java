@@ -3,12 +3,14 @@ package com.example.foreverhome.service;
 import com.example.foreverhome.domain.pet.Pet;
 import com.example.foreverhome.domain.pet.PetImage;
 import com.example.foreverhome.domain.profile.Foster;
+import com.example.foreverhome.domain.profile.RescueOrganization;
 import com.example.foreverhome.dto.pet.PetImageDto;
 import com.example.foreverhome.exception.AccessDeniedException;
 import com.example.foreverhome.exception.ResourceNotFoundException;
 import com.example.foreverhome.repository.FosterRepository;
 import com.example.foreverhome.repository.PetImageRepository;
 import com.example.foreverhome.repository.PetRepository;
+import com.example.foreverhome.repository.RescueOrganizationRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -26,15 +28,18 @@ public class PetImageService {
     private final PetImageRepository petImageRepository;
     private final PetRepository petRepository;
     private final FosterRepository fosterRepository;
+    private final RescueOrganizationRepository rescueOrganizationRepository;
     private final S3StorageService storageService;
 
     public PetImageService(PetImageRepository petImageRepository,
                            PetRepository petRepository,
                            FosterRepository fosterRepository,
+                           RescueOrganizationRepository rescueOrganizationRepository,
                            S3StorageService storageService) {
         this.petImageRepository = petImageRepository;
         this.petRepository = petRepository;
         this.fosterRepository = fosterRepository;
+        this.rescueOrganizationRepository = rescueOrganizationRepository;
         this.storageService = storageService;
     }
 
@@ -179,7 +184,18 @@ public class PetImageService {
     }
 
     private void verifyOwnership(Pet pet, UUID userId) {
-        // Look up the foster profile by user ID to get the foster's ID
+        // For rescue-owned pets (no foster), verify rescue organization ownership
+        if (pet.isRescueOwned()) {
+            RescueOrganization rescueOrg = rescueOrganizationRepository.findByUserId(userId)
+                    .orElseThrow(() -> new AccessDeniedException("You do not have permission to modify images for this pet"));
+
+            if (!pet.getRescueOrgId().equals(rescueOrg.getId())) {
+                throw new AccessDeniedException("You do not have permission to modify images for this pet");
+            }
+            return;
+        }
+
+        // For foster-registered pets, verify foster ownership
         Foster foster = fosterRepository.findByUserId(userId)
                 .orElseThrow(() -> new AccessDeniedException("You do not have permission to modify images for this pet"));
 

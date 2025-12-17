@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Button, Input, Select, ImageUpload, Textarea, Breadcrumb } from '../components';
+import { Button, Input, Select, ImageUpload, Textarea, Breadcrumb, Combobox } from '../components';
 import { useAuth } from '../contexts/AuthContext';
-import type { Pet, PetImage, Species, PetSize, PetSex, AgeUnit, CreatePetRequest } from '../types';
+import type { Pet, PetImage, Species, PetSize, PetSex, AgeUnit, CreatePetRequest, Breed } from '../types';
 import apiClient from '../api/client';
+import { getBreedsBySpecies } from '../constants/breeds';
 
 const speciesOptions = [
   { value: 'DOG', label: 'Dog' },
@@ -74,6 +75,23 @@ export function PetFormPage() {
       fetchPet(id);
     }
   }, [id]);
+
+  // Clear breed when species changes (if current breed isn't valid for new species)
+  useEffect(() => {
+    if (formData.breed) {
+      const validBreeds = getBreedsBySpecies(formData.species);
+      if (!validBreeds.find((b) => b.value === formData.breed)) {
+        setFormData((prev) => ({ ...prev, breed: '' }));
+      }
+    }
+  }, [formData.species]);
+
+  const handleBreedChange = (value: string) => {
+    setFormData((prev) => ({ ...prev, breed: value }));
+    if (errors.breed) {
+      setErrors((prev) => ({ ...prev, breed: undefined }));
+    }
+  };
 
   const fetchPet = async (petId: string) => {
     setLoading(true);
@@ -159,7 +177,7 @@ export function PetFormPage() {
         const createRequest: CreatePetRequest = {
           name: formData.name.trim(),
           species: formData.species,
-          breed: formData.breed.trim() || undefined,
+          breed: (formData.breed as Breed) || undefined,
           age: parseInt(formData.age),
           ageUnit: formData.ageUnit,
           sex: formData.sex,
@@ -235,12 +253,12 @@ export function PetFormPage() {
                 required
               />
 
-              <Input
+              <Combobox
                 label="Breed"
-                name="breed"
                 value={formData.breed}
-                onChange={handleChange}
-                placeholder="e.g., Golden Retriever"
+                onChange={handleBreedChange}
+                options={getBreedsBySpecies(formData.species)}
+                placeholder="Select or type to filter..."
                 disabled={isEditing}
                 hint="Optional - helps adopters find the right match"
               />

@@ -25,10 +25,10 @@ public class DevController {
     public ResponseEntity<Map<String, Object>> getTestAccounts() {
         List<TestAccountResponse> accounts = List.of(
             new TestAccountResponse("admin@test.com", "Test Admin", UserRole.ADMIN.name()),
-            new TestAccountResponse("foster@test.com", "Test Foster", UserRole.FOSTER.name()),
+            new TestAccountResponse("foster-r1@test.com", "Test Foster", UserRole.FOSTER.name()),
             new TestAccountResponse("adopter@test.com", "Test Adopter", UserRole.ADOPTER.name()),
             new TestAccountResponse("vet@test.com", "Test Vet", UserRole.VET.name()),
-            new TestAccountResponse("rescue@test.com", "Test Rescue Org", UserRole.RESCUE_ORG.name())
+            new TestAccountResponse("rescue1@test.com", "Test Rescue Org", UserRole.RESCUE_ORG.name())
         );
 
         return ResponseEntity.ok(Map.of(

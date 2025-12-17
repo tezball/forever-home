@@ -7,6 +7,25 @@ export type PetSex = 'MALE' | 'FEMALE';
 export type AgeUnit = 'MONTHS' | 'YEARS';
 export type ApplicationStatus = 'SUBMITTED' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED' | 'WITHDRAWN' | 'FINALIZED';
 
+// Pet breeds - Dog breeds
+export type DogBreed = 'LABRADOR' | 'GOLDEN_RETRIEVER' | 'GERMAN_SHEPHERD' | 'FRENCH_BULLDOG' |
+  'BULLDOG' | 'BEAGLE' | 'POODLE' | 'POODLE_MIX' | 'ROTTWEILER' | 'YORKSHIRE_TERRIER' |
+  'BOXER' | 'DACHSHUND' | 'HUSKY' | 'SIBERIAN_HUSKY' | 'GREAT_DANE' | 'DOBERMAN' |
+  'AUSTRALIAN_SHEPHERD' | 'CAVALIER_KING_CHARLES' | 'SHIH_TZU' | 'BOSTON_TERRIER' |
+  'BERNESE_MOUNTAIN_DOG' | 'POMERANIAN' | 'HAVANESE' | 'SHETLAND_SHEEPDOG' | 'CORGI' |
+  'PEMBROKE_WELSH_CORGI' | 'COCKER_SPANIEL' | 'BORDER_COLLIE' | 'CHIHUAHUA' |
+  'MINIATURE_SCHNAUZER' | 'PIT_BULL' | 'MALTESE' | 'JACK_RUSSELL_TERRIER' | 'BICHON_FRISE' |
+  'MIXED_DOG';
+
+// Pet breeds - Cat breeds
+export type CatBreed = 'TABBY' | 'DOMESTIC_SHORTHAIR' | 'DOMESTIC_LONGHAIR' | 'SIAMESE' |
+  'MAINE_COON' | 'PERSIAN' | 'RAGDOLL' | 'BENGAL' | 'BRITISH_SHORTHAIR' | 'ABYSSINIAN' |
+  'BIRMAN' | 'ORIENTAL_SHORTHAIR' | 'SPHYNX' | 'DEVON_REX' | 'SCOTTISH_FOLD' | 'RUSSIAN_BLUE' |
+  'AMERICAN_SHORTHAIR' | 'NORWEGIAN_FOREST_CAT' | 'EXOTIC_SHORTHAIR' | 'BURMESE' | 'TONKINESE' |
+  'HIMALAYAN' | 'TURKISH_ANGORA' | 'RAGAMUFFIN' | 'MIXED_CAT';
+
+export type Breed = DogBreed | CatBreed;
+
 export interface User {
   id: string;
   email: string;
@@ -20,7 +39,7 @@ export interface Pet {
   id: string;
   name: string;
   species: Species;
-  breed: string | null;
+  breed: Breed | null;
   age: number;
   ageUnit: AgeUnit;
   sex: PetSex;
@@ -62,7 +81,7 @@ export interface RegisterResponse {
 export interface CreatePetRequest {
   name: string;
   species: Species;
-  breed?: string;
+  breed?: Breed;
   age: number;
   ageUnit: AgeUnit;
   sex: PetSex;
@@ -126,7 +145,7 @@ export interface VetSignOffHistory {
   petId: string;
   petName: string;
   petSpecies: Species | null;
-  petBreed: string | null;
+  petBreed: Breed | null;
   petMicrochipId: string | null;
   petImageUrl: string | null;
   healthStatus: string;

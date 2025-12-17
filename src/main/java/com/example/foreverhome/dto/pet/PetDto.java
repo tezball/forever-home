@@ -10,7 +10,7 @@ public record PetDto(
         UUID id,
         String name,
         Species species,
-        String breed,
+        Breed breed,
         int age,
         AgeUnit ageUnit,
         PetSex sex,

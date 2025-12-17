@@ -1,6 +1,7 @@
 package com.example.foreverhome.dto.pet;
 
 import com.example.foreverhome.domain.pet.AgeUnit;
+import com.example.foreverhome.domain.pet.Breed;
 import com.example.foreverhome.domain.pet.PetSex;
 import com.example.foreverhome.domain.pet.PetSize;
 import com.example.foreverhome.domain.pet.Species;
@@ -15,7 +16,7 @@ public record CreatePetRequest(
         @NotNull(message = "Species is required")
         Species species,
 
-        String breed,
+        Breed breed,
 
         @Min(value = 0, message = "Age must be non-negative")
         int age,

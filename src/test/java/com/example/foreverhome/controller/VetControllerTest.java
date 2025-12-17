@@ -1,5 +1,6 @@
 package com.example.foreverhome.controller;
 
+import com.example.foreverhome.domain.pet.Breed;
 import com.example.foreverhome.domain.pet.Pet;
 import com.example.foreverhome.domain.pet.AgeUnit;
 import com.example.foreverhome.domain.pet.PetSex;
@@ -367,7 +368,7 @@ class VetControllerTest {
                 UUID.randomUUID(),
                 name,
                 Species.DOG,
-                "Labrador",
+                Breed.LABRADOR,
                 2,
                 AgeUnit.YEARS,
                 PetSex.MALE,
@@ -398,7 +399,7 @@ class VetControllerTest {
     }
 
     private Pet createPet(UUID petId, String name) {
-        Pet pet = Pet.create(UUID.randomUUID(), name, Species.DOG, "Labrador", 2, AgeUnit.YEARS,
+        Pet pet = Pet.create(UUID.randomUUID(), name, Species.DOG, Breed.LABRADOR, 2, AgeUnit.YEARS,
                 PetSex.MALE, PetSize.LARGE, "MICRO123", "A friendly dog", "Healthy");
         setId(pet, petId);
         return pet;

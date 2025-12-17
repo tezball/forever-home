@@ -29,7 +29,7 @@ public class Pet implements Persistable<UUID> {
     private Species species;
 
     @Column("breed")
-    private String breed;
+    private Breed breed;
 
     @Column("age")
     private int age;
@@ -73,7 +73,7 @@ public class Pet implements Persistable<UUID> {
     protected Pet() {
     }
 
-    private Pet(UUID id, String name, Species species, String breed, int age, AgeUnit ageUnit,
+    private Pet(UUID id, String name, Species species, Breed breed, int age, AgeUnit ageUnit,
                 PetSex sex, PetSize size, String description, String microchipId, PetStatus status,
                 UUID fosterId, UUID rescueOrgId, Instant createdAt, Instant updatedAt, String healthNotes) {
         this.id = id;
@@ -94,12 +94,12 @@ public class Pet implements Persistable<UUID> {
         this.healthNotes = healthNotes;
     }
 
-    public static Pet create(String name, Species species, String breed, int age, AgeUnit ageUnit,
+    public static Pet create(String name, Species species, Breed breed, int age, AgeUnit ageUnit,
                               PetSex sex, PetSize size, String description, String microchipId, UUID fosterId) {
         return create(fosterId, name, species, breed, age, ageUnit, sex, size, microchipId, description, null);
     }
 
-    public static Pet create(UUID fosterId, String name, Species species, String breed, int age, AgeUnit ageUnit,
+    public static Pet create(UUID fosterId, String name, Species species, Breed breed, int age, AgeUnit ageUnit,
                               PetSex sex, PetSize size, String microchipId, String description, String healthNotes) {
         validateRequired(name, "name");
         validateRequired(species, "species");
@@ -141,7 +141,7 @@ public class Pet implements Persistable<UUID> {
      * @param healthNotes Health notes (nullable)
      * @return A new Pet entity in PENDING_VET status
      */
-    public static Pet createForRescue(UUID rescueOrgId, String name, Species species, String breed,
+    public static Pet createForRescue(UUID rescueOrgId, String name, Species species, Breed breed,
                                        int age, AgeUnit ageUnit, PetSex sex, PetSize size,
                                        String microchipId, String description, String healthNotes) {
         validateRequired(name, "name");
@@ -189,7 +189,7 @@ public class Pet implements Persistable<UUID> {
     public UUID getId() { return id; }
     public String getName() { return name; }
     public Species getSpecies() { return species; }
-    public String getBreed() { return breed; }
+    public Breed getBreed() { return breed; }
     public int getAge() { return age; }
     public AgeUnit getAgeUnit() { return ageUnit; }
     public PetSex getSex() { return sex; }
@@ -291,7 +291,7 @@ public class Pet implements Persistable<UUID> {
     }
 
     // Update methods
-    public void updateDetails(String name, String breed, int age, AgeUnit ageUnit,
+    public void updateDetails(String name, Breed breed, int age, AgeUnit ageUnit,
                                PetSex sex, PetSize size, String description) {
         if (!isEditable()) {
             throw new IllegalStateException("Pet cannot be edited in status: " + status);

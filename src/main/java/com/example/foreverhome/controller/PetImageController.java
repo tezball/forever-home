@@ -30,7 +30,7 @@ public class PetImageController {
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("hasRole('FOSTER')")
+    @PreAuthorize("hasRole('FOSTER') or hasRole('RESCUE_ORG')")
     public ResponseEntity<PetImageDto> uploadImage(
             @PathVariable UUID petId,
             @AuthenticationPrincipal UserPrincipal principal,
@@ -40,7 +40,7 @@ public class PetImageController {
     }
 
     @DeleteMapping("/{imageId}")
-    @PreAuthorize("hasRole('FOSTER')")
+    @PreAuthorize("hasRole('FOSTER') or hasRole('RESCUE_ORG')")
     public ResponseEntity<Void> deleteImage(
             @PathVariable UUID petId,
             @PathVariable UUID imageId,
@@ -50,7 +50,7 @@ public class PetImageController {
     }
 
     @PutMapping("/{imageId}/primary")
-    @PreAuthorize("hasRole('FOSTER')")
+    @PreAuthorize("hasRole('FOSTER') or hasRole('RESCUE_ORG')")
     public ResponseEntity<PetImageDto> setPrimary(
             @PathVariable UUID petId,
             @PathVariable UUID imageId,
@@ -60,7 +60,7 @@ public class PetImageController {
     }
 
     @PutMapping("/reorder")
-    @PreAuthorize("hasRole('FOSTER')")
+    @PreAuthorize("hasRole('FOSTER') or hasRole('RESCUE_ORG')")
     public ResponseEntity<List<PetImageDto>> reorderImages(
             @PathVariable UUID petId,
             @AuthenticationPrincipal UserPrincipal principal,

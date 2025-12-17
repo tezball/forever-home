@@ -284,7 +284,7 @@ public class VetController {
                     signOff.getPetId(),
                     pet != null ? pet.getName() : "Unknown",
                     pet != null ? pet.getSpecies().name() : null,
-                    pet != null ? pet.getBreed() : null,
+                    pet != null && pet.getBreed() != null ? pet.getBreed().name() : null,
                     pet != null ? pet.getMicrochipId() : null,
                     null, // Pet image URL - would need to fetch from images table
                     signOff.getHealthStatus().name(),
