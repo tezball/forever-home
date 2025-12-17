@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button, Input, Select, ImageUpload, Textarea, Breadcrumb } from '../components';
+import { useAuth } from '../contexts/AuthContext';
 import type { Pet, PetImage, Species, PetSize, PetSex, AgeUnit, CreatePetRequest } from '../types';
 import apiClient from '../api/client';
 
@@ -54,7 +55,11 @@ const initialFormData: FormData = {
 export function PetFormPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const isEditing = Boolean(id);
+  const isRescueOrg = user?.role === 'RESCUE_ORG';
+  const basePath = isRescueOrg ? '/rescue' : '/foster';
+  const dashboardPath = `${basePath}/dashboard`;
 
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [images, setImages] = useState<PetImage[]>([]);
@@ -167,7 +172,7 @@ export function PetFormPage() {
         const response = await apiClient.post<Pet>('/pets', createRequest);
         setPetId(response.data.id);
         // After creating, stay on page to allow image uploads
-        navigate(`/foster/pets/${response.data.id}/edit`, { replace: true });
+        navigate(`${basePath}/pets/${response.data.id}/edit`, { replace: true });
       }
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
@@ -356,7 +361,7 @@ export function PetFormPage() {
             <Button
               type="button"
               variant="outline"
-              onClick={() => navigate('/foster/dashboard')}
+              onClick={() => navigate(dashboardPath)}
               className="flex-1"
             >
               Cancel

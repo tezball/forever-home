@@ -2,8 +2,10 @@ package com.example.foreverhome.service;
 
 import com.example.foreverhome.domain.pet.*;
 import com.example.foreverhome.domain.profile.Foster;
+import com.example.foreverhome.domain.profile.RescueOrganization;
 import com.example.foreverhome.domain.user.User;
 import com.example.foreverhome.domain.user.UserRole;
+import com.example.foreverhome.exception.DuplicateMicrochipException;
 import com.example.foreverhome.dto.pet.CreatePetRequest;
 import com.example.foreverhome.dto.pet.PetDto;
 import com.example.foreverhome.dto.pet.UpdatePetRequest;
@@ -437,6 +439,174 @@ class PetServiceTest {
         }
     }
 
+    @Nested
+    @DisplayName("createPetForRescue")
+    class CreatePetForRescue {
+
+        @Test
+        @DisplayName("given valid pet data from verified rescue org, when create, then creates pet in pending_vet status")
+        void givenValidPetDataFromVerifiedRescueOrg_whenCreate_thenCreatesPetInPendingVetStatus() {
+            // Given
+            UUID userId = UUID.randomUUID();
+            UUID rescueOrgId = UUID.randomUUID();
+            RescueOrganization rescueOrg = createTestRescueOrg(userId, rescueOrgId, true);
+
+            CreatePetRequest request = new CreatePetRequest(
+                    "Max",
+                    Species.DOG,
+                    "Labrador",
+                    2,
+                    AgeUnit.YEARS,
+                    PetSex.MALE,
+                    PetSize.LARGE,
+                    "RESCUE123456",
+                    "Friendly rescue dog",
+                    null
+            );
+            when(rescueOrganizationRepository.findByUserId(userId)).thenReturn(Optional.of(rescueOrg));
+            when(petRepository.existsByMicrochipId("RESCUE123456")).thenReturn(false);
+            when(petRepository.save(any(Pet.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            // When
+            PetDto result = petService.createPetForRescue(userId, request);
+
+            // Then
+            assertThat(result).isNotNull();
+            assertThat(result.name()).isEqualTo("Max");
+            assertThat(result.status()).isEqualTo(PetStatus.PENDING_VET);
+
+            ArgumentCaptor<Pet> petCaptor = ArgumentCaptor.forClass(Pet.class);
+            verify(petRepository).save(petCaptor.capture());
+            Pet savedPet = petCaptor.getValue();
+            assertThat(savedPet.getFosterId()).isNull(); // No foster for rescue-owned pets
+            assertThat(savedPet.getRescueOrgId()).isEqualTo(rescueOrgId);
+            assertThat(savedPet.getStatus()).isEqualTo(PetStatus.PENDING_VET);
+            assertThat(savedPet.isRescueOwned()).isTrue();
+        }
+
+        @Test
+        @DisplayName("given unverified rescue org, when create, then throws AccessDeniedException")
+        void givenUnverifiedRescueOrg_whenCreate_thenThrowsAccessDeniedException() {
+            // Given
+            UUID userId = UUID.randomUUID();
+            UUID rescueOrgId = UUID.randomUUID();
+            RescueOrganization rescueOrg = createTestRescueOrg(userId, rescueOrgId, false); // Not verified
+
+            CreatePetRequest request = new CreatePetRequest(
+                    "Max",
+                    Species.DOG,
+                    "Labrador",
+                    2,
+                    AgeUnit.YEARS,
+                    PetSex.MALE,
+                    PetSize.LARGE,
+                    "RESCUE123456",
+                    "Friendly rescue dog",
+                    null
+            );
+            when(rescueOrganizationRepository.findByUserId(userId)).thenReturn(Optional.of(rescueOrg));
+
+            // When/Then
+            assertThatThrownBy(() -> petService.createPetForRescue(userId, request))
+                    .isInstanceOf(AccessDeniedException.class)
+                    .hasMessageContaining("verified");
+        }
+
+        @Test
+        @DisplayName("given user without rescue org profile, when create, then throws ResourceNotFoundException")
+        void givenUserWithoutRescueOrgProfile_whenCreate_thenThrowsResourceNotFoundException() {
+            // Given
+            UUID userId = UUID.randomUUID();
+            CreatePetRequest request = new CreatePetRequest(
+                    "Max",
+                    Species.DOG,
+                    "Labrador",
+                    2,
+                    AgeUnit.YEARS,
+                    PetSex.MALE,
+                    PetSize.LARGE,
+                    "RESCUE123456",
+                    "Friendly rescue dog",
+                    null
+            );
+            when(rescueOrganizationRepository.findByUserId(userId)).thenReturn(Optional.empty());
+
+            // When/Then
+            assertThatThrownBy(() -> petService.createPetForRescue(userId, request))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageContaining("Rescue organization profile not found");
+        }
+
+        @Test
+        @DisplayName("given duplicate microchip, when create, then throws DuplicateMicrochipException")
+        void givenDuplicateMicrochip_whenCreate_thenThrowsDuplicateMicrochipException() {
+            // Given
+            UUID userId = UUID.randomUUID();
+            UUID rescueOrgId = UUID.randomUUID();
+            RescueOrganization rescueOrg = createTestRescueOrg(userId, rescueOrgId, true);
+
+            CreatePetRequest request = new CreatePetRequest(
+                    "Max",
+                    Species.DOG,
+                    "Labrador",
+                    2,
+                    AgeUnit.YEARS,
+                    PetSex.MALE,
+                    PetSize.LARGE,
+                    "EXISTING_CHIP",
+                    "Friendly rescue dog",
+                    null
+            );
+            when(rescueOrganizationRepository.findByUserId(userId)).thenReturn(Optional.of(rescueOrg));
+            when(petRepository.existsByMicrochipId("EXISTING_CHIP")).thenReturn(true);
+
+            // When/Then
+            assertThatThrownBy(() -> petService.createPetForRescue(userId, request))
+                    .isInstanceOf(DuplicateMicrochipException.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("Pet.isRescueOwned")
+    class PetIsRescueOwned {
+
+        @Test
+        @DisplayName("given foster-created pet, when isRescueOwned, then returns false")
+        void givenFosterCreatedPet_whenIsRescueOwned_thenReturnsFalse() {
+            // Given
+            Pet pet = createTestPet();
+
+            // When/Then
+            assertThat(pet.isRescueOwned()).isFalse();
+            assertThat(pet.getFosterId()).isNotNull();
+        }
+
+        @Test
+        @DisplayName("given rescue-created pet, when isRescueOwned, then returns true")
+        void givenRescueCreatedPet_whenIsRescueOwned_thenReturnsTrue() {
+            // Given
+            Pet pet = Pet.createForRescue(
+                    UUID.randomUUID(),
+                    "Max",
+                    Species.DOG,
+                    "Labrador",
+                    2,
+                    AgeUnit.YEARS,
+                    PetSex.MALE,
+                    PetSize.LARGE,
+                    "RESCUE123456",
+                    "Friendly rescue dog",
+                    null
+            );
+
+            // When/Then
+            assertThat(pet.isRescueOwned()).isTrue();
+            assertThat(pet.getFosterId()).isNull();
+            assertThat(pet.getRescueOrgId()).isNotNull();
+            assertThat(pet.getStatus()).isEqualTo(PetStatus.PENDING_VET);
+        }
+    }
+
     private Pet createTestPet() {
         return Pet.create(
                 UUID.randomUUID(),
@@ -464,5 +634,25 @@ class PetServiceTest {
             throw new RuntimeException(e);
         }
         return foster;
+    }
+
+    private RescueOrganization createTestRescueOrg(UUID userId, UUID rescueOrgId, boolean verified) {
+        RescueOrganization rescueOrg = RescueOrganization.create(
+                userId, "Test Rescue", "555-1234", "http://test.com",
+                "A great rescue", "John Doe", "john@test.com", null, null
+        );
+        // Use reflection to set the id and verified fields
+        try {
+            java.lang.reflect.Field idField = RescueOrganization.class.getDeclaredField("id");
+            idField.setAccessible(true);
+            idField.set(rescueOrg, rescueOrgId);
+
+            java.lang.reflect.Field verifiedField = RescueOrganization.class.getDeclaredField("verified");
+            verifiedField.setAccessible(true);
+            verifiedField.set(rescueOrg, verified);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        return rescueOrg;
     }
 }

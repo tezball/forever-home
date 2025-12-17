@@ -75,6 +75,13 @@ public interface PetRepository extends CrudRepository<Pet, UUID> {
     @Query("SELECT * FROM pets WHERE status = :status AND rescue_org_id IN (:rescueOrgIds) ORDER BY created_at DESC")
     List<Pet> findByStatusAndRescueOrgIdIn(@Param("status") PetStatus status, @Param("rescueOrgIds") List<UUID> rescueOrgIds);
 
+    /**
+     * Find pets created directly by a rescue organization (no foster involved).
+     * Rescue-owned pets have foster_id = NULL.
+     */
+    @Query("SELECT * FROM pets WHERE rescue_org_id = :rescueOrgId AND foster_id IS NULL ORDER BY created_at DESC")
+    List<Pet> findByRescueOrgIdAndFosterIdIsNull(@Param("rescueOrgId") UUID rescueOrgId);
+
     // Paginated queries
     @Query("""
         SELECT * FROM pets

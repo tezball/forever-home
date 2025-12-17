@@ -124,6 +124,51 @@ public class Pet implements Persistable<UUID> {
         return pet;
     }
 
+    /**
+     * Creates a pet directly owned by a rescue organization.
+     * Rescue-created pets start in PENDING_VET status, skipping the foster submission workflow.
+     *
+     * @param rescueOrgId The ID of the rescue organization creating the pet
+     * @param name Pet name
+     * @param species Pet species
+     * @param breed Pet breed (nullable)
+     * @param age Pet age
+     * @param ageUnit Unit for age (months/years)
+     * @param sex Pet sex
+     * @param size Pet size
+     * @param microchipId Microchip ID (required, unique)
+     * @param description Pet description (nullable)
+     * @param healthNotes Health notes (nullable)
+     * @return A new Pet entity in PENDING_VET status
+     */
+    public static Pet createForRescue(UUID rescueOrgId, String name, Species species, String breed,
+                                       int age, AgeUnit ageUnit, PetSex sex, PetSize size,
+                                       String microchipId, String description, String healthNotes) {
+        validateRequired(name, "name");
+        validateRequired(species, "species");
+        validateRequired(ageUnit, "ageUnit");
+        validateRequired(sex, "sex");
+        validateRequired(size, "size");
+        validateRequired(microchipId, "microchipId");
+        validateRequired(rescueOrgId, "rescueOrgId");
+
+        if (age < 0) {
+            throw new IllegalArgumentException("age must be non-negative");
+        }
+        if (description != null && description.length() > MAX_DESCRIPTION_LENGTH) {
+            throw new IllegalArgumentException("description cannot exceed " + MAX_DESCRIPTION_LENGTH + " characters");
+        }
+
+        Instant now = Instant.now();
+        Pet pet = new Pet(UUID.randomUUID(), name.trim(), species, breed, age, ageUnit,
+                sex, size, description, microchipId.trim(), PetStatus.PENDING_VET,
+                null,       // fosterId is null for rescue-created pets
+                rescueOrgId, // rescueOrgId is set at creation
+                now, now, healthNotes);
+        pet.isNew = true;
+        return pet;
+    }
+
     private static void validateRequired(Object value, String fieldName) {
         if (value == null) {
             throw new IllegalArgumentException(fieldName + " cannot be null");
@@ -162,6 +207,14 @@ public class Pet implements Persistable<UUID> {
         return ageUnit.formatAge(age);
     }
 
+    /**
+     * Returns true if this pet was created directly by a rescue organization
+     * (i.e., has no associated foster).
+     */
+    public boolean isRescueOwned() {
+        return fosterId == null;
+    }
+
     public boolean isPubliclyVisible() {
         return status.isPubliclyVisible();
     }
@@ -195,7 +248,13 @@ public class Pet implements Persistable<UUID> {
     }
 
     public void declineByVet() {
-        transitionTo(PetStatus.PENDING_RESCUE);
+        if (isRescueOwned()) {
+            // For rescue-owned pets, stay in PENDING_VET (no foster to return to)
+            // Rescue can address vet concerns and resubmit
+            this.updatedAt = Instant.now();
+        } else {
+            transitionTo(PetStatus.PENDING_RESCUE);
+        }
     }
 
     public void approveApplication() {

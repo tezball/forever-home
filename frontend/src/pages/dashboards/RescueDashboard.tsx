@@ -237,16 +237,23 @@ export function RescueDashboard() {
           <h1 className="text-3xl font-bold text-gray-900">Rescue Dashboard</h1>
           <p className="text-gray-600">Welcome back, {user?.name}</p>
         </div>
-        <Link to="/rescue/vets">
-          <Button variant="outline" className="relative">
-            Manage Vets
-            {vetRequestCount > 0 && (
-              <span className="absolute -top-2 -right-2 bg-warning-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                {vetRequestCount}
-              </span>
-            )}
-          </Button>
-        </Link>
+        <div className="flex gap-3">
+          <Link to="/rescue/pets/new">
+            <Button variant="primary">
+              + Add Pet
+            </Button>
+          </Link>
+          <Link to="/rescue/vets">
+            <Button variant="outline" className="relative">
+              Manage Vets
+              {vetRequestCount > 0 && (
+                <span className="absolute -top-2 -right-2 bg-warning-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                  {vetRequestCount}
+                </span>
+              )}
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Success Message */}

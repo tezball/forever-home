@@ -69,16 +69,21 @@ public class PetController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('FOSTER')")
+    @PreAuthorize("hasRole('FOSTER') or hasRole('RESCUE_ORG')")
     public ResponseEntity<PetDto> createPet(
             @AuthenticationPrincipal UserPrincipal principal,
             @Valid @RequestBody CreatePetRequest request) {
-        PetDto pet = petService.createPet(principal.userId(), request);
+        PetDto pet;
+        if (principal.isRescueOrg()) {
+            pet = petService.createPetForRescue(principal.userId(), request);
+        } else {
+            pet = petService.createPet(principal.userId(), request);
+        }
         return ResponseEntity.status(HttpStatus.CREATED).body(pet);
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('FOSTER')")
+    @PreAuthorize("hasRole('FOSTER') or hasRole('RESCUE_ORG')")
     public ResponseEntity<PetDto> updatePet(
             @PathVariable UUID id,
             @AuthenticationPrincipal UserPrincipal principal,
@@ -119,7 +124,7 @@ public class PetController {
     }
 
     @PostMapping("/{id}/withdraw")
-    @PreAuthorize("hasRole('FOSTER')")
+    @PreAuthorize("hasRole('FOSTER') or hasRole('RESCUE_ORG')")
     public ResponseEntity<PetDto> withdrawPet(
             @PathVariable UUID id,
             @AuthenticationPrincipal UserPrincipal principal) {
@@ -131,6 +136,16 @@ public class PetController {
     @PreAuthorize("hasRole('FOSTER')")
     public ResponseEntity<List<PetDto>> getMyPets(@AuthenticationPrincipal UserPrincipal principal) {
         return ResponseEntity.ok(petService.getPetsByFoster(principal.userId()));
+    }
+
+    /**
+     * Get pets created directly by the authenticated rescue organization (no foster involved).
+     */
+    @GetMapping("/rescue/my/owned")
+    @PreAuthorize("hasRole('RESCUE_ORG')")
+    public ResponseEntity<List<PetDto>> getMyRescueOwnedPets(@AuthenticationPrincipal UserPrincipal principal) {
+        RescueOrganization rescueOrg = getRescueOrgForUser(principal.userId());
+        return ResponseEntity.ok(petService.getRescueOwnedPets(rescueOrg.getId()));
     }
 
     @GetMapping("/rescue/{rescueOrgId}")

@@ -125,6 +125,57 @@ public class PetService {
         return PetDto.from(savedPet);
     }
 
+    /**
+     * Creates a pet directly for a rescue organization.
+     * Rescue-created pets start in PENDING_VET status, bypassing the foster submission workflow.
+     *
+     * @param userId The user ID of the rescue organization user
+     * @param request The pet creation request
+     * @return The created pet DTO
+     * @throws ResourceNotFoundException if rescue organization profile not found
+     * @throws AccessDeniedException if rescue organization is not verified
+     * @throws DuplicateMicrochipException if microchip already exists
+     */
+    public PetDto createPetForRescue(UUID userId, CreatePetRequest request) {
+        // Look up the rescue organization profile by user ID
+        RescueOrganization rescueOrg = rescueOrganizationRepository.findByUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Rescue organization profile not found"));
+
+        // Verify the rescue organization is verified by admin
+        if (!rescueOrg.isVerified()) {
+            throw new AccessDeniedException("Your rescue organization must be verified before creating pets");
+        }
+
+        // Check for duplicate microchip
+        if (petRepository.existsByMicrochipId(request.microchipId())) {
+            throw new DuplicateMicrochipException(request.microchipId());
+        }
+
+        Pet pet = Pet.createForRescue(
+                rescueOrg.getId(),
+                request.name(),
+                request.species(),
+                request.breed(),
+                request.age(),
+                request.ageUnit(),
+                request.sex(),
+                request.size(),
+                request.microchipId(),
+                request.description(),
+                request.healthNotes()
+        );
+        Pet savedPet = petRepository.save(pet);
+
+        // Record initial status in history
+        recordStatusChange(savedPet.getId(), null, PetStatus.PENDING_VET, userId,
+                "Pet created directly by rescue organization");
+
+        // Record metric
+        metricsService.recordPetRegistration(request.species().name());
+
+        return PetDto.from(savedPet);
+    }
+
     @Transactional(readOnly = true)
     public PetDto getPet(UUID petId) {
         Pet pet = findPetOrThrow(petId);
@@ -190,6 +241,17 @@ public class PetService {
                 .toList();
     }
 
+    /**
+     * Get pets created directly by a rescue organization (no foster involved).
+     * These are pets where foster_id is null.
+     */
+    @Transactional(readOnly = true)
+    public List<PetDto> getRescueOwnedPets(UUID rescueOrgId) {
+        return petRepository.findByRescueOrgIdAndFosterIdIsNull(rescueOrgId).stream()
+                .map(this::toPetDtoWithImages)
+                .toList();
+    }
+
     @Transactional(readOnly = true)
     public List<PetDto> getPendingPetsForRescueOrg(UUID rescueOrgId) {
         return petRepository.findPendingByRescueOrgId(rescueOrgId).stream()
@@ -229,10 +291,18 @@ public class PetService {
     public PetDto updatePet(UUID petId, UUID userId, UpdatePetRequest request) {
         Pet pet = findPetOrThrow(petId);
 
-        // Look up the foster profile by user ID
-        Foster foster = fosterRepository.findByUserId(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Foster profile not found for user"));
-        verifyOwnership(pet, foster.getId());
+        // Check ownership based on pet type
+        if (pet.isRescueOwned()) {
+            // Rescue-owned pet - verify rescue org ownership
+            RescueOrganization rescueOrg = rescueOrganizationRepository.findByUserId(userId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Rescue organization profile not found"));
+            verifyRescueOrgOwnership(pet, rescueOrg.getId());
+        } else {
+            // Foster-owned pet - verify foster ownership
+            Foster foster = fosterRepository.findByUserId(userId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Foster profile not found for user"));
+            verifyOwnership(pet, foster.getId());
+        }
 
         if (!pet.getStatus().isEditable()) {
             throw new InvalidStatusTransitionException("Pet cannot be edited in status: " + pet.getStatus());
@@ -404,10 +474,18 @@ public class PetService {
     public PetDto withdrawPet(UUID petId, UUID userId) {
         Pet pet = findPetOrThrow(petId);
 
-        // Look up the foster profile by user ID
-        Foster foster = fosterRepository.findByUserId(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Foster profile not found for user"));
-        verifyOwnership(pet, foster.getId());
+        // Check ownership based on pet type
+        if (pet.isRescueOwned()) {
+            // Rescue-owned pet - verify rescue org ownership
+            RescueOrganization rescueOrg = rescueOrganizationRepository.findByUserId(userId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Rescue organization profile not found"));
+            verifyRescueOrgOwnership(pet, rescueOrg.getId());
+        } else {
+            // Foster-owned pet - verify foster ownership
+            Foster foster = fosterRepository.findByUserId(userId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Foster profile not found for user"));
+            verifyOwnership(pet, foster.getId());
+        }
 
         if (pet.getStatus().isTerminal()) {
             throw new InvalidStatusTransitionException("Cannot withdraw pet in terminal status: " + pet.getStatus());
@@ -492,8 +570,12 @@ public class PetService {
     /**
      * Get the user ID for a foster by their profile ID.
      * Used to send notifications to the correct user.
+     * Returns null if fosterProfileId is null (rescue-owned pets).
      */
     private UUID getFosterUserId(UUID fosterProfileId) {
+        if (fosterProfileId == null) {
+            return null;
+        }
         return fosterRepository.findById(fosterProfileId)
                 .map(Foster::getUserId)
                 .orElse(null);

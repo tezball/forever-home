@@ -132,6 +132,22 @@ function AppRoutes() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/rescue/pets/new"
+            element={
+              <ProtectedRoute allowedRoles={['RESCUE_ORG']}>
+                <PetFormPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/rescue/pets/:id/edit"
+            element={
+              <ProtectedRoute allowedRoles={['RESCUE_ORG']}>
+                <PetFormPage />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Vet Routes */}
           <Route
