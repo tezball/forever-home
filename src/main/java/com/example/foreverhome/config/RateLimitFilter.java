@@ -35,6 +35,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
     private final Map<String, Bucket> loginBuckets = new ConcurrentHashMap<>();
     private final Map<String, Bucket> registerBuckets = new ConcurrentHashMap<>();
     private final Map<String, Bucket> passwordResetBuckets = new ConcurrentHashMap<>();
+    private final Map<String, Bucket> resendVerificationBuckets = new ConcurrentHashMap<>();
     private final MetricsService metricsService;
 
     public RateLimitFilter(MetricsService metricsService) {
@@ -72,6 +73,8 @@ public class RateLimitFilter extends OncePerRequestFilter {
             return registerBuckets.computeIfAbsent(clientIp, this::createRegisterBucket);
         } else if (path.contains("/forgot-password") || path.contains("/reset-password")) {
             return passwordResetBuckets.computeIfAbsent(clientIp, this::createPasswordResetBucket);
+        } else if (path.contains("/resend-verification")) {
+            return resendVerificationBuckets.computeIfAbsent(clientIp, this::createResendVerificationBucket);
         }
         return null; // No rate limit for other auth endpoints
     }
@@ -94,6 +97,13 @@ public class RateLimitFilter extends OncePerRequestFilter {
         // 3 password reset attempts per minute per IP
         return Bucket.builder()
                 .addLimit(Bandwidth.simple(3, Duration.ofMinutes(1)))
+                .build();
+    }
+
+    private Bucket createResendVerificationBucket(String key) {
+        // 3 resend verification attempts per hour per IP (stricter to prevent abuse)
+        return Bucket.builder()
+                .addLimit(Bandwidth.simple(3, Duration.ofHours(1)))
                 .build();
     }
 

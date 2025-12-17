@@ -21,6 +21,7 @@ public class UserJourneyLogger {
     public static final String ACTION_LOGIN = "USER_LOGIN";
     public static final String ACTION_LOGOUT = "USER_LOGOUT";
     public static final String ACTION_EMAIL_VERIFY = "EMAIL_VERIFY";
+    public static final String ACTION_RESEND_VERIFICATION = "RESEND_VERIFICATION";
     public static final String ACTION_PASSWORD_RESET_REQUEST = "PASSWORD_RESET_REQUEST";
     public static final String ACTION_PASSWORD_RESET = "PASSWORD_RESET";
     public static final String ACTION_PROFILE_COMPLETE = "PROFILE_COMPLETE";

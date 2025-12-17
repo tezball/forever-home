@@ -180,6 +180,59 @@ class AuthControllerTest {
     }
 
     @Nested
+    @DisplayName("POST /api/auth/resend-verification")
+    class ResendVerification {
+
+        @Test
+        @DisplayName("given email, when resendVerification, then returns generic success message")
+        void givenEmail_whenResendVerification_thenReturnsGenericSuccessMessage() {
+            // Given
+            ResendVerificationRequest request = new ResendVerificationRequest("test@example.com");
+            doNothing().when(authService).resendVerificationEmail("test@example.com");
+
+            // When
+            ResponseEntity<Map<String, String>> response = authController.resendVerification(request);
+
+            // Then
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(response.getBody().get("message")).contains("If the email exists and is unverified");
+            verify(authService).resendVerificationEmail("test@example.com");
+        }
+
+        @Test
+        @DisplayName("given non-existent email, when resendVerification, then still returns generic message for security")
+        void givenNonExistentEmail_whenResendVerification_thenStillReturnsGenericMessageForSecurity() {
+            // Given
+            ResendVerificationRequest request = new ResendVerificationRequest("unknown@example.com");
+            // Service silently handles non-existent emails
+            doNothing().when(authService).resendVerificationEmail("unknown@example.com");
+
+            // When
+            ResponseEntity<Map<String, String>> response = authController.resendVerification(request);
+
+            // Then
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+            // Security: same response for existing and non-existing emails
+            assertThat(response.getBody().get("message")).contains("If the email exists and is unverified");
+        }
+
+        @Test
+        @DisplayName("given already verified email, when resendVerification, then throws exception")
+        void givenAlreadyVerifiedEmail_whenResendVerification_thenThrowsException() {
+            // Given
+            ResendVerificationRequest request = new ResendVerificationRequest("verified@example.com");
+            doThrow(new IllegalStateException("Account is already verified"))
+                    .when(authService).resendVerificationEmail("verified@example.com");
+
+            // When/Then
+            org.junit.jupiter.api.Assertions.assertThrows(
+                    IllegalStateException.class,
+                    () -> authController.resendVerification(request)
+            );
+        }
+    }
+
+    @Nested
     @DisplayName("POST /api/auth/forgot-password")
     class ForgotPassword {
 

@@ -238,6 +238,38 @@ public class AuthService {
         userRepository.save(user);
     }
 
+    /**
+     * Resend verification email to a user.
+     * Generates a new verification token, invalidating any previous one.
+     * Silent failure for non-existent emails (security best practice).
+     */
+    public void resendVerificationEmail(String email) {
+        User user = userRepository.findByEmail(email.toLowerCase()).orElse(null);
+
+        // Silent failure for non-existent emails (security)
+        if (user == null) {
+            logger.info("Resend verification requested for non-existent email: {}", email);
+            return;
+        }
+
+        // Only resend for PENDING accounts
+        if (user.getStatus() != AccountStatus.PENDING) {
+            journeyLogger.logAuth(UserJourneyLogger.ACTION_RESEND_VERIFICATION, email, false,
+                "Account is already verified");
+            throw new IllegalStateException("Account is already verified");
+        }
+
+        // Generate new token (invalidates old one)
+        String newToken = UUID.randomUUID().toString();
+        user.setEmailVerificationToken(newToken);
+        userRepository.save(user);
+
+        emailService.sendVerificationEmail(email, newToken);
+
+        journeyLogger.logAuth(UserJourneyLogger.ACTION_RESEND_VERIFICATION, email, true,
+            "Verification email resent");
+    }
+
     public void logout(String refreshTokenValue) {
         refreshTokenRepository.findByToken(refreshTokenValue)
                 .ifPresent(token -> {

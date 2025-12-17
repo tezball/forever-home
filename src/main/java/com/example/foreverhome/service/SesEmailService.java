@@ -17,119 +17,81 @@ public class SesEmailService implements EmailService {
 
     private final SesClient sesClient;
     private final String fromEmail;
-    private final String baseUrl;
     private final MetricsService metricsService;
     private final UserJourneyLogger journeyLogger;
+    private final EmailTemplateService templateService;
+    private final String configurationSetName;
 
     public SesEmailService(
             SesClient sesClient,
             @Value("${app.email.from:noreply@foreverhome.local}") String fromEmail,
-            @Value("${app.base-url:http://localhost:5173}") String baseUrl,
+            @Value("${aws.ses.configuration-set:}") String configurationSetName,
             MetricsService metricsService,
-            UserJourneyLogger journeyLogger) {
+            UserJourneyLogger journeyLogger,
+            EmailTemplateService templateService) {
         this.sesClient = sesClient;
         this.fromEmail = fromEmail;
-        this.baseUrl = baseUrl;
+        this.configurationSetName = configurationSetName;
         this.metricsService = metricsService;
         this.journeyLogger = journeyLogger;
+        this.templateService = templateService;
     }
 
     @Override
     public void sendVerificationEmail(String to, String token) {
-        String subject = "Verify your Forever Home account";
-        String verificationLink = baseUrl + "/verify-email?token=" + token;
-        String body = """
-            Welcome to Forever Home!
-
-            Please click the link below to verify your email address:
-            %s
-
-            This link will expire in 24 hours.
-
-            If you didn't create an account, please ignore this email.
-            """.formatted(verificationLink);
-
-        sendEmail(to, subject, body);
+        // Extract name from email for personalization (before @)
+        String recipientName = extractNameFromEmail(to);
+        EmailTemplateService.EmailContent content = templateService.generateVerificationEmail(recipientName, token);
+        sendEmail(to, content.subject(), content.htmlBody(), content.textBody());
     }
 
     @Override
     public void sendPasswordResetEmail(String to, String token) {
-        String subject = "Reset your Forever Home password";
-        String resetLink = baseUrl + "/reset-password?token=" + token;
-        String body = """
-            You requested a password reset for your Forever Home account.
-
-            Click the link below to reset your password:
-            %s
-
-            This link will expire in 1 hour.
-
-            If you didn't request this, please ignore this email.
-            """.formatted(resetLink);
-
-        sendEmail(to, subject, body);
+        String recipientName = extractNameFromEmail(to);
+        EmailTemplateService.EmailContent content = templateService.generatePasswordResetEmail(recipientName, token);
+        sendEmail(to, content.subject(), content.htmlBody(), content.textBody());
     }
 
     @Override
     public void sendPasswordResetByAdmin(String to, String temporaryPassword) {
-        String subject = "Your Forever Home password has been reset";
-        String body = """
-            An administrator has reset your Forever Home account password.
-
-            Your temporary password is: %s
-
-            Please log in and change your password immediately for security.
-
-            If you didn't expect this reset, please contact support.
-            """.formatted(temporaryPassword);
-
-        sendEmail(to, subject, body);
+        String recipientName = extractNameFromEmail(to);
+        EmailTemplateService.EmailContent content = templateService.generateAdminPasswordResetEmail(recipientName, temporaryPassword);
+        sendEmail(to, content.subject(), content.htmlBody(), content.textBody());
     }
 
     @Override
     public void sendNotificationEmail(String to, String subject, String body) {
-        sendEmail(to, subject, body);
+        String recipientName = extractNameFromEmail(to);
+        EmailTemplateService.EmailContent content = templateService.generateNotificationEmail(recipientName, subject, body);
+        sendEmail(to, content.subject(), content.htmlBody(), content.textBody());
     }
 
     @Override
     public void sendWelcomeEmail(String to, String name) {
-        String subject = "Welcome to Forever Home!";
-        String body = """
-            Hi %s,
-
-            Welcome to Forever Home! We're excited to have you join our community.
-
-            Forever Home connects pet lovers with rescue organizations to help pets find their forever families.
-
-            Here's what you can do next:
-            - Complete your profile to get started
-            - Browse available pets looking for homes
-            - Connect with rescue organizations in your area
-
-            If you have any questions, feel free to reach out to our support team.
-
-            Happy pet matching!
-            The Forever Home Team
-            """.formatted(name);
-
-        sendEmail(to, subject, body);
+        EmailTemplateService.EmailContent content = templateService.generateWelcomeEmail(name);
+        sendEmail(to, content.subject(), content.htmlBody(), content.textBody());
     }
 
-    private void sendEmail(String to, String subject, String body) {
+    private void sendEmail(String to, String subject, String htmlBody, String textBody) {
         String emailType = getEmailType(subject);
         try {
-            SendEmailRequest request = SendEmailRequest.builder()
+            SendEmailRequest.Builder requestBuilder = SendEmailRequest.builder()
                     .destination(Destination.builder().toAddresses(to).build())
                     .message(Message.builder()
-                            .subject(Content.builder().data(subject).build())
+                            .subject(Content.builder().data(subject).charset("UTF-8").build())
                             .body(Body.builder()
-                                    .text(Content.builder().data(body).build())
+                                    .html(Content.builder().data(htmlBody).charset("UTF-8").build())
+                                    .text(Content.builder().data(textBody).charset("UTF-8").build())
                                     .build())
                             .build())
-                    .source(fromEmail)
-                    .build();
+                    .source(fromEmail);
 
-            sesClient.sendEmail(request);
+            // Add configuration set for CloudWatch tracking if configured
+            if (configurationSetName != null && !configurationSetName.isBlank()) {
+                requestBuilder.configurationSetName(configurationSetName);
+            }
+
+            sesClient.sendEmail(requestBuilder.build());
             metricsService.recordEmailSent(emailType);
             journeyLogger.logEmail(UserJourneyLogger.ACTION_EMAIL_SENT, emailType, to, true, "Subject: " + subject);
             logger.info("Email sent to {}: {}", to, subject);
@@ -147,5 +109,31 @@ public class SesEmailService implements EmailService {
         if (subject.contains("Welcome")) return "welcome";
         if (subject.contains("notification")) return "notification";
         return "other";
+    }
+
+    /**
+     * Extract a display name from email address.
+     * Converts "john.doe@example.com" to "John Doe".
+     */
+    private String extractNameFromEmail(String email) {
+        if (email == null || email.isBlank()) {
+            return "there";
+        }
+        String localPart = email.split("@")[0];
+        // Replace common separators with spaces and capitalize each word
+        String[] parts = localPart.split("[._-]");
+        StringBuilder name = new StringBuilder();
+        for (String part : parts) {
+            if (!part.isEmpty()) {
+                if (!name.isEmpty()) {
+                    name.append(" ");
+                }
+                name.append(Character.toUpperCase(part.charAt(0)));
+                if (part.length() > 1) {
+                    name.append(part.substring(1).toLowerCase());
+                }
+            }
+        }
+        return name.toString().isEmpty() ? "there" : name.toString();
     }
 }

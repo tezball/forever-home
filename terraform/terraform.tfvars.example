@@ -35,6 +35,11 @@ cors_allowed_origins = "http://localhost:5173,http://localhost:3000"
 # Email Configuration (REQUIRED for email verification)
 email_from = "noreply@yourdomain.com"
 
+# SES Domain Configuration (REQUIRED for email sending in production)
+# This domain must be verified in SES - terraform outputs the required DNS records
+# After running terraform apply, add the DNS records shown in the output
+ses_domain = "yourdomain.com"
+
 # Database Reset (DANGEROUS - use only for dev/testing!)
 # When true, drops ALL tables and re-runs migrations on each deploy
 reset_database_on_deploy = false

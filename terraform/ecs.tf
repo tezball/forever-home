@@ -256,6 +256,10 @@ resource "aws_ecs_task_definition" "app" {
           value = var.ses_domain != "" ? "ses" : "console"
         },
         {
+          name  = "AWS_SES_CONFIGURATION_SET"
+          value = var.ses_domain != "" ? aws_ses_configuration_set.main[0].name : ""
+        },
+        {
           name  = "FLYWAY_CLEAN_ON_START"
           value = tostring(var.reset_database_on_deploy)
         }
