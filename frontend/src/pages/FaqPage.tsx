@@ -1,4 +1,45 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
+
+interface FaqItem {
+  question: string;
+  answer: string;
+}
+
+function FaqAccordion({ items, colorClass }: { items: FaqItem[]; colorClass: string }) {
+  const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
+
+  return (
+    <div className="space-y-2">
+      {items.map((faq, index) => (
+        <div key={index} className={`card overflow-hidden border-l-4 ${colorClass}`}>
+          <button
+            onClick={() => setExpandedIndex(expandedIndex === index ? null : index)}
+            className="w-full p-4 flex justify-between items-center text-left hover:bg-gray-50 transition-colors"
+            aria-expanded={expandedIndex === index}
+          >
+            <h4 className="font-semibold text-gray-900 pr-4">{faq.question}</h4>
+            <svg
+              className={`w-5 h-5 text-gray-500 flex-shrink-0 transition-transform duration-200 ${
+                expandedIndex === index ? 'rotate-180' : ''
+              }`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          {expandedIndex === index && (
+            <div className="px-4 pb-4 text-gray-600 border-t border-gray-100 pt-3">
+              {faq.answer}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export function FaqPage() {
   const petJourneySteps = [
@@ -195,14 +236,7 @@ export function FaqPage() {
               <span className="w-3 h-3 bg-blue-500 rounded-full"></span>
               For Fosters (Current Pet Owners)
             </h3>
-            <div className="space-y-4">
-              {fosterFaqs.map((faq, index) => (
-                <div key={index} className="card p-5 border-l-4 border-l-blue-500">
-                  <h4 className="font-semibold text-gray-900 mb-2">{faq.question}</h4>
-                  <p className="text-gray-600">{faq.answer}</p>
-                </div>
-              ))}
-            </div>
+            <FaqAccordion items={fosterFaqs} colorClass="border-l-blue-500" />
           </div>
 
           {/* Rescue FAQs */}
@@ -211,14 +245,7 @@ export function FaqPage() {
               <span className="w-3 h-3 bg-green-500 rounded-full"></span>
               For Rescue Organizations
             </h3>
-            <div className="space-y-4">
-              {rescueFaqs.map((faq, index) => (
-                <div key={index} className="card p-5 border-l-4 border-l-green-500">
-                  <h4 className="font-semibold text-gray-900 mb-2">{faq.question}</h4>
-                  <p className="text-gray-600">{faq.answer}</p>
-                </div>
-              ))}
-            </div>
+            <FaqAccordion items={rescueFaqs} colorClass="border-l-green-500" />
           </div>
 
           {/* Vet FAQs */}
@@ -227,14 +254,7 @@ export function FaqPage() {
               <span className="w-3 h-3 bg-purple-500 rounded-full"></span>
               For Veterinarians
             </h3>
-            <div className="space-y-4">
-              {vetFaqs.map((faq, index) => (
-                <div key={index} className="card p-5 border-l-4 border-l-purple-500">
-                  <h4 className="font-semibold text-gray-900 mb-2">{faq.question}</h4>
-                  <p className="text-gray-600">{faq.answer}</p>
-                </div>
-              ))}
-            </div>
+            <FaqAccordion items={vetFaqs} colorClass="border-l-purple-500" />
           </div>
 
           {/* Adopter FAQs */}
@@ -243,28 +263,14 @@ export function FaqPage() {
               <span className="w-3 h-3 bg-orange-500 rounded-full"></span>
               For Adopters (Future Pet Owners)
             </h3>
-            <div className="space-y-4">
-              {adopterFaqs.map((faq, index) => (
-                <div key={index} className="card p-5 border-l-4 border-l-orange-500">
-                  <h4 className="font-semibold text-gray-900 mb-2">{faq.question}</h4>
-                  <p className="text-gray-600">{faq.answer}</p>
-                </div>
-              ))}
-            </div>
+            <FaqAccordion items={adopterFaqs} colorClass="border-l-orange-500" />
           </div>
         </section>
 
         {/* General FAQs */}
         <section className="mb-10">
           <h2 className="text-2xl font-semibold text-gray-900 mb-6">General Questions</h2>
-          <div className="space-y-4">
-            {generalFaqs.map((faq, index) => (
-              <div key={index} className="card p-6">
-                <h3 className="font-semibold text-gray-900 mb-2">{faq.question}</h3>
-                <p className="text-gray-600">{faq.answer}</p>
-              </div>
-            ))}
-          </div>
+          <FaqAccordion items={generalFaqs} colorClass="border-l-gray-400" />
         </section>
 
         {/* Still need help section */}

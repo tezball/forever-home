@@ -68,7 +68,7 @@ export function RescuesPage() {
         </div>
       ) : filteredRescues.length === 0 ? (
         <div className="text-center py-12">
-          <div className="text-6xl mb-4">🏥</div>
+          <div className="text-6xl mb-4">🐾</div>
           <h3 className="text-xl font-semibold text-gray-900 mb-2">
             {rescues.length === 0 ? 'No rescue organizations yet' : 'No organizations match your search'}
           </h3>
@@ -99,7 +99,7 @@ export function RescuesPage() {
                     {rescue.logoUrl ? (
                       <img src={rescue.logoUrl} alt={rescue.name} className="w-12 h-12 object-contain" />
                     ) : (
-                      <span className="text-3xl">🏥</span>
+                      <span className="text-3xl">🐾</span>
                     )}
                   </div>
                   <div className="flex-1 min-w-0">

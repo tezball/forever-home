@@ -2,8 +2,10 @@ import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import type { Notification } from '../types';
 import apiClient from '../api/client';
+import { useAuth } from '../contexts/AuthContext';
 
 export function NotificationBell() {
+  const { isAuthenticated } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
@@ -11,11 +13,16 @@ export function NotificationBell() {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      setUnreadCount(0);
+      setNotifications([]);
+      return;
+    }
     fetchUnreadCount();
     // Poll for new notifications every 60 seconds
     const interval = setInterval(fetchUnreadCount, 60000);
     return () => clearInterval(interval);
-  }, []);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     // Close dropdown when clicking outside
@@ -39,6 +46,7 @@ export function NotificationBell() {
   };
 
   const fetchNotifications = async () => {
+    if (!isAuthenticated) return;
     setLoading(true);
     try {
       const res = await apiClient.get<Notification[]>('/notifications');

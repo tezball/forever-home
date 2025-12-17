@@ -113,9 +113,27 @@ export function ImageCarousel({ images, petName, placeholderUrl }: ImageCarousel
         </button>
       </div>
 
-      {/* Thumbnail Strip */}
+      {/* Dot Indicators (Mobile) */}
       {hasMultipleImages && (
-        <div className="flex gap-2 overflow-x-auto pb-2">
+        <div className="flex justify-center gap-2 md:hidden">
+          {displayImages.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => goToIndex(index)}
+              className={`w-2.5 h-2.5 rounded-full transition-all ${
+                index === currentIndex
+                  ? 'bg-primary-500 w-4'
+                  : 'bg-gray-300 hover:bg-gray-400'
+              }`}
+              aria-label={`Go to image ${index + 1}`}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Thumbnail Strip (Desktop) */}
+      {hasMultipleImages && (
+        <div className="hidden md:flex gap-2 overflow-x-auto pb-2">
           {displayImages.map((url, index) => (
             <button
               key={index}

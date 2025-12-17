@@ -8,14 +8,14 @@ interface PetCardProps {
 }
 
 const statusColors: Record<PetStatus, string> = {
-  DRAFT: 'bg-gray-100 text-gray-800',
-  PENDING_RESCUE: 'bg-yellow-100 text-yellow-800',
-  PENDING_VET: 'bg-blue-100 text-blue-800',
-  AVAILABLE: 'bg-green-100 text-green-800',
-  IN_PROGRESS: 'bg-purple-100 text-purple-800',
-  ADOPTED: 'bg-primary-100 text-primary-800',
-  WITHDRAWN: 'bg-red-100 text-red-800',
-  ON_HOLD: 'bg-orange-100 text-orange-800',
+  DRAFT: 'bg-gray-200 text-gray-900',
+  PENDING_RESCUE: 'bg-yellow-100 text-yellow-900',
+  PENDING_VET: 'bg-blue-100 text-blue-900',
+  AVAILABLE: 'bg-green-100 text-green-900',
+  IN_PROGRESS: 'bg-purple-100 text-purple-900',
+  ADOPTED: 'bg-primary-100 text-primary-900',
+  WITHDRAWN: 'bg-red-100 text-red-900',
+  ON_HOLD: 'bg-orange-100 text-orange-900',
 };
 
 const statusLabels: Record<PetStatus, string> = {

@@ -257,8 +257,8 @@ export function HomePage() {
       {/* Footer */}
       <footer className="bg-primary-700 text-white py-12">
         <div className="container-app">
-          <div className="grid md:grid-cols-4 gap-8">
-            <div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+            <div className="col-span-2 md:col-span-1">
               <h4 className="font-serif text-xl font-semibold mb-4">Forever Home</h4>
               <p className="text-primary-100 text-sm">
                 Connecting pets with loving families since 2024.
@@ -266,26 +266,26 @@ export function HomePage() {
             </div>
             <div>
               <h5 className="font-semibold mb-4">For Adopters</h5>
-              <ul className="space-y-2 text-sm text-primary-100">
-                <li><Link to="/pets" className="hover:text-white">Browse Pets</Link></li>
-                <li><Link to="/rescues" className="hover:text-white">Find Rescues</Link></li>
-                <li><Link to="/register" className="hover:text-white">Create Account</Link></li>
+              <ul className="space-y-1 text-sm text-primary-100">
+                <li><Link to="/pets" className="hover:text-white block py-2">Browse Pets</Link></li>
+                <li><Link to="/rescues" className="hover:text-white block py-2">Find Rescues</Link></li>
+                <li><Link to="/register" className="hover:text-white block py-2">Create Account</Link></li>
               </ul>
             </div>
-            <div>
+            <div className="hidden md:block">
               <h5 className="font-semibold mb-4">For Partners</h5>
-              <ul className="space-y-2 text-sm text-primary-100">
-                <li><Link to="/register" className="hover:text-white">Foster Registration</Link></li>
-                <li><Link to="/register" className="hover:text-white">Rescue Partnership</Link></li>
-                <li><Link to="/register" className="hover:text-white">Vet Verification</Link></li>
+              <ul className="space-y-1 text-sm text-primary-100">
+                <li><Link to="/register" className="hover:text-white block py-2">Foster Registration</Link></li>
+                <li><Link to="/register" className="hover:text-white block py-2">Rescue Partnership</Link></li>
+                <li><Link to="/register" className="hover:text-white block py-2">Vet Verification</Link></li>
               </ul>
             </div>
             <div>
               <h5 className="font-semibold mb-4">Support</h5>
-              <ul className="space-y-2 text-sm text-primary-100">
-                <li><Link to="/help" className="hover:text-white">Help Center</Link></li>
-                <li><Link to="/contact" className="hover:text-white">Contact Us</Link></li>
-                <li><Link to="/privacy" className="hover:text-white">Privacy Policy</Link></li>
+              <ul className="space-y-1 text-sm text-primary-100">
+                <li><Link to="/help" className="hover:text-white block py-2">Help Center</Link></li>
+                <li><Link to="/contact" className="hover:text-white block py-2">Contact Us</Link></li>
+                <li><Link to="/privacy" className="hover:text-white block py-2">Privacy Policy</Link></li>
               </ul>
             </div>
           </div>

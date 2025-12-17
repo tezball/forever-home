@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { PetCard, Select, Input, ErrorDisplay, getErrorMessage } from '../components';
+import { PetCard, Select, Input, ErrorDisplay, getErrorMessage, SkeletonCard } from '../components';
 import type { Pet, Species, PetSize, PetSex } from '../types';
 import apiClient from '../api/client';
 
@@ -105,40 +105,50 @@ export function PetListPage() {
 
       {/* Filters */}
       <div className="bg-secondary-50 rounded-lg p-4 mb-8">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div className="flex flex-col gap-3">
           <Input
             placeholder="Search by name or breed..."
             value={filters.search}
             onChange={(e) => setFilters({ ...filters, search: e.target.value })}
           />
-          <Select
-            options={speciesOptions}
-            value={filters.species}
-            onChange={(e) => setFilters({ ...filters, species: e.target.value as Species })}
-          />
-          <Select
-            options={sizeOptions}
-            value={filters.size}
-            onChange={(e) => setFilters({ ...filters, size: e.target.value as PetSize })}
-          />
-          <Select
-            options={sexOptions}
-            value={filters.sex}
-            onChange={(e) => setFilters({ ...filters, sex: e.target.value as PetSex })}
-          />
-          <button
-            onClick={() => setFilters({ species: '', size: '', sex: '', search: '' })}
-            className="text-primary-500 hover:underline text-sm"
-          >
-            Clear filters
-          </button>
+          <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 md:flex-wrap scrollbar-hide">
+            <div className="flex-shrink-0 w-32">
+              <Select
+                options={speciesOptions}
+                value={filters.species}
+                onChange={(e) => setFilters({ ...filters, species: e.target.value as Species })}
+              />
+            </div>
+            <div className="flex-shrink-0 w-28">
+              <Select
+                options={sizeOptions}
+                value={filters.size}
+                onChange={(e) => setFilters({ ...filters, size: e.target.value as PetSize })}
+              />
+            </div>
+            <div className="flex-shrink-0 w-24">
+              <Select
+                options={sexOptions}
+                value={filters.sex}
+                onChange={(e) => setFilters({ ...filters, sex: e.target.value as PetSex })}
+              />
+            </div>
+            <button
+              onClick={() => setFilters({ species: '', size: '', sex: '', search: '' })}
+              className="flex-shrink-0 text-primary-500 hover:underline text-sm whitespace-nowrap"
+            >
+              Clear filters
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Results */}
       {loading ? (
-        <div className="flex justify-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary-500 border-t-transparent" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {[...Array(8)].map((_, i) => (
+            <SkeletonCard key={i} />
+          ))}
         </div>
       ) : error && pets.length === 0 ? (
         <ErrorDisplay
