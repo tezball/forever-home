@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Header, ErrorBoundary } from './components';
-import { HomePage, LoginPage, RegisterPage, PetListPage, PetDetailPage, PetFormPage, PetSubmitPage, RescuesPage, RescueVetManagement, ForgotPasswordPage, ResetPasswordPage, HelpCenterPage, ContactPage, PrivacyPolicyPage, VetSignOffHistoryPage, SettingsPage, NotificationsPage, RescueOrgProfilePage, VetsPage, VetProfilePage, RescueOrgSettingsPage, VetSettingsPage, AdminAnalyticsPage, AdminModerationPage, VerifyEmailPage, VetRequestApprovalPage, ProfilePage, FaqPage, AboutPage } from './pages';
+import { HomePage, LoginPage, RegisterPage, PetListPage, PetDetailPage, PetFormPage, PetSubmitPage, RescuesPage, RescueVetManagement, ForgotPasswordPage, ResetPasswordPage, HelpCenterPage, ContactPage, PrivacyPolicyPage, VetSignOffHistoryPage, SettingsPage, NotificationsPage, RescueOrgProfilePage, VetsPage, VetProfilePage, RescueOrgSettingsPage, VetSettingsPage, AdminAnalyticsPage, AdminModerationPage, VerifyEmailPage, VetRequestApprovalPage, ProfilePage, FaqPage, AboutPage, SwipeModePage } from './pages';
 import {
   FosterDashboard,
   AdopterDashboard,
@@ -62,6 +62,7 @@ function AppRoutes() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/pets" element={<PetListPage />} />
+          <Route path="/pets/swipe" element={<SwipeModePage />} />
           <Route path="/pets/:id" element={<PetDetailPage />} />
           <Route path="/rescues" element={<RescuesPage />} />
           <Route path="/rescues/:id" element={<RescueOrgProfilePage />} />

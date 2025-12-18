@@ -88,6 +88,9 @@ export function Header() {
             <Link to="/pets" className="text-gray-600 hover:text-primary-500 transition-colors">
               Browse Pets
             </Link>
+            <Link to="/pets/swipe" className="text-gray-600 hover:text-primary-500 transition-colors">
+              Swipe
+            </Link>
             <Link to="/rescues" className="text-gray-600 hover:text-primary-500 transition-colors">
               Rescues
             </Link>
@@ -194,6 +197,13 @@ export function Header() {
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Browse Pets
+              </Link>
+              <Link
+                to="/pets/swipe"
+                className="px-4 py-2 text-gray-600 hover:bg-secondary-100 rounded"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Swipe
               </Link>
               <Link
                 to="/rescues"
