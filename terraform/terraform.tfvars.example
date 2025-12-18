@@ -3,60 +3,60 @@
 
 # AWS Configuration
 aws_region = "us-east-1"
-environment = "dev"
+environment = "prod"
 
 # VPC Configuration
 vpc_cidr = "10.0.0.0/16"
 availability_zones = ["us-east-1a", "us-east-1b"]
 
-# ECS Configuration - Minimal sizing (smallest Fargate task)
-# 256 CPU = 0.25 vCPU, 512 MB memory (minimum for Fargate)
-ecs_task_cpu    = 256
-ecs_task_memory = 512
-ecs_desired_count = 1
+# ECS Configuration
+# Recommended: 512 CPU (0.5 vCPU), 1024 MB memory for production
+ecs_task_cpu    = 512
+ecs_task_memory = 1024
+ecs_desired_count = 2
 container_port = 8080
 
-# RDS Configuration - Minimal sizing
-# db.t4g.micro is the smallest available instance (~$12/month)
-db_instance_class    = "db.t4g.micro"
+# RDS Configuration
+db_instance_class    = "db.t4g.small"
 db_allocated_storage = 20
 db_name              = "foreverhome"
 db_username          = "foreverhome_admin"
-db_multi_az          = false  # Set to true for production
+db_multi_az          = true
 
-# Database External Access (for IDE connections) - TEST/DEV ONLY!
-db_publicly_accessible = true
+# Database External Access
+# WARNING: Only enable for debugging! Should be false in production.
+db_publicly_accessible = false
 
 # Application Configuration
 admin_email          = "admin@yourdomain.com"
 app_base_url         = ""  # Leave empty to use ALB DNS name
-cors_allowed_origins = "http://localhost:5173,http://localhost:3000"
+cors_allowed_origins = ""
 
 # Email Configuration (REQUIRED for email verification)
 email_from = "noreply@yourdomain.com"
 
-# SES Domain Configuration (REQUIRED for email sending in production)
+# SES Domain Configuration (REQUIRED for email sending)
 # This domain must be verified in SES - terraform outputs the required DNS records
 # After running terraform apply, add the DNS records shown in the output
 ses_domain = "yourdomain.com"
 
-# Database Reset (DANGEROUS - use only for dev/testing!)
+# Database Reset (DANGEROUS!)
 # When true, drops ALL tables and re-runs migrations on each deploy
 reset_database_on_deploy = false
 
 # S3 Configuration
 s3_bucket_name = ""  # Leave empty for auto-generated name
 
-# Domain Configuration (optional)
-domain_name        = ""
-create_certificate = false
+# Domain Configuration
+domain_name        = "yourdomain.com"
+create_certificate = true
 
-# Production Overrides Example:
-# environment         = "prod"
-# ecs_task_cpu        = 512
-# ecs_task_memory     = 1024
-# ecs_desired_count   = 2
-# db_instance_class   = "db.t4g.small"
-# db_multi_az         = true
-# create_certificate  = true
-# domain_name         = "api.foreverhome.com"
+# Route53 DNS Configuration
+# Option 1: Use existing Route53 hosted zone
+route53_zone_id = ""  # Your existing zone ID (e.g., "Z1234567890ABC")
+
+# Option 2: Create new Route53 hosted zone (if route53_zone_id is empty)
+create_route53_zone = false
+
+# Create www subdomain alias
+create_www_redirect = true

@@ -10,7 +10,7 @@ resource "random_password" "jwt_secret" {
 resource "aws_secretsmanager_secret" "jwt_secret" {
   name                    = "${local.name_prefix}-jwt-secret-${random_id.suffix.hex}"
   description             = "JWT signing secret for Forever Home"
-  recovery_window_in_days = 0 # Set to 0 for dev, 7-30 for prod
+  recovery_window_in_days = 7
 
   tags = {
     Name = "${local.name_prefix}-jwt-secret"

@@ -12,6 +12,10 @@ resource "aws_ecs_cluster" "main" {
   tags = {
     Name = "${local.name_prefix}-cluster"
   }
+
+  lifecycle {
+    ignore_changes = [name, tags["Name"]]
+  }
 }
 
 # ECS Cluster Capacity Providers
@@ -176,6 +180,10 @@ resource "aws_security_group" "ecs_tasks" {
 
   tags = {
     Name = "${local.name_prefix}-ecs-tasks-sg"
+  }
+
+  lifecycle {
+    ignore_changes = [name, tags["Name"]]
   }
 }
 
@@ -351,7 +359,7 @@ resource "aws_ecs_service" "app" {
   }
 
   lifecycle {
-    ignore_changes = [task_definition] # Allow CI/CD to update task definition
+    ignore_changes = [task_definition, name, tags["Name"]] # Allow CI/CD to update task definition
   }
 }
 

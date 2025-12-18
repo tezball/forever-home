@@ -114,6 +114,11 @@ output "ecs_task_definition_arn" {
 }
 
 # ALB Outputs
+output "alb_arn" {
+  description = "ALB ARN"
+  value       = aws_lb.main.arn
+}
+
 output "alb_dns_name" {
   description = "ALB DNS name"
   value       = aws_lb.main.dns_name
@@ -150,6 +155,66 @@ output "cloudwatch_log_group" {
 output "jwt_secret_arn" {
   description = "ARN of the JWT secret"
   value       = aws_secretsmanager_secret.jwt_secret.arn
+}
+
+# Route53 Outputs
+output "route53_zone_id" {
+  description = "Route53 hosted zone ID"
+  value       = var.domain_name != "" && var.route53_zone_id != "" ? var.route53_zone_id : (var.create_route53_zone ? aws_route53_zone.main[0].zone_id : null)
+}
+
+output "route53_nameservers" {
+  description = "Route53 nameservers (only if zone was created)"
+  value       = var.create_route53_zone && var.domain_name != "" ? aws_route53_zone.main[0].name_servers : null
+}
+
+output "dns_configuration_required" {
+  description = "DNS configuration instructions"
+  value = var.domain_name != "" ? (
+    var.route53_zone_id != "" || var.create_route53_zone ? <<-EOT
+
+    ============================================
+    DNS MANAGED BY TERRAFORM
+    ============================================
+
+    Your domain ${var.domain_name} is configured with Route53.
+    ${var.create_route53_zone ? "Zone ID: ${aws_route53_zone.main[0].zone_id}" : ""}
+    ${var.create_route53_zone ? "Nameservers:\n  ${join("\n  ", aws_route53_zone.main[0].name_servers)}" : ""}
+
+    DNS records are automatically managed by Terraform.
+
+    WARNING: Running 'terraform destroy' will:
+    - Delete all DNS records
+    - Cause immediate service unavailability
+    - Require DNS propagation (up to 48h) after re-apply
+
+    ============================================
+    EOT
+    : <<-EOT
+
+    ============================================
+    MANUAL DNS CONFIGURATION REQUIRED
+    ============================================
+
+    Point your domain ${var.domain_name} to the ALB:
+
+    Option A (Recommended - CNAME record):
+      Name:  ${var.domain_name}
+      Type:  CNAME
+      Value: ${aws_lb.main.dns_name}
+
+    Option B (A record via Route53 Alias):
+      Name:     ${var.domain_name}
+      Type:     A (Alias)
+      Target:   ${aws_lb.main.dns_name}
+      Zone ID:  ${aws_lb.main.zone_id}
+
+    WARNING: The ALB DNS name changes on destroy/apply.
+    You will need to update your DNS records manually.
+
+    ============================================
+    EOT
+  ) : null
 }
 
 # Deployment Commands

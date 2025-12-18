@@ -7,9 +7,9 @@ variable "aws_region" {
 }
 
 variable "environment" {
-  description = "Environment name (dev, staging, prod)"
+  description = "Environment name"
   type        = string
-  default     = "dev"
+  default     = "prod"
 }
 
 # VPC Configuration
@@ -76,15 +76,15 @@ variable "db_username" {
 }
 
 variable "db_multi_az" {
-  description = "Enable Multi-AZ for RDS (set to false for cost savings in dev)"
+  description = "Enable Multi-AZ for RDS for high availability"
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "db_publicly_accessible" {
-  description = "Make RDS publicly accessible for IDE/external connections. WARNING: Only enable for test/dev!"
+  description = "Make RDS publicly accessible for external connections. WARNING: Should be false in production!"
   type        = bool
-  default     = true
+  default     = false
 }
 
 # Application Configuration
@@ -128,7 +128,7 @@ variable "ses_domain" {
 
 # Database Reset Configuration
 variable "reset_database_on_deploy" {
-  description = "WARNING: If true, drops ALL tables and re-runs migrations on each deploy. Use only for dev/testing!"
+  description = "WARNING: If true, drops ALL tables and re-runs migrations on each deploy. DANGEROUS!"
   type        = bool
   default     = false
 }
@@ -144,4 +144,23 @@ variable "create_certificate" {
   description = "Create ACM certificate for HTTPS"
   type        = bool
   default     = false
+}
+
+# Route53 Configuration
+variable "route53_zone_id" {
+  description = "Existing Route53 hosted zone ID (leave empty to create new or skip)"
+  type        = string
+  default     = ""
+}
+
+variable "create_route53_zone" {
+  description = "Create a new Route53 hosted zone (only if route53_zone_id is empty)"
+  type        = bool
+  default     = false
+}
+
+variable "create_www_redirect" {
+  description = "Create www subdomain alias record"
+  type        = bool
+  default     = true
 }

@@ -14,7 +14,7 @@ COPY frontend/ ./
 ENV VITE_API_URL=/api
 ENV VITE_TEST_MODE=true
 
-RUN npm run build
+RUN npm run build -- --outDir dist
 
 # Stage 2: Build backend
 FROM eclipse-temurin:25-jdk-alpine AS builder

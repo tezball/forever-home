@@ -8,7 +8,6 @@
 - [[domain-model]] - Entity definitions and relationships
 - [[pet-status]] - Pet lifecycle state machine
 - [[user-stories/index]] - Feature specifications
-- [[e2e-review]] - Previous E2E review findings
 
 ---
 

@@ -46,7 +46,7 @@ This Terraform configuration deploys the Forever Home application to AWS using F
 | CloudWatch | Basic logs | ~$1-5 |
 | **Total** | | **~$72-80/month** |
 
-> **Note**: Use FARGATE_SPOT in dev environments to reduce ECS costs by ~70%.
+> **Note**: FARGATE_SPOT can reduce ECS costs by ~70% but may have interruptions.
 
 ## Prerequisites
 
@@ -105,15 +105,14 @@ aws ecs update-service \
 terraform output application_url
 ```
 
-## Environment Configurations
+## Configuration
 
-### Development (Default)
-- FARGATE_SPOT for cost savings (~70% cheaper)
-- Single AZ RDS (no Multi-AZ)
-- Minimal logging retention (7 days)
-- No deletion protection
+### Production Settings (Default)
+- Multi-AZ RDS for high availability
+- Deletion protection enabled
+- HTTPS with ACM certificate
+- Private database (not publicly accessible)
 
-### Production
 ```hcl
 environment         = "prod"
 ecs_task_cpu        = 512
@@ -122,7 +121,7 @@ ecs_desired_count   = 2
 db_instance_class   = "db.t4g.small"
 db_multi_az         = true
 create_certificate  = true
-domain_name         = "api.yourdomain.com"
+domain_name         = "yourdomain.com"
 ```
 
 ## Key Features
@@ -190,9 +189,9 @@ aws dynamodb create-table \
 ## Troubleshooting
 
 ### ECS Task Fails to Start
-1. Check CloudWatch logs: `aws logs tail /ecs/forever-home-dev --follow`
-2. Verify ECR image exists: `aws ecr list-images --repository-name forever-home-dev-app`
-3. Check task definition: `aws ecs describe-task-definition --task-definition forever-home-dev-app`
+1. Check CloudWatch logs: `aws logs tail /ecs/forever-home-prod --follow`
+2. Verify ECR image exists: `aws ecr list-images --repository-name forever-home-prod-app`
+3. Check task definition: `aws ecs describe-task-definition --task-definition forever-home-prod-app`
 
 ### Database Connection Issues
 1. Verify security groups allow traffic from ECS tasks

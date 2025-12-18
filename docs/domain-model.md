@@ -8,7 +8,6 @@
 - [[Roadmap]] - Implementation phases and status
 - [[pet-status]] - Pet lifecycle state machine
 - [[user-stories/index]] - User stories by role
-- [[gaps-and-decisions]] - Architectural decisions
 
 ## Domain Overview
 
@@ -43,9 +42,21 @@ Forever Home operates on a trust-based adoption model where pets must pass throu
 | lastLoginAt | Timestamp | Most recent login |
 | status | AccountStatus | Active, Suspended, Pending |
 | profileComplete | Boolean | Has completed role-specific profile |
+| emailVerified | Boolean | Email has been verified |
+| emailVerificationToken | String | Token for email verification |
+| emailVerificationExpiry | Timestamp | When verification token expires |
+| passwordResetToken | String | Token for password reset |
+| passwordResetExpiry | Timestamp | When reset token expires |
+| failedLoginAttempts | Integer | Count of consecutive failed logins |
+| lockedUntil | Timestamp | Account lockout expiry (after 5 failed attempts) |
 | notificationPrefs | NotificationPreferences | Email/in-app notification settings |
 
 **Why it exists:** Provides authentication and authorization foundation. All specific user types extend from this base, enabling a unified login system while supporting role-specific functionality.
+
+**Security Features:**
+- Account locks after 5 failed login attempts
+- Email verification required before full access
+- Password reset with 1-hour expiry tokens
 
 ---
 
@@ -181,6 +192,28 @@ Forever Home operates on a trust-based adoption model where pets must pass throu
 3. **Audit trail:** Records who approved each vet and when
 
 **Business Rule:** When a vet looks up a pet by microchip, the system checks if the vet is approved by the rescue organization that manages that pet.
+
+---
+
+### Vet Approval Request
+**Purpose:** Tracks requests from vets to work with specific rescue organizations.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| id | UUID | Unique identifier |
+| vetId | UUID | Requesting vet |
+| rescueOrgId | UUID | Target rescue organization |
+| status | VetApprovalRequestStatus | Pending, Approved, Rejected |
+| requestedAt | Timestamp | When request was made |
+| processedAt | Timestamp | When request was handled |
+| processedBy | UUID | Who handled the request |
+| rejectionReason | Text | If rejected, why |
+
+**Why it exists:** Enables a bilateral approval system where:
+1. **Vets can proactively request** approval from rescues they want to work with
+2. **Rescues review and approve/reject** requests
+3. **Prevents spam:** Vets must explicitly request approval
+4. **Audit trail:** Records all approval decisions
 
 ---
 
@@ -420,6 +453,64 @@ Forever Home operates on a trust-based adoption model where pets must pass throu
 
 ---
 
+### Pet Status History
+**Purpose:** Audit trail of all pet status transitions.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| id | UUID | Unique identifier |
+| petId | UUID | Pet whose status changed |
+| fromStatus | PetStatus | Previous status |
+| toStatus | PetStatus | New status |
+| reason | Text | Why status changed |
+| changedBy | UUID | User who made the change |
+| changedAt | Timestamp | When change occurred |
+
+**Why it exists:** Provides complete audit trail for:
+1. **Transparency:** Fosters and adopters can see the pet's journey
+2. **Debugging:** Track issues in the adoption flow
+3. **Analytics:** Understand typical pet lifecycles
+4. **Compliance:** Legal record of custody changes
+
+---
+
+### Content Flag
+**Purpose:** Moderator-submitted flags for problematic content.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| id | UUID | Unique identifier |
+| contentType | ContentType | PET, PROFILE, APPLICATION |
+| contentId | UUID | ID of flagged content |
+| reason | Text | Why content was flagged |
+| flaggedBy | UUID | User who flagged |
+| flaggedAt | Timestamp | When flagged |
+| status | FlagStatus | PENDING, APPROVED, DISMISSED |
+| resolvedBy | UUID | Admin who resolved |
+| resolvedAt | Timestamp | When resolved |
+| resolution | Text | Resolution notes |
+
+**Why it exists:** Enables community moderation and admin oversight of platform content.
+
+---
+
+### Audit Log
+**Purpose:** Records administrative actions for accountability.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| id | UUID | Unique identifier |
+| adminId | UUID | Admin who took action |
+| action | String | Action type (APPROVE, REJECT, SUSPEND, etc.) |
+| targetType | String | Entity type affected |
+| targetId | UUID | ID of affected entity |
+| details | Text | Additional context |
+| createdAt | Timestamp | When action occurred |
+
+**Why it exists:** Provides accountability for administrative actions and enables investigation of disputes.
+
+---
+
 ### NotificationPreferences
 **Purpose:** User settings for notification delivery (embedded in User).
 
@@ -438,53 +529,74 @@ Forever Home operates on a trust-based adoption model where pets must pass throu
 
 ### UserRole
 ```
-Admin | Foster | Adopter | Vet | RescueOrg
+ADMIN | FOSTER | ADOPTER | VET | RESCUE_ORG
 ```
 
 ### AccountStatus
 ```
-Pending | Active | Suspended
+PENDING | ACTIVE | SUSPENDED
 ```
 
 ### Species
 ```
-Dog | Cat | Rabbit | Bird | Other
+DOG | CAT | RABBIT | BIRD | OTHER
 ```
+
+### Breed
+Over 100 breeds supported including:
+- **Dogs:** LABRADOR_RETRIEVER, GERMAN_SHEPHERD, GOLDEN_RETRIEVER, BULLDOG, POODLE, BEAGLE, ROTTWEILER, etc.
+- **Cats:** PERSIAN, MAINE_COON, SIAMESE, RAGDOLL, BENGAL, BRITISH_SHORTHAIR, etc.
+- **Mixed:** MIXED_BREED (for both species)
 
 ### PetSize
 ```
-Small | Medium | Large
+EXTRA_SMALL | SMALL | MEDIUM | LARGE | EXTRA_LARGE
 ```
 
 ### PetSex
 ```
-Male | Female
+MALE | FEMALE
 ```
 
 ### AgeUnit
 ```
-Months | Years
+WEEKS | MONTHS | YEARS
 ```
 
 ### PetStatus
 ```
-Draft | PendingRescue | PendingVet | Available | InProgress | Adopted | Withdrawn | OnHold
+DRAFT | PENDING_RESCUE | PENDING_VET | AVAILABLE | IN_PROGRESS | ADOPTED | WITHDRAWN | ON_HOLD
 ```
-*See [[pet-status]] for detailed definitions.*
+*See [[pet-status]] for detailed definitions and transitions.*
 
 ### HealthStatus
 ```
-Good | KnownConditions
+GOOD | NEEDS_ATTENTION | CRITICAL
 ```
 
 ### ApplicationStatus
 ```
-Submitted | UnderReview | Approved | Rejected | Withdrawn
+SUBMITTED | UNDER_REVIEW | APPROVED | REJECTED | WITHDRAWN | FINALIZED
 ```
 
 ### NotificationType
 ```
-StatusChange | NewApplication | ApplicationUpdate | SystemAlert
+PET_STATUS_CHANGE | NEW_APPLICATION | APPLICATION_UPDATE | FAVORITE_UPDATE | SYSTEM_ALERT
+```
+
+### VetApprovalRequestStatus
+```
+PENDING | APPROVED | REJECTED
+```
+
+### ContentType (for moderation)
+```
+PET | PROFILE | APPLICATION
+```
+
+### FlagStatus
+```
+PENDING | APPROVED | DISMISSED
 ```
 
 ---
@@ -497,22 +609,31 @@ User (1) ──────── (0..1) Foster
      (1) ──────── (0..1) Vet
      (1) ──────── (0..1) RescueOrg
      (1) ──────── (0..1) Admin
+     (1) ──────── (0..*) Notification
 
-Foster (1) ──────── (0..*) Pet
+Foster (1) ──────── (0..*) Pet [as registrant]
+RescueOrg (1) ──────── (0..*) Pet [as owner, can create directly]
+
 Pet (1) ──────── (0..*) PetImage
 Pet (1) ──────── (0..1) VetSignOff
 Pet (1) ──────── (0..*) AdoptionApplication
 Pet (1) ──────── (0..*) Favorite
+Pet (1) ──────── (0..*) PetStatusHistory
 Pet (0..1) ──────── (1) Adoption
 
-RescueOrg (1) ──────── (0..*) Pet
 RescueOrg (1) ──────── (0..*) VetApproval
+RescueOrg (1) ──────── (0..*) VetApprovalRequest
+
 Vet (1) ──────── (0..*) VetSignOff
 Vet (1) ──────── (0..*) VetApproval
-Adopter (1) ──────── (0..*) Favorite
+Vet (1) ──────── (0..*) VetApprovalRequest
 
+Adopter (1) ──────── (0..*) Favorite
 Adopter (1) ──────── (0..*) AdoptionApplication
 Adopter (1) ──────── (0..*) Adoption
 
 VetSignOff (1) ──────── (0..*) VaccinationRecord
+
+Admin (1) ──────── (0..*) AuditLog
+ContentFlag (0..*) ──────── (1) Admin [resolver]
 ```

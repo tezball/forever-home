@@ -3,6 +3,9 @@
 resource "aws_s3_bucket" "images" {
   bucket = var.s3_bucket_name != "" ? var.s3_bucket_name : "${local.name_prefix}-images-${random_id.suffix.hex}"
 
+  # Allow terraform destroy to delete bucket even if it contains objects
+  force_destroy = true
+
   tags = {
     Name = "${local.name_prefix}-images"
   }

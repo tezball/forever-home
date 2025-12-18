@@ -1,7 +1,17 @@
 # RDS PostgreSQL Database - Minimal Configuration
 
-# DB Subnet Group (private - for production use)
+# Use existing resources that were created during dev environment
+# These are managed outside of terraform to avoid recreation issues
+locals {
+  # Existing RDS resources - these can't be changed without recreating the DB
+  existing_rds_subnet_group_name  = "forever-home-dev-db-subnet-group-public"
+  existing_rds_parameter_group    = "forever-home-prod-postgres-params"
+  existing_rds_security_group_id  = "sg-09839622744d6eb75"
+}
+
+# DB Subnet Group (private - only created for new deployments)
 resource "aws_db_subnet_group" "private" {
+  count      = 0  # Disabled - using existing subnet group
   name       = "${local.name_prefix}-db-subnet-group-private"
   subnet_ids = aws_subnet.private[*].id
 
@@ -10,9 +20,9 @@ resource "aws_db_subnet_group" "private" {
   }
 }
 
-# DB Subnet Group (public - for IDE/external access in dev)
+# DB Subnet Group (public - only created for new deployments)
 resource "aws_db_subnet_group" "public" {
-  count      = var.db_publicly_accessible ? 1 : 0
+  count      = 0  # Disabled - using existing subnet group
   name       = "${local.name_prefix}-db-subnet-group-public"
   subnet_ids = aws_subnet.public[*].id
 
@@ -21,8 +31,9 @@ resource "aws_db_subnet_group" "public" {
   }
 }
 
-# Security Group for RDS
+# Security Group for RDS - disabled as we're using existing one
 resource "aws_security_group" "rds" {
+  count       = 0  # Disabled - using existing security group
   name        = "${local.name_prefix}-rds-sg"
   description = "Security group for RDS PostgreSQL"
   vpc_id      = aws_vpc.main.id
@@ -47,16 +58,16 @@ resource "aws_security_group" "rds" {
   }
 }
 
-# Security Group rule for external access (IDE connections)
+# Security Group rule for external access (IDE connections) - disabled
 resource "aws_security_group_rule" "rds_external_access" {
-  count             = var.db_publicly_accessible ? 1 : 0
+  count             = 0  # Disabled - managed outside terraform
   type              = "ingress"
   from_port         = 5432
   to_port           = 5432
   protocol          = "tcp"
   cidr_blocks       = ["0.0.0.0/0"]
-  security_group_id = aws_security_group.rds.id
-  description       = "PostgreSQL from anywhere (test/dev only)"
+  security_group_id = aws_security_group.rds[0].id
+  description       = "PostgreSQL from anywhere (enable only for debugging)"
 }
 
 # Generate random password for RDS
@@ -70,7 +81,7 @@ resource "random_password" "db_password" {
 resource "aws_secretsmanager_secret" "db_password" {
   name                    = "${local.name_prefix}-db-password-${random_id.suffix.hex}"
   description             = "RDS master password for Forever Home"
-  recovery_window_in_days = 0 # Set to 0 for dev, 7-30 for prod
+  recovery_window_in_days = 7
 
   tags = {
     Name = "${local.name_prefix}-db-password"
@@ -93,22 +104,22 @@ resource "aws_db_instance" "main" {
   identifier = "${local.name_prefix}-postgres"
 
   # Engine configuration
-  engine               = "postgres"
-  engine_version       = "16.6"
-  instance_class       = var.db_instance_class
-  allocated_storage    = var.db_allocated_storage
+  engine                = "postgres"
+  engine_version        = "16.6"
+  instance_class        = var.db_instance_class
+  allocated_storage     = var.db_allocated_storage
   max_allocated_storage = var.db_allocated_storage * 2 # Allow some autoscaling
-  storage_type         = "gp3"
-  storage_encrypted    = true
+  storage_type          = "gp3"
+  storage_encrypted     = true
 
   # Database configuration
   db_name  = var.db_name
   username = var.db_username
   password = random_password.db_password.result
 
-  # Network configuration
-  db_subnet_group_name   = var.db_publicly_accessible ? aws_db_subnet_group.public[0].name : aws_db_subnet_group.private.name
-  vpc_security_group_ids = [aws_security_group.rds.id]
+  # Network configuration - use existing resources
+  db_subnet_group_name   = local.existing_rds_subnet_group_name
+  vpc_security_group_ids = [local.existing_rds_security_group_id]
   publicly_accessible    = var.db_publicly_accessible
   multi_az               = var.db_multi_az
 
@@ -127,16 +138,25 @@ resource "aws_db_instance" "main" {
   skip_final_snapshot        = var.environment != "prod"
   final_snapshot_identifier  = var.environment == "prod" ? "${local.name_prefix}-final-snapshot" : null
 
-  # Parameter group for PostgreSQL tuning
-  parameter_group_name = aws_db_parameter_group.main.name
+  # Parameter group for PostgreSQL tuning - use existing
+  parameter_group_name = local.existing_rds_parameter_group
 
   tags = {
     Name = "${local.name_prefix}-postgres"
   }
+
+  # Ignore changes to attributes that can't be modified on existing instance
+  lifecycle {
+    ignore_changes = [
+      db_subnet_group_name,  # Can't change subnet group of existing RDS
+      identifier,            # Keep existing identifier during environment rename
+    ]
+  }
 }
 
-# Custom parameter group for PostgreSQL
+# Custom parameter group for PostgreSQL - disabled, using existing one
 resource "aws_db_parameter_group" "main" {
+  count  = 0  # Disabled - using existing parameter group
   family = "postgres16"
   name   = "${local.name_prefix}-postgres-params"
 

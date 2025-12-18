@@ -321,9 +321,7 @@ public class TestDataSeeder implements CommandLineRunner {
 
         String description = generateDescription(name, species, breed, age, ageUnit, sex);
 
-        String imageFile = species.equals("DOG")
-            ? "dog-" + ((petNumber % 6) + 1) + ".jpg"
-            : "cat-" + ((petNumber % 4) + 1) + ".jpg";
+        String imageFile = getBreedImageFile(breed);
 
         jdbcTemplate.update("""
             INSERT INTO pets (id, name, species, breed, age, age_unit, sex, size, description, microchip_id,
@@ -334,6 +332,61 @@ public class TestDataSeeder implements CommandLineRunner {
 
         petSeeds.add(new PetSeed(petId, microchip, species, imageFile));
         return petId;
+    }
+
+    /**
+     * Returns the image filename for a given breed enum.
+     * Each breed has a unique breed-specific image.
+     */
+    private String getBreedImageFile(String breed) {
+        return switch (breed) {
+            // Dog breeds
+            case "LABRADOR" -> "labrador.jpg";
+            case "GOLDEN_RETRIEVER" -> "golden-retriever.jpg";
+            case "GERMAN_SHEPHERD" -> "german-shepherd.jpg";
+            case "FRENCH_BULLDOG" -> "french-bulldog.jpg";
+            case "BULLDOG" -> "bulldog.jpg";
+            case "BEAGLE" -> "beagle.jpg";
+            case "POODLE" -> "poodle.jpg";
+            case "POODLE_MIX" -> "poodle-mix.jpg";
+            case "ROTTWEILER" -> "rottweiler.jpg";
+            case "YORKSHIRE_TERRIER" -> "yorkshire-terrier.jpg";
+            case "BOXER" -> "boxer.jpg";
+            case "DACHSHUND" -> "dachshund.jpg";
+            case "HUSKY" -> "husky.jpg";
+            case "SIBERIAN_HUSKY" -> "siberian-husky.jpg";
+            case "GREAT_DANE" -> "great-dane.jpg";
+            case "DOBERMAN" -> "doberman.jpg";
+            case "AUSTRALIAN_SHEPHERD" -> "australian-shepherd.jpg";
+            case "CAVALIER_KING_CHARLES" -> "cavalier-king-charles.jpg";
+            case "SHIH_TZU" -> "shih-tzu.jpg";
+            case "BOSTON_TERRIER" -> "boston-terrier.jpg";
+            // Cat breeds
+            case "TABBY" -> "tabby.jpg";
+            case "DOMESTIC_SHORTHAIR" -> "domestic-shorthair.jpg";
+            case "DOMESTIC_LONGHAIR" -> "domestic-longhair.jpg";
+            case "SIAMESE" -> "siamese.jpg";
+            case "MAINE_COON" -> "maine-coon.jpg";
+            case "PERSIAN" -> "persian.jpg";
+            case "RAGDOLL" -> "ragdoll.jpg";
+            case "BENGAL" -> "bengal.jpg";
+            case "BRITISH_SHORTHAIR" -> "british-shorthair.jpg";
+            case "ABYSSINIAN" -> "abyssinian.jpg";
+            case "BIRMAN" -> "birman.jpg";
+            case "ORIENTAL_SHORTHAIR" -> "oriental-shorthair.jpg";
+            case "SPHYNX" -> "sphynx.jpg";
+            case "DEVON_REX" -> "devon-rex.jpg";
+            case "SCOTTISH_FOLD" -> "scottish-fold.jpg";
+            case "RUSSIAN_BLUE" -> "russian-blue.jpg";
+            case "AMERICAN_SHORTHAIR" -> "american-shorthair.jpg";
+            case "NORWEGIAN_FOREST_CAT" -> "norwegian-forest-cat.jpg";
+            case "EXOTIC_SHORTHAIR" -> "exotic-shorthair.jpg";
+            case "BURMESE" -> "burmese.jpg";
+            // Fallback for any other breeds
+            default -> breed.toLowerCase().contains("dog") || breed.toLowerCase().contains("mix_dog")
+                ? "dog-1.jpg"
+                : "cat-1.jpg";
+        };
     }
 
     /**
@@ -544,33 +597,24 @@ public class TestDataSeeder implements CommandLineRunner {
             return;
         }
 
-        // Get all pets and seed images for them
+        // Get all pets and seed images for them using breed-specific images
         List<Map<String, Object>> pets = jdbcTemplate.queryForList(
-            "SELECT id, microchip_id, species FROM pets"
+            "SELECT id, microchip_id, species, breed FROM pets"
         );
 
         if (pets.isEmpty()) {
             return;
         }
 
-        // Map species to appropriate demo images
-        int dogIndex = 1;
-        int catIndex = 1;
         List<PetSeed> petSeeds = new ArrayList<>();
 
         for (Map<String, Object> pet : pets) {
             UUID petId = (UUID) pet.get("id");
             String microchipId = (String) pet.get("microchip_id");
             String species = (String) pet.get("species");
+            String breed = (String) pet.get("breed");
 
-            String imageFile;
-            if ("DOG".equals(species)) {
-                imageFile = "dog-" + dogIndex + ".jpg";
-                dogIndex = (dogIndex % 6) + 1; // Cycle through 1-6
-            } else {
-                imageFile = "cat-" + catIndex + ".jpg";
-                catIndex = (catIndex % 4) + 1; // Cycle through 1-4
-            }
+            String imageFile = getBreedImageFile(breed);
             petSeeds.add(new PetSeed(petId, microchipId, species, imageFile));
         }
 

@@ -32,6 +32,10 @@ resource "aws_security_group" "alb" {
   tags = {
     Name = "${local.name_prefix}-alb-sg"
   }
+
+  lifecycle {
+    ignore_changes = [name, tags["Name"]]
+  }
 }
 
 # Application Load Balancer
@@ -46,6 +50,10 @@ resource "aws_lb" "main" {
 
   tags = {
     Name = "${local.name_prefix}-alb"
+  }
+
+  lifecycle {
+    ignore_changes = [name, tags["Name"]]
   }
 }
 
@@ -73,6 +81,10 @@ resource "aws_lb_target_group" "app" {
 
   tags = {
     Name = "${local.name_prefix}-tg"
+  }
+
+  lifecycle {
+    ignore_changes = [name, tags["Name"]]
   }
 }
 

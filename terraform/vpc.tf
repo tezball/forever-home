@@ -199,4 +199,8 @@ resource "aws_security_group" "vpc_endpoints" {
   tags = {
     Name = "${local.name_prefix}-vpc-endpoints-sg"
   }
+
+  lifecycle {
+    ignore_changes = [name, tags["Name"]]
+  }
 }

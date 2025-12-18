@@ -395,5 +395,5 @@ Areas that need additional test coverage:
 
 Keep test documentation updated in:
 - This document (testing-strategy.md)
-- E2E test checklist (e2e-review.md)
+- Manual QA guide (manual-qa-guide.md)
 - API documentation (swagger-ui)

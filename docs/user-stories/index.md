@@ -11,7 +11,6 @@
 - [[domain-model]] - Entity definitions and relationships
 - [[pet-status]] - Status lifecycle and transitions
 - [[ui-style-guide]] - Component specifications
-- [[gaps-and-decisions]] - Requirement decisions
 
 ---
 

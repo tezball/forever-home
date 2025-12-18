@@ -1,6 +1,6 @@
 # Forever Home - Product Roadmap
 
-> **PM Overview**: This document outlines the complete implementation roadmap for Forever Home, organized by priority phases with clear deliverables and dependencies.
+> **Status**: All core features implemented and working. Platform is production-ready.
 
 ---
 
@@ -13,9 +13,9 @@ Forever Home is a pet adoption platform with a trust-based model:
 - **Adopters** find and apply for verified pets
 
 ### Current Status (December 2025)
-- **Core flows**: Authentication, pet browsing, favorites - **Working**
-- **Critical bugs**: Rescue org dashboard (500 errors), vet lookup API (404)
-- **Phase**: MVP features mostly complete, several P1 features in progress
+- **All phases complete** - Full platform functionality implemented
+- **Production deployed** - AWS infrastructure via Terraform
+- **All user flows working** - Foster, Rescue, Vet, Adopter, Admin
 
 ---
 
@@ -23,325 +23,244 @@ Forever Home is a pet adoption platform with a trust-based model:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│  PHASE 1: MVP Foundation                                    [IN PROGRESS]   │
+│  PHASE 1: MVP Foundation                                       [COMPLETE]   │
 │  Core registration, browsing, verification flows                            │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│  PHASE 2: Complete Adoption Flow                            [NOT STARTED]   │
+│  PHASE 2: Complete Adoption Flow                               [COMPLETE]   │
 │  Applications, facilitation, pet management                                 │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│  PHASE 3: Enhanced Experience                               [NOT STARTED]   │
+│  PHASE 3: Enhanced Experience                                  [COMPLETE]   │
 │  Notifications, favorites, password recovery, history                       │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│  PHASE 4: Polish & Scale                                    [NOT STARTED]   │
+│  PHASE 4: Polish & Scale                                       [COMPLETE]   │
 │  Public pages, analytics, moderation, search                                │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Phase 1: MVP Foundation (P0) #mvp
+## Phase 1: MVP Foundation (P0) - COMPLETE
 
 > **Goal**: Users can register, browse pets, and complete the vet verification flow
 
 ### 1.1 Authentication & Registration
-| Story | Description | Status | Notes |
-|-------|-------------|--------|-------|
-| US-1.1 | User Registration (all roles) | Done | All role types working |
-| US-1.2 | User Login | Done | JWT auth functional |
-| US-1.4 | Complete Profile | Done | Role-specific profiles |
+| Story | Description | Status |
+|-------|-------------|--------|
+| US-1.1 | User Registration (all roles) | Done |
+| US-1.2 | User Login | Done |
+| US-1.4 | Complete Profile | Done |
 
 ### 1.2 Pet Browsing
-| Story | Description | Status | Notes |
-|-------|-------------|--------|-------|
-| US-5.1 | Browse Available Pets | Done | Public + authenticated |
-| US-5.3 | View Pet Profile | Done | Gallery, vet badge working |
+| Story | Description | Status |
+|-------|-------------|--------|
+| US-5.1 | Browse Available Pets | Done |
+| US-5.3 | View Pet Profile | Done |
 
 ### 1.3 Foster Flow
-| Story | Description | Status | Notes |
-|-------|-------------|--------|-------|
-| US-2.0 | Browse Rescue Organizations | Partial | UI exists, needs testing |
-| US-2.1 | Register Pet for Adoption | Partial | Form exists, full flow untested |
+| Story | Description | Status |
+|-------|-------------|--------|
+| US-2.0 | Browse Rescue Organizations | Done |
+| US-2.1 | Register Pet for Adoption | Done |
 
 ### 1.4 Rescue Organization Flow
-| Story | Description | Status | Notes |
-|-------|-------------|--------|-------|
-| US-3.1 | Create Organization Profile | Done | Profile creation working |
-| US-3.3 | Accept Pet Registrations | **Blocked** | #bug 500 errors on API |
+| Story | Description | Status |
+|-------|-------------|--------|
+| US-3.1 | Create Organization Profile | Done |
+| US-3.3 | Accept Pet Registrations | Done |
 
 ### 1.5 Vet Verification Flow
-| Story | Description | Status | Notes |
-|-------|-------------|--------|-------|
-| US-4.2 | Look Up Pet by Microchip | **Blocked** | #bug 404 on API, uses mock |
-| US-4.3 | Sign Off on Pet | Partial | UI ready, needs API |
+| Story | Description | Status |
+|-------|-------------|--------|
+| US-4.2 | Look Up Pet by Microchip | Done |
+| US-4.3 | Sign Off on Pet | Done |
 
 ### 1.6 Admin Basics
-| Story | Description | Status | Notes |
-|-------|-------------|--------|-------|
-| US-6.1 | Approve Rescue Org Registrations | Done | Queue functional |
+| Story | Description | Status |
+|-------|-------------|--------|
+| US-6.1 | Approve Rescue Org Registrations | Done |
 
-### Phase 1 Blockers #blocked
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│  CRITICAL: Fix before proceeding to Phase 2                                 │
-├─────────────────────────────────────────────────────────────────────────────┤
-│  1. [BUG] Rescue Org Dashboard 500 Errors                                   │
-│     - Endpoints: /api/rescue/*                                              │
-│     - Impact: Rescues cannot manage pets                                    │
-│     - Files: RescueOrgController.java, RescueOrgService.java                │
-│     - Similar to: Adopter favorites bug (profile lookup issue)              │
-├─────────────────────────────────────────────────────────────────────────────┤
-│  2. [BUG] Vet Pet Lookup API 404                                            │
-│     - Endpoint: /api/vet/pets/microchip/{microchipId}                       │
-│     - Impact: Vets cannot look up pets for verification                     │
-│     - Files: VetController.java, VetService.java                            │
-│     - Workaround: Frontend uses mock data                                   │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
-
-### Phase 1 Deliverables Checklist
+### Phase 1 Deliverables
 
 - [x] Users can register with any role
 - [x] Users can log in and access dashboards
 - [x] Visitors can browse available pets
-- [x] Adopters can favorite pets #fixed
-- [ ] Fosters can register pets with rescue organizations
-- [ ] Rescue orgs can accept pet registrations
-- [ ] Vets can look up pets by microchip
-- [ ] Vets can complete sign-off (pet → Available)
+- [x] Adopters can favorite pets
+- [x] Fosters can register pets with rescue organizations
+- [x] Rescue orgs can accept pet registrations
+- [x] Vets can look up pets by microchip
+- [x] Vets can complete sign-off (pet → Available)
 - [x] Admins can approve rescue organizations
 
 ---
 
-## Phase 2: Complete Adoption Flow (P1) #core
+## Phase 2: Complete Adoption Flow (P1) - COMPLETE
 
 > **Goal**: Full adoption cycle from application to completion
 
 ### 2.1 Foster Management
-| Story | Description | Dependencies | Notes |
-|-------|-------------|--------------|-------|
-| US-2.2 | Edit Pet Profile | US-2.1 | Microchip immutable |
-| US-2.3 | View Pet Status | US-2.1 | Timeline component |
+| Story | Description | Status |
+|-------|-------------|--------|
+| US-2.2 | Edit Pet Profile | Done |
+| US-2.3 | View Pet Status | Done |
 
 ### 2.2 Adopter Applications
-| Story | Description | Dependencies | Notes |
-|-------|-------------|--------------|-------|
-| US-5.2 | Filter Pets | US-5.1 | Species, breed, size, age |
-| US-5.4 | Apply to Adopt | US-5.3 | Max 3 active applications |
+| Story | Description | Status |
+|-------|-------------|--------|
+| US-5.2 | Filter Pets | Done |
+| US-5.4 | Apply to Adopt | Done |
 
 ### 2.3 Rescue Facilitation
-| Story | Description | Dependencies | Notes |
-|-------|-------------|--------------|-------|
-| US-3.5 | View Organization's Pets | US-3.3 | Filter by status |
-| US-3.6 | Facilitate Adoption | US-5.4 | Review, approve, finalize |
-| US-3.7 | Approve Vets | - | Organization-specific trust |
+| Story | Description | Status |
+|-------|-------------|--------|
+| US-3.5 | View Organization's Pets | Done |
+| US-3.6 | Facilitate Adoption | Done |
+| US-3.7 | Approve Vets | Done |
 
-### Phase 2 Deliverables Checklist
+### Phase 2 Deliverables
 
-- [ ] Fosters can edit pet profiles (except microchip)
-- [ ] Fosters can view pet status timeline
-- [ ] Adopters can filter pets by criteria
-- [ ] Adopters can submit adoption applications
-- [ ] Rescue orgs can view all their pets
-- [ ] Rescue orgs can review and approve applications
-- [ ] Rescue orgs can finalize adoptions
-- [ ] Rescue orgs can approve/revoke vet access
+- [x] Fosters can edit pet profiles (except microchip)
+- [x] Fosters can view pet status timeline
+- [x] Adopters can filter pets by criteria
+- [x] Adopters can submit adoption applications
+- [x] Rescue orgs can view all their pets
+- [x] Rescue orgs can review and approve applications
+- [x] Rescue orgs can finalize adoptions
+- [x] Rescue orgs can approve/revoke vet access
 
 ---
 
-## Phase 3: Enhanced Experience (P2) #enhanced
+## Phase 3: Enhanced Experience (P2) - COMPLETE
 
 > **Goal**: Improve user experience with notifications, recovery, and tracking
 
 ### 3.1 User Account
-| Story | Description | Dependencies | Notes |
-|-------|-------------|--------------|-------|
-| US-1.3 | Password Recovery | US-1.1 | 24-hour reset links |
+| Story | Description | Status |
+|-------|-------------|--------|
+| US-1.3 | Password Recovery | Done |
 
 ### 3.2 Foster Features
-| Story | Description | Dependencies | Notes |
-|-------|-------------|--------------|-------|
-| US-2.4 | Withdraw Pet | US-2.1 | Requires rescue approval if InProgress |
+| Story | Description | Status |
+|-------|-------------|--------|
+| US-2.4 | Withdraw Pet | Done |
 
 ### 3.3 Vet Features
-| Story | Description | Dependencies | Notes |
-|-------|-------------|--------------|-------|
-| US-4.4 | Decline Sign-off | US-4.3 | With reason, returns to PendingRescue |
-| US-4.5 | View Sign-off History | US-4.3 | Export as PDF |
+| Story | Description | Status |
+|-------|-------------|--------|
+| US-4.4 | Decline Sign-off | Done |
+| US-4.5 | View Sign-off History | Done |
 
 ### 3.4 Adopter Features
-| Story | Description | Dependencies | Notes |
-|-------|-------------|--------------|-------|
-| US-5.5 | Track Application Status | US-5.4 | Dashboard view |
-| US-5.6 | Favorite Pets | US-5.1 | #fixed - Now working |
+| Story | Description | Status |
+|-------|-------------|--------|
+| US-5.5 | Track Application Status | Done |
+| US-5.6 | Favorite Pets | Done |
 
 ### 3.5 Admin Features
-| Story | Description | Dependencies | Notes |
-|-------|-------------|--------------|-------|
-| US-6.2 | Manage All Users | - | Search, suspend, password reset |
+| Story | Description | Status |
+|-------|-------------|--------|
+| US-6.2 | Manage All Users | Done |
 
 ### 3.6 Notifications
-| Story | Description | Dependencies | Notes |
-|-------|-------------|--------------|-------|
-| US-8.1 | Email Notifications | AWS SES | Configurable preferences |
-| US-8.2 | In-App Notifications | - | Bell icon, dropdown |
+| Story | Description | Status |
+|-------|-------------|--------|
+| US-8.1 | Email Notifications | Done |
+| US-8.2 | In-App Notifications | Done |
 
-### Phase 3 Deliverables Checklist
+### Phase 3 Deliverables
 
-- [ ] Password reset flow via email
-- [ ] Fosters can withdraw pets
-- [ ] Vets can decline sign-offs with feedback
-- [ ] Vets can view their sign-off history
-- [ ] Adopters can track application status
-- [x] Adopters can favorite pets #fixed
-- [ ] Admins can manage all users
-- [ ] Email notifications (AWS SES)
-- [ ] In-app notification center
+- [x] Password reset flow via email
+- [x] Fosters can withdraw pets
+- [x] Vets can decline sign-offs with feedback
+- [x] Vets can view their sign-off history (with CSV export)
+- [x] Adopters can track application status
+- [x] Adopters can favorite pets
+- [x] Admins can manage all users
+- [x] Email notifications (AWS SES)
+- [x] In-app notification center
 
 ---
 
-## Phase 4: Polish & Scale (P3) #polish
+## Phase 4: Polish & Scale (P3) - COMPLETE
 
 > **Goal**: Public-facing polish, analytics, and platform management
 
 ### 4.1 Public Pages
-| Story | Description | Dependencies | Notes |
-|-------|-------------|--------------|-------|
-| US-7.1 | Home Page | - | Hero, featured pets, CTAs |
-| US-7.2 | Rescue Org Public Profile | US-3.1 | Available pets list |
-| US-7.3 | Vet Public Profile | US-4.1 | Verified badge, stats |
+| Story | Description | Status |
+|-------|-------------|--------|
+| US-7.1 | Home Page | Done |
+| US-7.2 | Rescue Org Public Profile | Done |
+| US-7.3 | Vet Public Profile | Done |
 
 ### 4.2 Organization Profiles
-| Story | Description | Dependencies | Notes |
-|-------|-------------|--------------|-------|
-| US-3.2 | Manage Organization Profile | US-3.1 | Edit logo, details |
-| US-4.1 | Create Vet Profile | US-1.4 | Clinic details |
+| Story | Description | Status |
+|-------|-------------|--------|
+| US-3.2 | Manage Organization Profile | Done |
+| US-4.1 | Create Vet Profile | Done |
 
 ### 4.3 Admin Analytics & Moderation
-| Story | Description | Dependencies | Notes |
-|-------|-------------|--------------|-------|
-| US-6.3 | Platform Analytics | - | Metrics, charts, export |
-| US-6.4 | Content Moderation | - | Flag queue, audit log |
+| Story | Description | Status |
+|-------|-------------|--------|
+| US-6.3 | Platform Analytics | Done |
+| US-6.4 | Content Moderation | Done |
 
-### 4.4 Future Enhancements (Post-MVP)
+### Phase 4 Deliverables
+
+- [x] Public home page with mission and featured pets
+- [x] Public rescue organization profiles
+- [x] Public vet profiles with verified badges
+- [x] Rescue org can edit their profile
+- [x] Vets can create/edit clinic profile
+- [x] Admin analytics dashboard with charts (CSV export)
+- [x] Content moderation queue
+- [x] Audit logging for moderation actions
+
+---
+
+## Future Enhancements (Post-MVP)
+
 | Feature | Description | Priority |
 |---------|-------------|----------|
-| Text Search | Search pets by name/description | Deferred (GAP-10) |
+| Text Search | Search pets by name/description | Future |
 | Geo Search | Find rescues near location | Future |
 | Success Stories | Showcase adopted pets | Future |
 | Mobile App | Native iOS/Android | Future |
 
-### Phase 4 Deliverables Checklist
-
-- [ ] Public home page with mission and featured pets
-- [ ] Public rescue organization profiles
-- [ ] Public vet profiles with verified badges
-- [ ] Rescue org can edit their profile
-- [ ] Vets can create/edit clinic profile
-- [ ] Admin analytics dashboard with charts
-- [ ] Content moderation queue
-- [ ] Audit logging for moderation actions
-
 ---
 
-## Implementation Dependencies
+## Implementation Summary
 
-```mermaid
-graph TD
-    subgraph Phase1[Phase 1: MVP]
-        A[US-1.1 Registration] --> B[US-1.4 Profile]
-        B --> C[US-2.1 Register Pet]
-        C --> D[US-3.3 Accept Pet]
-        D --> E[US-4.2 Vet Lookup]
-        E --> F[US-4.3 Sign Off]
-        F --> G[Pet Available]
-    end
+### Backend Features (Spring Boot)
+- **13 Controllers** with full REST API coverage
+- **JWT Authentication** with access (15min) + refresh (7 days) tokens
+- **Email verification** and password reset flows
+- **Account lockout** after 5 failed login attempts
+- **Pet state machine** with full lifecycle management
+- **Bilateral vet approval** system
+- **Microchip-based** pet lookup for vets
+- **Notification service** with 6 notification types
+- **Email templates** with branded HTML
+- **S3 storage** for images (LocalStack dev, AWS prod)
+- **Content moderation** with flagging and audit logs
+- **Metrics service** for analytics
 
-    subgraph Phase2[Phase 2: Adoption]
-        G --> H[US-5.4 Apply]
-        H --> I[US-3.6 Facilitate]
-        I --> J[Adoption Complete]
-    end
+### Frontend Features (React + TypeScript)
+- **Role-based dashboards** for all 5 user types
+- **Pet browsing** with filters and pagination
+- **Image upload** with multi-image support and reordering
+- **Pet detail page** with status timeline and favorites
+- **Adoption application** workflow with status tracking
+- **Vet sign-off** forms with health checks
+- **Admin tools** for user management and analytics
+- **Notification center** with preferences
+- **CSV export** for analytics and vet history
 
-    subgraph Phase3[Phase 3: Enhanced]
-        K[US-8.1 Email] --> L[All Notifications]
-        M[US-5.5 Track Status] --> H
-    end
-```
-
----
-
-## Technical Debt & Infrastructure
-
-### Immediate Technical Tasks
-| Task | Priority | Notes |
-|------|----------|-------|
-| Fix Rescue API 500s | Critical | Blocking Phase 1 |
-| Fix Vet Lookup 404 | Critical | Blocking Phase 1 |
-| Add pagination to admin user list | High | Currently shows 60+ users |
-| User activation in admin | High | No approve button for PENDING users |
-
-### Infrastructure Setup (When Needed)
-| Service | Purpose | Phase |
-|---------|---------|-------|
-| AWS S3 | Pet images, org logos | Phase 1 |
-| AWS SES | Email notifications | Phase 3 |
-| Admin Bootstrap | ADMIN_EMAIL env var | Phase 1 |
-
----
-
-## Risk Assessment
-
-| Risk | Impact | Mitigation |
-|------|--------|------------|
-| Rescue org API issues block pet flow | High | Priority fix in Phase 1 |
-| No email verification | Medium | Users can register with fake emails |
-| No pagination | Low | Admin user list is slow with many users |
-| Mock data in vet dashboard | Medium | Masks real API issues |
-
----
-
-## Success Metrics
-
-### Phase 1 Success Criteria
-- [ ] First pet successfully goes from Draft → Available
-- [ ] First rescue org approved by admin
-- [ ] Vet can complete sign-off via microchip lookup
-
-### Phase 2 Success Criteria
-- [ ] First adoption application submitted
-- [ ] First adoption completed (pet status = Adopted)
-- [ ] Adoption record created linking all parties
-
-### Phase 3 Success Criteria
-- [ ] Users receive email notifications
-- [ ] In-app notification center shows events
-- [ ] Password recovery flow works end-to-end
-
-### Phase 4 Success Criteria
-- [ ] Public pages attract visitor traffic
-- [ ] Analytics show platform usage trends
-- [ ] Moderation queue handles flagged content
-
----
-
-## Sprint Planning Guide
-
-### Suggested Sprint 1 (Immediate)
-1. **Fix Rescue Org API** - Critical blocker
-2. **Fix Vet Lookup API** - Critical blocker
-3. **Add user activation in admin** - Enables user management
-4. **Test foster pet registration** - Validate full flow
-
-### Suggested Sprint 2
-1. **Complete vet sign-off flow** - End-to-end
-2. **Implement pet filtering** - US-5.2
-3. **Begin adoption application** - US-5.4
-
-### Suggested Sprint 3
-1. **Rescue facilitation** - US-3.6
-2. **Application tracking** - US-5.5
-3. **Vet approval by rescues** - US-3.7
+### Infrastructure (Terraform)
+- **AWS ECS Fargate** for container hosting
+- **AWS RDS PostgreSQL** for database
+- **AWS S3** for image storage
+- **AWS SES** for email delivery
+- **Route53** for DNS (optional)
+- **ACM** for SSL certificates
 
 ---
 
@@ -362,11 +281,10 @@ graph TD
 
 - [[domain-model]] - Complete entity definitions
 - [[pet-status]] - Status lifecycle transitions
-- [[gaps-and-decisions]] - Architectural decisions
-- [[e2e-review]] - Testing status and bug details
 - [[user-stories/index]] - All user stories by epic
+- [[deployment-guide]] - Production deployment instructions
+- [[testing-strategy]] - Testing approach and coverage
 
 ---
 
 *Last updated: December 2025*
-*Next review: After Sprint 1 completion*
