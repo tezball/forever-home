@@ -38,9 +38,22 @@ function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
   return <>{children}</>;
 }
 
+function ConstructionBanner() {
+  return (
+    <div className="bg-amber-500 text-white py-2 px-4 text-center font-medium">
+      <span className="inline-flex items-center gap-2">
+        <span>🚧</span>
+        <span>Site Under Construction - Coming Soon</span>
+        <span>🚧</span>
+      </span>
+    </div>
+  );
+}
+
 function AppRoutes() {
   return (
     <div className="min-h-screen flex flex-col">
+      <ConstructionBanner />
       <Header />
       <main className="flex-1">
         <Routes>

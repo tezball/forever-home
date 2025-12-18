@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Button, PetCard, Modal } from '../../components';
 import type { Pet } from '../../types';
 import apiClient from '../../api/client';
+import { formatBreed } from '../../utils';
 
 export function FosterDashboard() {
   const { user } = useAuth();
@@ -110,32 +111,38 @@ export function FosterDashboard() {
         </div>
       ) : (
         <div className="space-y-8">
-          {/* Status Overview Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-            <div className="card p-3 text-center">
-              <p className="text-2xl font-bold text-gray-500">{draftPets.length}</p>
-              <p className="text-xs text-gray-500">Drafts</p>
-            </div>
-            <div className="card p-3 text-center">
-              <p className="text-2xl font-bold text-yellow-600">{pendingRescuePets.length}</p>
-              <p className="text-xs text-gray-500">With Rescue</p>
-            </div>
-            <div className="card p-3 text-center">
-              <p className="text-2xl font-bold text-success-600">{availablePets.length}</p>
-              <p className="text-xs text-gray-500">Available</p>
-            </div>
-            <div className="card p-3 text-center">
-              <p className="text-2xl font-bold text-purple-600">{inProgressPets.length}</p>
-              <p className="text-xs text-gray-500">In Progress</p>
-            </div>
-            <div className="card p-3 text-center">
-              <p className="text-2xl font-bold text-primary-600">{adoptedPets.length}</p>
-              <p className="text-xs text-gray-500">Adopted</p>
-            </div>
-            <div className="card p-3 text-center">
-              <p className="text-2xl font-bold text-error-600">{withdrawnPets.length}</p>
-              <p className="text-xs text-gray-500">Withdrawn</p>
-            </div>
+          {/* Status Overview Stats - Only show non-zero counts */}
+          <div className="flex flex-wrap gap-3 mb-2">
+            {draftPets.length > 0 && (
+              <div className="card px-4 py-2 flex items-center gap-2">
+                <span className="text-xl font-bold text-gray-500">{draftPets.length}</span>
+                <span className="text-sm text-gray-500">Drafts</span>
+              </div>
+            )}
+            {(pendingRescuePets.length > 0 || pendingVetPets.length > 0) && (
+              <div className="card px-4 py-2 flex items-center gap-2">
+                <span className="text-xl font-bold text-yellow-600">{pendingRescuePets.length + pendingVetPets.length}</span>
+                <span className="text-sm text-gray-500">Pending</span>
+              </div>
+            )}
+            {availablePets.length > 0 && (
+              <div className="card px-4 py-2 flex items-center gap-2">
+                <span className="text-xl font-bold text-success-600">{availablePets.length}</span>
+                <span className="text-sm text-gray-500">Available</span>
+              </div>
+            )}
+            {inProgressPets.length > 0 && (
+              <div className="card px-4 py-2 flex items-center gap-2">
+                <span className="text-xl font-bold text-purple-600">{inProgressPets.length}</span>
+                <span className="text-sm text-gray-500">In Progress</span>
+              </div>
+            )}
+            {adoptedPets.length > 0 && (
+              <div className="card px-4 py-2 flex items-center gap-2">
+                <span className="text-xl font-bold text-primary-600">{adoptedPets.length}</span>
+                <span className="text-sm text-gray-500">Rehomed</span>
+              </div>
+            )}
           </div>
 
           {/* Draft Pets - with prominent CTA */}
@@ -167,7 +174,7 @@ export function FosterDashboard() {
                           <span className="status-badge bg-gray-100 text-gray-800">Draft</span>
                         </div>
                         <p className="text-sm text-gray-500 mb-2">
-                          {pet.breed || pet.species} • {pet.age} {pet.ageUnit.toLowerCase()} • {pet.sex.toLowerCase()}
+                          {formatBreed(pet.breed) || pet.species} • {pet.age} {pet.ageUnit.toLowerCase()} • {pet.sex.toLowerCase()}
                         </p>
                       </div>
                     </Link>
@@ -259,12 +266,12 @@ export function FosterDashboard() {
             </section>
           )}
 
-          {/* Adopted */}
+          {/* Rehomed */}
           {adoptedPets.length > 0 && (
             <section>
               <div className="flex items-center gap-2 mb-4">
-                <h2 className="text-xl font-semibold text-gray-900">Successfully Adopted</h2>
-                <span className="text-sm text-primary-600">- Found their forever homes!</span>
+                <h2 className="text-xl font-semibold text-gray-900">Rehomed</h2>
+                <span className="text-sm text-primary-600">Found their forever homes!</span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {adoptedPets.map((pet) => (

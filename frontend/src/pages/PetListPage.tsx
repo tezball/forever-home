@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { PetCard, Select, Input, ErrorDisplay, getErrorMessage, SkeletonCard } from '../components';
 import type { Pet, Species, PetSize, PetSex } from '../types';
 import apiClient from '../api/client';
+import { BREEDS, getBreedsBySpecies } from '../constants/breeds';
 
 interface PagedResponse<T> {
   content: T[];
@@ -45,17 +46,37 @@ export function PetListPage() {
     species: '' as Species | '',
     size: '' as PetSize | '',
     sex: '' as PetSex | '',
+    breed: '',
     search: '',
   });
+
+  // Get breed options based on selected species
+  const breedOptions = useMemo(() => {
+    const breeds = filters.species ? getBreedsBySpecies(filters.species) : BREEDS;
+    return [
+      { value: '', label: 'All Breeds' },
+      ...breeds.map((b) => ({ value: b.value, label: b.label })),
+    ];
+  }, [filters.species]);
 
   useEffect(() => {
     // Reset to first page when filters change
     setCurrentPage(0);
-  }, [filters.species, filters.size, filters.sex]);
+  }, [filters.species, filters.size, filters.sex, filters.breed]);
+
+  // Clear breed when species changes (breed may no longer be valid)
+  useEffect(() => {
+    if (filters.breed && filters.species) {
+      const validBreeds = getBreedsBySpecies(filters.species);
+      if (!validBreeds.find((b) => b.value === filters.breed)) {
+        setFilters((prev) => ({ ...prev, breed: '' }));
+      }
+    }
+  }, [filters.species, filters.breed]);
 
   useEffect(() => {
     fetchPets();
-  }, [filters.species, filters.size, filters.sex, currentPage]);
+  }, [filters.species, filters.size, filters.sex, filters.breed, currentPage]);
 
   const fetchPets = async () => {
     setLoading(true);
@@ -65,6 +86,7 @@ export function PetListPage() {
       if (filters.species) params.append('species', filters.species);
       if (filters.size) params.append('size', filters.size);
       if (filters.sex) params.append('sex', filters.sex);
+      if (filters.breed) params.append('breed', filters.breed);
       params.append('page', currentPage.toString());
       params.append('pageSize', PAGE_SIZE.toString());
 
@@ -104,10 +126,10 @@ export function PetListPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-secondary-50 rounded-lg p-4 mb-8">
+      <div className="bg-secondary-50 rounded-lg p-4 mb-4">
         <div className="flex flex-col gap-3">
           <Input
-            placeholder="Search by name or breed..."
+            placeholder="Search by name..."
             value={filters.search}
             onChange={(e) => setFilters({ ...filters, search: e.target.value })}
           />
@@ -117,6 +139,13 @@ export function PetListPage() {
                 options={speciesOptions}
                 value={filters.species}
                 onChange={(e) => setFilters({ ...filters, species: e.target.value as Species })}
+              />
+            </div>
+            <div className="flex-shrink-0 w-40">
+              <Select
+                options={breedOptions}
+                value={filters.breed}
+                onChange={(e) => setFilters({ ...filters, breed: e.target.value })}
               />
             </div>
             <div className="flex-shrink-0 w-28">
@@ -133,15 +162,86 @@ export function PetListPage() {
                 onChange={(e) => setFilters({ ...filters, sex: e.target.value as PetSex })}
               />
             </div>
-            <button
-              onClick={() => setFilters({ species: '', size: '', sex: '', search: '' })}
-              className="flex-shrink-0 text-primary-500 hover:underline text-sm whitespace-nowrap"
-            >
-              Clear filters
-            </button>
           </div>
         </div>
       </div>
+
+      {/* Active Filter Chips */}
+      {(filters.species || filters.breed || filters.size || filters.sex || filters.search) && (
+        <div className="flex flex-wrap gap-2 mb-6">
+          {filters.species && (
+            <span className="inline-flex items-center gap-1 px-3 py-1 bg-primary-100 text-primary-700 rounded-full text-sm">
+              {speciesOptions.find((o) => o.value === filters.species)?.label}
+              <button
+                onClick={() => setFilters({ ...filters, species: '', breed: '' })}
+                className="hover:text-primary-900"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </span>
+          )}
+          {filters.breed && (
+            <span className="inline-flex items-center gap-1 px-3 py-1 bg-primary-100 text-primary-700 rounded-full text-sm">
+              {breedOptions.find((o) => o.value === filters.breed)?.label}
+              <button
+                onClick={() => setFilters({ ...filters, breed: '' })}
+                className="hover:text-primary-900"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </span>
+          )}
+          {filters.size && (
+            <span className="inline-flex items-center gap-1 px-3 py-1 bg-primary-100 text-primary-700 rounded-full text-sm">
+              {sizeOptions.find((o) => o.value === filters.size)?.label}
+              <button
+                onClick={() => setFilters({ ...filters, size: '' })}
+                className="hover:text-primary-900"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </span>
+          )}
+          {filters.sex && (
+            <span className="inline-flex items-center gap-1 px-3 py-1 bg-primary-100 text-primary-700 rounded-full text-sm">
+              {sexOptions.find((o) => o.value === filters.sex)?.label}
+              <button
+                onClick={() => setFilters({ ...filters, sex: '' })}
+                className="hover:text-primary-900"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </span>
+          )}
+          {filters.search && (
+            <span className="inline-flex items-center gap-1 px-3 py-1 bg-primary-100 text-primary-700 rounded-full text-sm">
+              "{filters.search}"
+              <button
+                onClick={() => setFilters({ ...filters, search: '' })}
+                className="hover:text-primary-900"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </span>
+          )}
+          <button
+            onClick={() => setFilters({ species: '', size: '', sex: '', breed: '', search: '' })}
+            className="text-primary-500 hover:underline text-sm"
+          >
+            Clear all
+          </button>
+        </div>
+      )}
 
       {/* Results */}
       {loading ? (
@@ -167,9 +267,9 @@ export function PetListPage() {
               ? 'Check back soon - new pets are added regularly!'
               : 'Try adjusting your search or filters to find more options.'}
           </p>
-          {(filters.species || filters.size || filters.sex || filters.search) && (
+          {(filters.species || filters.size || filters.sex || filters.breed || filters.search) && (
             <button
-              onClick={() => setFilters({ species: '', size: '', sex: '', search: '' })}
+              onClick={() => setFilters({ species: '', size: '', sex: '', breed: '', search: '' })}
               className="inline-flex items-center px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors"
             >
               Clear All Filters

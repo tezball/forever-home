@@ -1,5 +1,6 @@
 import type { Pet, PetStatus } from '../types';
 import { Link } from 'react-router-dom';
+import { formatBreed } from '../utils';
 
 interface PetCardProps {
   pet: Pet;
@@ -58,7 +59,7 @@ export function PetCard({ pet, showEditButton = false, onWithdraw }: PetCardProp
             </span>
           </div>
           <p className="text-sm text-gray-500 mb-2">
-            {pet.breed || pet.species} • {pet.age} {pet.ageUnit.toLowerCase()} • {pet.sex.toLowerCase()}
+            {formatBreed(pet.breed) || pet.species} • {pet.age} {pet.ageUnit.toLowerCase()} • {pet.sex.toLowerCase()}
           </p>
           {pet.description && (
             <p className="text-sm text-gray-600 line-clamp-2">{pet.description}</p>

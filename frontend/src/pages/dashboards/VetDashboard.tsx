@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Button, Input, Modal } from '../../components';
 import type { Pet } from '../../types';
 import apiClient from '../../api/client';
+import { formatBreed, formatRelativeTime } from '../../utils';
 
 interface ApprovedOrg {
   id: string;
@@ -253,7 +254,7 @@ export function VetDashboard() {
                   />
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-gray-900 truncate">{pendingPet.name}</p>
-                    <p className="text-sm text-gray-500 truncate">{pendingPet.breed || pendingPet.species}</p>
+                    <p className="text-sm text-gray-500 truncate">{formatBreed(pendingPet.breed) || pendingPet.species}</p>
                     <p className="text-xs text-gray-400 font-mono">{pendingPet.microchipId}</p>
                   </div>
                   <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -332,7 +333,7 @@ export function VetDashboard() {
                   </p>
                 </div>
                 <span className="text-xs text-gray-400">
-                  Approved {new Date(org.approvedAt).toLocaleDateString()}
+                  Approved {formatRelativeTime(org.approvedAt)}
                 </span>
               </div>
             ))}
@@ -404,7 +405,7 @@ export function VetDashboard() {
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <h3 className="text-2xl font-bold text-gray-900">{pet.name}</h3>
-                  <p className="text-gray-600">{pet.breed || pet.species}</p>
+                  <p className="text-gray-600">{formatBreed(pet.breed) || pet.species}</p>
                 </div>
                 <span className={`status-badge ${pet.status === 'PENDING_VET' ? 'status-pending' : 'status-available'}`}>
                   {pet.status === 'PENDING_VET' ? 'Awaiting Sign-off' : 'Verified'}

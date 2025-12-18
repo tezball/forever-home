@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Button, Modal, PetCard, Textarea } from '../../components';
 import type { Pet, AdoptionApplication } from '../../types';
 import apiClient from '../../api/client';
+import { formatRelativeTime, formatBreed } from '../../utils';
 
 type StatusFilter = 'ALL' | 'PENDING_VET' | 'AVAILABLE' | 'IN_PROGRESS' | 'ADOPTED';
 
@@ -270,28 +271,55 @@ export function RescueDashboard() {
         </div>
       )}
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
-        <div className="card p-4 text-center">
-          <p className="text-3xl font-bold text-warning-600">{pendingPets.length}</p>
-          <p className="text-sm text-gray-600">Pending Review</p>
+      {/* Action Required Banner - Only show if there are actionable items */}
+      {(pendingPets.length > 0 || pendingApps.length > 0 || approvedApps.length > 0 || vetRequestCount > 0) && (
+        <div className="card p-4 mb-8 border-2 border-warning-200 bg-warning-50">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-8 h-8 bg-warning-500 rounded-full flex items-center justify-center">
+              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <h2 className="text-lg font-semibold text-warning-800">Action Required</h2>
+            <span className="px-2 py-0.5 text-xs font-bold bg-warning-500 text-white rounded-full">
+              {pendingPets.length + pendingApps.length + approvedApps.length + (vetRequestCount > 0 ? 1 : 0)}
+            </span>
+          </div>
+          <div className="flex flex-wrap gap-4 text-sm">
+            {pendingPets.length > 0 && (
+              <span className="text-warning-700">{pendingPets.length} pet{pendingPets.length !== 1 ? 's' : ''} awaiting review</span>
+            )}
+            {pendingApps.length > 0 && (
+              <span className="text-warning-700">{pendingApps.length} application{pendingApps.length !== 1 ? 's' : ''} to review</span>
+            )}
+            {approvedApps.length > 0 && (
+              <span className="text-warning-700">{approvedApps.length} adoption{approvedApps.length !== 1 ? 's' : ''} to finalize</span>
+            )}
+            {vetRequestCount > 0 && (
+              <Link to="/rescue/vets" className="text-warning-700 underline">{vetRequestCount} vet request{vetRequestCount !== 1 ? 's' : ''}</Link>
+            )}
+          </div>
         </div>
-        <div className="card p-4 text-center">
-          <p className="text-3xl font-bold text-success-500">{activePets.filter((p) => p.status === 'AVAILABLE').length}</p>
-          <p className="text-sm text-gray-600">Available</p>
+      )}
+
+      {/* Stats - Consolidated */}
+      <div className="flex flex-wrap gap-4 mb-8">
+        <div className="card px-5 py-3 flex items-center gap-3">
+          <span className="text-2xl font-bold text-success-500">{activePets.filter((p) => p.status === 'AVAILABLE').length}</span>
+          <span className="text-sm text-gray-600">Available</span>
         </div>
-        <div className="card p-4 text-center">
-          <p className="text-3xl font-bold text-primary-500">{pendingApps.length}</p>
-          <p className="text-sm text-gray-600">Applications</p>
+        <div className="card px-5 py-3 flex items-center gap-3">
+          <span className="text-2xl font-bold text-blue-500">{activePets.filter((p) => p.status === 'PENDING_VET').length}</span>
+          <span className="text-sm text-gray-600">Pending Vet</span>
         </div>
-        <div className="card p-4 text-center">
-          <p className="text-3xl font-bold text-info-500">{activePets.filter((p) => p.status === 'IN_PROGRESS').length}</p>
-          <p className="text-sm text-gray-600">In Progress</p>
+        <div className="card px-5 py-3 flex items-center gap-3">
+          <span className="text-2xl font-bold text-purple-500">{activePets.filter((p) => p.status === 'IN_PROGRESS').length}</span>
+          <span className="text-sm text-gray-600">In Progress</span>
         </div>
-        <Link to="/rescue/vets" className="card p-4 text-center hover:bg-secondary-50 transition-colors">
-          <p className={`text-3xl font-bold ${vetRequestCount > 0 ? 'text-warning-600' : 'text-gray-400'}`}>{vetRequestCount}</p>
-          <p className="text-sm text-gray-600">Vet Requests</p>
-        </Link>
+        <div className="card px-5 py-3 flex items-center gap-3">
+          <span className="text-2xl font-bold text-primary-500">{activePets.filter((p) => p.status === 'ADOPTED').length}</span>
+          <span className="text-sm text-gray-600">Adopted</span>
+        </div>
       </div>
 
       {loading ? (
@@ -323,7 +351,7 @@ export function RescueDashboard() {
                           <Link to={`/pets/${pet.id}`} className="font-medium text-gray-900 hover:text-primary-500">
                             {pet.name}
                           </Link>
-                          <p className="text-sm text-gray-500">{pet.breed || pet.species}</p>
+                          <p className="text-sm text-gray-500">{formatBreed(pet.breed) || pet.species}</p>
                           <p className="text-xs text-gray-400">Microchip: {pet.microchipId}</p>
                         </div>
                         <button
@@ -426,7 +454,7 @@ export function RescueDashboard() {
                           </Link>
                         </p>
                         <p className="text-sm text-gray-500">
-                          Submitted {new Date(app.submittedAt).toLocaleDateString()}
+                          Submitted {formatRelativeTime(app.submittedAt)}
                         </p>
                       </div>
                     </div>
@@ -504,7 +532,7 @@ export function RescueDashboard() {
                           </Link>
                         </p>
                         <p className="text-sm text-gray-500">
-                          Rejected {app.reviewedAt ? new Date(app.reviewedAt).toLocaleDateString() : ''}
+                          Rejected {app.reviewedAt ? formatRelativeTime(app.reviewedAt) : ''}
                         </p>
                       </div>
                       <span className="px-2 py-1 text-xs font-medium rounded-full bg-error-100 text-error-700">
@@ -653,7 +681,7 @@ export function RescueDashboard() {
             )}
 
             <div className="text-sm text-gray-500">
-              Submitted {new Date(selectedApplication.submittedAt).toLocaleDateString()}
+              Submitted {formatRelativeTime(selectedApplication.submittedAt)}
             </div>
 
             <div className="flex gap-4 pt-4">

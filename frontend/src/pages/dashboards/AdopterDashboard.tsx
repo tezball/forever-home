@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Button, PetCard, Modal } from '../../components';
 import type { Pet, AdoptionApplication } from '../../types';
 import apiClient from '../../api/client';
+import { formatRelativeTime } from '../../utils';
 
 export function AdopterDashboard() {
   const { user } = useAuth();
@@ -141,12 +142,49 @@ export function AdopterDashboard() {
             </section>
           )}
 
-          {/* Applications - always show section header even if empty */}
-          <section>
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">My Applications</h2>
-            {applications.length > 0 ? (
+          {/* Action Needed - Approved applications requiring user action */}
+          {applications.filter(a => a.status === 'APPROVED').length > 0 && (
+            <section>
+              <div className="flex items-center gap-2 mb-4">
+                <h2 className="text-xl font-semibold text-gray-900">Action Needed</h2>
+                <span className="px-2 py-0.5 text-xs font-medium bg-warning-100 text-warning-700 rounded-full">
+                  {applications.filter(a => a.status === 'APPROVED').length}
+                </span>
+              </div>
+              <div className="card border-2 border-warning-200 bg-warning-50 divide-y divide-warning-200">
+                {applications.filter(a => a.status === 'APPROVED').map((app) => (
+                  <div
+                    key={app.id}
+                    className="flex items-center justify-between p-4"
+                  >
+                    <Link to={`/pets/${app.petId}`} className="flex items-center gap-4 flex-1">
+                      <img
+                        src={app.petImageUrl || `https://placedog.net/60/60?id=${app.petId.slice(0, 8)}`}
+                        alt={app.petName}
+                        className="w-14 h-14 rounded-lg object-cover flex-shrink-0"
+                      />
+                      <div className="flex-1">
+                        <p className="font-medium text-gray-900">{app.petName}</p>
+                        <p className="text-sm text-success-600 font-medium">
+                          Approved! Contact the rescue to schedule pickup.
+                        </p>
+                      </div>
+                    </Link>
+                    <div className="flex items-center gap-3">
+                      {getStatusBadge(app.status)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Pending Applications */}
+          {applications.filter(a => ['SUBMITTED', 'UNDER_REVIEW'].includes(a.status)).length > 0 && (
+            <section>
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Pending Applications</h2>
               <div className="card divide-y divide-secondary-200">
-                {applications.map((app) => (
+                {applications.filter(a => ['SUBMITTED', 'UNDER_REVIEW'].includes(a.status)).map((app) => (
                   <div
                     key={app.id}
                     className="flex items-center justify-between p-4 hover:bg-secondary-50"
@@ -160,14 +198,8 @@ export function AdopterDashboard() {
                       <div className="flex-1">
                         <p className="font-medium text-gray-900">{app.petName}</p>
                         <p className="text-sm text-gray-500">
-                          Applied {new Date(app.submittedAt).toLocaleDateString()}
+                          Applied {formatRelativeTime(app.submittedAt)}
                         </p>
-                        {app.status === 'REJECTED' && app.rejectionReason && (
-                          <div className="mt-2 p-2 bg-error-50 border border-error-200 rounded text-sm">
-                            <span className="font-medium text-error-700">Reason: </span>
-                            <span className="text-error-600">{app.rejectionReason}</span>
-                          </div>
-                        )}
                       </div>
                     </Link>
                     <div className="flex items-center gap-3">
@@ -184,17 +216,109 @@ export function AdopterDashboard() {
                   </div>
                 ))}
               </div>
-            ) : (
-              <div className="card p-6 text-center bg-secondary-50">
-                <p className="text-gray-600 mb-4">You haven't submitted any adoption applications yet.</p>
-                <Link to="/pets">
-                  <Button variant="outline" size="sm">Find a Pet to Adopt</Button>
+            </section>
+          )}
+
+          {/* Completed - Adopted pets (collapsible) */}
+          {applications.filter(a => a.status === 'FINALIZED').length > 0 && (
+            <section>
+              <details className="group">
+                <summary className="flex items-center gap-2 cursor-pointer list-none mb-4">
+                  <svg className="w-4 h-4 text-gray-500 transition-transform group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                  <h2 className="text-xl font-semibold text-gray-900">Adopted</h2>
+                  <span className="text-sm text-gray-500">({applications.filter(a => a.status === 'FINALIZED').length})</span>
+                </summary>
+                <div className="card divide-y divide-secondary-200">
+                  {applications.filter(a => a.status === 'FINALIZED').map((app) => (
+                    <div
+                      key={app.id}
+                      className="flex items-center justify-between p-4 hover:bg-secondary-50"
+                    >
+                      <Link to={`/pets/${app.petId}`} className="flex items-center gap-4 flex-1">
+                        <img
+                          src={app.petImageUrl || `https://placedog.net/60/60?id=${app.petId.slice(0, 8)}`}
+                          alt={app.petName}
+                          className="w-14 h-14 rounded-lg object-cover flex-shrink-0"
+                        />
+                        <div className="flex-1">
+                          <p className="font-medium text-gray-900">{app.petName}</p>
+                          <p className="text-sm text-gray-500">
+                            Adopted {formatRelativeTime(app.submittedAt)}
+                          </p>
+                        </div>
+                      </Link>
+                      <div className="flex items-center gap-3">
+                        {getStatusBadge(app.status)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </details>
+            </section>
+          )}
+
+          {/* Rejected Applications (collapsible) */}
+          {applications.filter(a => a.status === 'REJECTED').length > 0 && (
+            <section>
+              <details className="group">
+                <summary className="flex items-center gap-2 cursor-pointer list-none mb-4">
+                  <svg className="w-4 h-4 text-gray-500 transition-transform group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                  <h2 className="text-xl font-semibold text-gray-900">Rejected</h2>
+                  <span className="text-sm text-gray-500">({applications.filter(a => a.status === 'REJECTED').length})</span>
+                </summary>
+                <div className="card divide-y divide-secondary-200">
+                  {applications.filter(a => a.status === 'REJECTED').map((app) => (
+                    <div
+                      key={app.id}
+                      className="p-4 hover:bg-secondary-50"
+                    >
+                      <div className="flex items-center justify-between">
+                        <Link to={`/pets/${app.petId}`} className="flex items-center gap-4 flex-1">
+                          <img
+                            src={app.petImageUrl || `https://placedog.net/60/60?id=${app.petId.slice(0, 8)}`}
+                            alt={app.petName}
+                            className="w-14 h-14 rounded-lg object-cover flex-shrink-0"
+                          />
+                          <div className="flex-1">
+                            <p className="font-medium text-gray-900">{app.petName}</p>
+                            <p className="text-sm text-gray-500">
+                              Applied {formatRelativeTime(app.submittedAt)}
+                            </p>
+                          </div>
+                        </Link>
+                        {getStatusBadge(app.status)}
+                      </div>
+                      {app.rejectionReason && (
+                        <div className="mt-3 ml-18 p-2 bg-error-50 border border-error-200 rounded text-sm">
+                          <span className="font-medium text-error-700">Reason: </span>
+                          <span className="text-error-600">{app.rejectionReason}</span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </details>
+            </section>
+          )}
+
+          {/* Empty state for applications */}
+          {applications.length === 0 && favorites.length > 0 && (
+            <section>
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">My Applications</h2>
+              <div className="card p-4 bg-secondary-50 flex items-center justify-between">
+                <p className="text-gray-600">No applications yet.</p>
+                <Link to="/pets" className="text-primary-500 hover:underline text-sm font-medium">
+                  Find a Pet to Adopt
                 </Link>
               </div>
-            )}
-          </section>
+            </section>
+          )}
 
-          {/* Favorites */}
+          {/* Favorites - Collapsed empty state */}
           <section>
             <h2 className="text-xl font-semibold text-gray-900 mb-4">Saved Pets</h2>
             {favorites.length > 0 ? (
@@ -204,14 +328,10 @@ export function AdopterDashboard() {
                 ))}
               </div>
             ) : (
-              <div className="card p-12 text-center">
-                <div className="text-6xl mb-4">❤️</div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">No saved pets yet</h3>
-                <p className="text-gray-600 mb-6">
-                  Browse available pets and save your favorites.
-                </p>
-                <Link to="/pets">
-                  <Button variant="primary">Browse Pets</Button>
+              <div className="card p-4 bg-secondary-50 flex items-center justify-between">
+                <p className="text-gray-600">No saved pets yet.</p>
+                <Link to="/pets" className="text-primary-500 hover:underline text-sm font-medium">
+                  Browse Pets
                 </Link>
               </div>
             )}

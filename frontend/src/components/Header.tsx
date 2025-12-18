@@ -61,6 +61,18 @@ export function Header() {
     }
   };
 
+  const getDashboardLabel = () => {
+    if (!user) return 'Dashboard';
+    switch (user.role) {
+      case 'FOSTER': return 'My Pets';
+      case 'ADOPTER': return 'My Applications';
+      case 'VET': return 'Vet Dashboard';
+      case 'RESCUE_ORG': return 'Rescue Dashboard';
+      case 'ADMIN': return 'Admin';
+      default: return 'Dashboard';
+    }
+  };
+
   return (
     <header className="bg-secondary-50 border-b border-secondary-200 sticky top-0 z-50">
       <div className="container-app">
@@ -85,7 +97,7 @@ export function Header() {
             {isAuthenticated ? (
               <>
                 <Link to={getDashboardLink()} className="text-gray-600 hover:text-primary-500 transition-colors">
-                  Dashboard
+                  {getDashboardLabel()}
                 </Link>
                 <NotificationBell />
                 <div className="relative" ref={dropdownRef}>
@@ -204,7 +216,7 @@ export function Header() {
                     className="px-4 py-2 text-gray-600 hover:bg-secondary-100 rounded"
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    Dashboard
+                    {getDashboardLabel()}
                   </Link>
                   <Link
                     to="/profile"
