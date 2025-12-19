@@ -1,5 +1,6 @@
 package com.example.foreverhome.service;
 
+import com.example.foreverhome.domain.user.UserRole;
 import com.example.foreverhome.logging.UserJourneyLogger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -204,21 +205,22 @@ class SesEmailServiceTest {
     class SendWelcomeEmail {
 
         @Test
-        @DisplayName("given email and name, when sendWelcomeEmail, then sends personalized welcome email")
-        void givenEmailAndName_whenSendWelcomeEmail_thenSendsPersonalizedWelcomeEmail() {
+        @DisplayName("given email, name, and role, when sendWelcomeEmail, then sends personalized welcome email")
+        void givenEmailNameAndRole_whenSendWelcomeEmail_thenSendsPersonalizedWelcomeEmail() {
             // Given
             String to = "test@example.com";
             String name = "John Doe";
+            UserRole role = UserRole.FOSTER;
             EmailTemplateService.EmailContent content = new EmailTemplateService.EmailContent(
                     "Welcome to Forever Home!",
                     "<html>Welcome HTML body for " + name + "</html>",
                     "Welcome text body for " + name
             );
-            when(templateService.generateWelcomeEmail(eq(name))).thenReturn(content);
+            when(templateService.generateWelcomeEmail(eq(name), eq(role))).thenReturn(content);
             when(sesClient.sendEmail(any(SendEmailRequest.class))).thenReturn(SendEmailResponse.builder().build());
 
             // When
-            sesEmailService.sendWelcomeEmail(to, name);
+            sesEmailService.sendWelcomeEmail(to, name, role);
 
             // Then
             ArgumentCaptor<SendEmailRequest> captor = ArgumentCaptor.forClass(SendEmailRequest.class);
@@ -250,16 +252,17 @@ class SesEmailServiceTest {
 
             String to = "test@example.com";
             String name = "John Doe";
+            UserRole role = UserRole.ADOPTER;
             EmailTemplateService.EmailContent content = new EmailTemplateService.EmailContent(
                     "Welcome to Forever Home!",
                     "<html>Welcome</html>",
                     "Welcome text"
             );
-            when(templateService.generateWelcomeEmail(eq(name))).thenReturn(content);
+            when(templateService.generateWelcomeEmail(eq(name), eq(role))).thenReturn(content);
             when(sesClient.sendEmail(any(SendEmailRequest.class))).thenReturn(SendEmailResponse.builder().build());
 
             // When
-            serviceWithConfigSet.sendWelcomeEmail(to, name);
+            serviceWithConfigSet.sendWelcomeEmail(to, name, role);
 
             // Then
             ArgumentCaptor<SendEmailRequest> captor = ArgumentCaptor.forClass(SendEmailRequest.class);
@@ -274,16 +277,17 @@ class SesEmailServiceTest {
             // Given - service already has empty configuration set from setUp()
             String to = "test@example.com";
             String name = "John Doe";
+            UserRole role = UserRole.VET;
             EmailTemplateService.EmailContent content = new EmailTemplateService.EmailContent(
                     "Welcome to Forever Home!",
                     "<html>Welcome</html>",
                     "Welcome text"
             );
-            when(templateService.generateWelcomeEmail(eq(name))).thenReturn(content);
+            when(templateService.generateWelcomeEmail(eq(name), eq(role))).thenReturn(content);
             when(sesClient.sendEmail(any(SendEmailRequest.class))).thenReturn(SendEmailResponse.builder().build());
 
             // When
-            sesEmailService.sendWelcomeEmail(to, name);
+            sesEmailService.sendWelcomeEmail(to, name, role);
 
             // Then
             ArgumentCaptor<SendEmailRequest> captor = ArgumentCaptor.forClass(SendEmailRequest.class);

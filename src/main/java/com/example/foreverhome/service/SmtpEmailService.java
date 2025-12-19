@@ -1,5 +1,6 @@
 package com.example.foreverhome.service;
 
+import com.example.foreverhome.domain.user.UserRole;
 import com.example.foreverhome.logging.UserJourneyLogger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -97,25 +98,95 @@ public class SmtpEmailService implements EmailService {
     }
 
     @Override
-    public void sendWelcomeEmail(String to, String name) {
+    public void sendWelcomeEmail(String to, String name, UserRole role) {
         String subject = "Welcome to Forever Home!";
-        String body = """
-            Hi %s,
+        String body = switch (role) {
+            case FOSTER -> """
+                Hi %s,
 
-            Welcome to Forever Home! We're excited to have you join our community.
+                Thank you for opening your heart to help a pet find their forever home.
 
-            Forever Home connects pet lovers with rescue organizations to help pets find their forever families.
+                Every animal deserves a second chance, and by fostering or rehoming a pet through
+                Forever Home, you're making that possible.
 
-            Here's what you can do next:
-            - Complete your profile to get started
-            - Browse available pets looking for homes
-            - Connect with rescue organizations in your area
+                Here's how to get started:
+                - Complete your profile with your contact details
+                - Register your pet with photos and a heartfelt description
+                - Connect with rescue organizations in your area
+                - Review applications from loving adopters
 
-            If you have any questions, feel free to reach out to our support team.
+                With gratitude,
+                The Forever Home Team
+                """.formatted(name);
+            case ADOPTER -> """
+                Hi %s,
 
-            Happy pet matching!
-            The Forever Home Team
-            """.formatted(name);
+                Welcome to Forever Home! Your journey to finding a furry friend starts here.
+
+                We connect pet lovers like you with rescue organizations to help pets find
+                their forever families. Your perfect companion is waiting to meet you.
+
+                Here's what you can do next:
+                - Complete your profile to get started
+                - Browse available pets looking for homes
+                - Save your favorite pets to revisit later
+                - Submit adoption applications when you find the one
+
+                Happy pet matching!
+                The Forever Home Team
+                """.formatted(name);
+            case VET -> """
+                Hi %s,
+
+                Thank you for joining Forever Home as a veterinary professional.
+
+                Your expertise is vital to ensuring every pet is healthy and ready for their
+                new family. We appreciate your dedication to animal welfare.
+
+                Here's how to get started:
+                - Complete your clinic profile with license details
+                - Wait for verification from a rescue organization
+                - Review and sign off on pet health records
+                - Confirm vaccination and neutering status
+
+                Thank you for your service,
+                The Forever Home Team
+                """.formatted(name);
+            case RESCUE_ORG -> """
+                Hi %s,
+
+                Welcome to the Forever Home rescue network!
+
+                We're excited to partner with you in our mission to connect pets with loving
+                families. Together, we can make a real difference in the lives of animals in need.
+
+                Here's how to get started:
+                - Complete your organization profile with contact details
+                - Wait for admin approval of your organization
+                - Verify veterinarians to work with your rescue
+                - Start managing pet listings and adoption applications
+
+                Thank you for joining us,
+                The Forever Home Team
+                """.formatted(name);
+            case ADMIN -> """
+                Hi %s,
+
+                You've been granted administrator access to Forever Home.
+
+                You now have the tools to help manage our platform and support our community
+                of fosters, adopters, vets, and rescue organizations.
+
+                Your admin capabilities include:
+                - Approve rescue organization registrations
+                - Manage user accounts and access
+                - Monitor platform activity and metrics
+                - Handle support escalations
+
+                Welcome aboard,
+                The Forever Home Team
+                """.formatted(name);
+        };
 
         sendEmail(to, subject, body, "welcome");
     }

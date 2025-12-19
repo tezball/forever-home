@@ -121,7 +121,7 @@ public class AuthService {
         userRepository.save(user);
 
         // Send welcome email
-        emailService.sendWelcomeEmail(request.email(), request.name());
+        emailService.sendWelcomeEmail(request.email(), request.name(), request.role());
 
         // Record metric
         metricsService.recordUserRegistration(request.role().name());

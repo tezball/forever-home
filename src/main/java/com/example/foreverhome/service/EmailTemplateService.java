@@ -1,5 +1,6 @@
 package com.example.foreverhome.service;
 
+import com.example.foreverhome.domain.user.UserRole;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -197,21 +198,99 @@ public class EmailTemplateService {
     }
 
     /**
-     * Generate welcome email content.
+     * Generate welcome email content based on user role.
      */
-    public EmailContent generateWelcomeEmail(String recipientName) {
+    public EmailContent generateWelcomeEmail(String recipientName, UserRole role) {
         String subject = "Welcome to Forever Home!";
 
+        return switch (role) {
+            case FOSTER -> generateFosterWelcomeEmail(recipientName, subject);
+            case ADOPTER -> generateAdopterWelcomeEmail(recipientName, subject);
+            case VET -> generateVetWelcomeEmail(recipientName, subject);
+            case RESCUE_ORG -> generateRescueOrgWelcomeEmail(recipientName, subject);
+            case ADMIN -> generateAdminWelcomeEmail(recipientName, subject);
+        };
+    }
+
+    private EmailContent generateFosterWelcomeEmail(String recipientName, String subject) {
         String htmlBody = wrapInTemplate(subject, """
             <h1 style="color: #1D3A2F; font-family: 'Georgia', serif; font-size: 24px; margin: 0 0 16px 0;">
-                Welcome to Forever Home!
+                Thank You for Opening Your Heart
             </h1>
             <p style="color: #1A1A1A; font-size: 16px; line-height: 1.6; margin: 0 0 24px 0;">
                 Hi %s,
             </p>
             <p style="color: #1A1A1A; font-size: 16px; line-height: 1.6; margin: 0 0 24px 0;">
-                We're thrilled to have you join our community! Forever Home connects pet lovers with rescue
-                organizations to help pets find their forever families.
+                We're deeply grateful that you've chosen to help a pet find their forever home. Every animal
+                deserves a second chance, and by fostering or rehoming a pet through Forever Home, you're
+                making that possible. Your compassion makes all the difference.
+            </p>
+            <h2 style="color: #2D5A47; font-size: 18px; margin: 32px 0 16px 0;">
+                Here's how to get started:
+            </h2>
+            <ul style="color: #1A1A1A; font-size: 16px; line-height: 1.8; margin: 0 0 24px 0; padding-left: 24px;">
+                <li>Complete your profile with your contact details</li>
+                <li>Register your pet with photos and a heartfelt description</li>
+                <li>Connect with rescue organizations in your area</li>
+                <li>Review applications from loving adopters</li>
+            </ul>
+            <div style="text-align: center; margin: 32px 0;">
+                <a href="%s"
+                   style="background-color: #2D5A47; color: #FFFFFF; padding: 14px 32px; text-decoration: none;
+                          border-radius: 6px; font-weight: 600; font-size: 16px; display: inline-block;">
+                    Register Your Pet
+                </a>
+            </div>
+            <p style="color: #5C5C5C; font-size: 14px; line-height: 1.6; margin: 24px 0 0 0;">
+                If you have any questions along the way, our team is here to support you through this journey.
+            </p>
+            <p style="color: #2D5A47; font-size: 16px; font-style: italic; margin: 24px 0 0 0;">
+                With gratitude,<br>
+                The Forever Home Team
+            </p>
+            """.formatted(escapeHtml(recipientName), baseUrl));
+
+        String textBody = """
+            Thank You for Opening Your Heart
+
+            Hi %s,
+
+            We're deeply grateful that you've chosen to help a pet find their forever home. Every animal
+            deserves a second chance, and by fostering or rehoming a pet through Forever Home, you're
+            making that possible. Your compassion makes all the difference.
+
+            Here's how to get started:
+            - Complete your profile with your contact details
+            - Register your pet with photos and a heartfelt description
+            - Connect with rescue organizations in your area
+            - Review applications from loving adopters
+
+            Visit: %s
+
+            If you have any questions along the way, our team is here to support you through this journey.
+
+            With gratitude,
+            The Forever Home Team
+
+            ---
+            Forever Home - Finding forever families for pets
+            """.formatted(recipientName, baseUrl);
+
+        return new EmailContent(subject, htmlBody, textBody);
+    }
+
+    private EmailContent generateAdopterWelcomeEmail(String recipientName, String subject) {
+        String htmlBody = wrapInTemplate(subject, """
+            <h1 style="color: #1D3A2F; font-family: 'Georgia', serif; font-size: 24px; margin: 0 0 16px 0;">
+                Your Journey to Finding a Friend Starts Here
+            </h1>
+            <p style="color: #1A1A1A; font-size: 16px; line-height: 1.6; margin: 0 0 24px 0;">
+                Hi %s,
+            </p>
+            <p style="color: #1A1A1A; font-size: 16px; line-height: 1.6; margin: 0 0 24px 0;">
+                We're thrilled to have you join our community! Forever Home connects pet lovers like you
+                with rescue organizations to help pets find their forever families. Your perfect companion
+                is waiting to meet you.
             </p>
             <h2 style="color: #2D5A47; font-size: 18px; margin: 32px 0 16px 0;">
                 Here's what you can do next:
@@ -219,14 +298,14 @@ public class EmailTemplateService {
             <ul style="color: #1A1A1A; font-size: 16px; line-height: 1.8; margin: 0 0 24px 0; padding-left: 24px;">
                 <li>Complete your profile to get started</li>
                 <li>Browse available pets looking for homes</li>
-                <li>Connect with rescue organizations in your area</li>
                 <li>Save your favorite pets to revisit later</li>
+                <li>Submit adoption applications when you find the one</li>
             </ul>
             <div style="text-align: center; margin: 32px 0;">
                 <a href="%s"
                    style="background-color: #2D5A47; color: #FFFFFF; padding: 14px 32px; text-decoration: none;
                           border-radius: 6px; font-weight: 600; font-size: 16px; display: inline-block;">
-                    Explore Forever Home
+                    Browse Available Pets
                 </a>
             </div>
             <p style="color: #5C5C5C; font-size: 14px; line-height: 1.6; margin: 24px 0 0 0;">
@@ -239,24 +318,226 @@ public class EmailTemplateService {
             """.formatted(escapeHtml(recipientName), baseUrl));
 
         String textBody = """
-            Welcome to Forever Home!
+            Your Journey to Finding a Friend Starts Here
 
             Hi %s,
 
-            We're thrilled to have you join our community! Forever Home connects pet lovers with rescue
-            organizations to help pets find their forever families.
+            We're thrilled to have you join our community! Forever Home connects pet lovers like you
+            with rescue organizations to help pets find their forever families. Your perfect companion
+            is waiting to meet you.
 
             Here's what you can do next:
             - Complete your profile to get started
             - Browse available pets looking for homes
-            - Connect with rescue organizations in your area
             - Save your favorite pets to revisit later
+            - Submit adoption applications when you find the one
 
             Visit: %s
 
             If you have any questions, feel free to reach out to our support team.
 
             Happy pet matching!
+            The Forever Home Team
+
+            ---
+            Forever Home - Finding forever families for pets
+            """.formatted(recipientName, baseUrl);
+
+        return new EmailContent(subject, htmlBody, textBody);
+    }
+
+    private EmailContent generateVetWelcomeEmail(String recipientName, String subject) {
+        String htmlBody = wrapInTemplate(subject, """
+            <h1 style="color: #1D3A2F; font-family: 'Georgia', serif; font-size: 24px; margin: 0 0 16px 0;">
+                Thank You for Joining Our Network
+            </h1>
+            <p style="color: #1A1A1A; font-size: 16px; line-height: 1.6; margin: 0 0 24px 0;">
+                Hi %s,
+            </p>
+            <p style="color: #1A1A1A; font-size: 16px; line-height: 1.6; margin: 0 0 24px 0;">
+                Thank you for joining Forever Home as a veterinary professional. Your expertise is vital
+                to ensuring every pet is healthy and ready for their new family. We appreciate your
+                dedication to animal welfare.
+            </p>
+            <h2 style="color: #2D5A47; font-size: 18px; margin: 32px 0 16px 0;">
+                Here's how to get started:
+            </h2>
+            <ul style="color: #1A1A1A; font-size: 16px; line-height: 1.8; margin: 0 0 24px 0; padding-left: 24px;">
+                <li>Complete your clinic profile with license details</li>
+                <li>Wait for verification from a rescue organization</li>
+                <li>Review and sign off on pet health records</li>
+                <li>Confirm vaccination and neutering status</li>
+            </ul>
+            <div style="text-align: center; margin: 32px 0;">
+                <a href="%s"
+                   style="background-color: #2D5A47; color: #FFFFFF; padding: 14px 32px; text-decoration: none;
+                          border-radius: 6px; font-weight: 600; font-size: 16px; display: inline-block;">
+                    Complete Your Profile
+                </a>
+            </div>
+            <p style="color: #5C5C5C; font-size: 14px; line-height: 1.6; margin: 24px 0 0 0;">
+                Once verified by a rescue organization, you'll be able to review pets by their microchip number.
+            </p>
+            <p style="color: #2D5A47; font-size: 16px; font-style: italic; margin: 24px 0 0 0;">
+                Thank you for your service,<br>
+                The Forever Home Team
+            </p>
+            """.formatted(escapeHtml(recipientName), baseUrl));
+
+        String textBody = """
+            Thank You for Joining Our Network
+
+            Hi %s,
+
+            Thank you for joining Forever Home as a veterinary professional. Your expertise is vital
+            to ensuring every pet is healthy and ready for their new family. We appreciate your
+            dedication to animal welfare.
+
+            Here's how to get started:
+            - Complete your clinic profile with license details
+            - Wait for verification from a rescue organization
+            - Review and sign off on pet health records
+            - Confirm vaccination and neutering status
+
+            Visit: %s
+
+            Once verified by a rescue organization, you'll be able to review pets by their microchip number.
+
+            Thank you for your service,
+            The Forever Home Team
+
+            ---
+            Forever Home - Finding forever families for pets
+            """.formatted(recipientName, baseUrl);
+
+        return new EmailContent(subject, htmlBody, textBody);
+    }
+
+    private EmailContent generateRescueOrgWelcomeEmail(String recipientName, String subject) {
+        String htmlBody = wrapInTemplate(subject, """
+            <h1 style="color: #1D3A2F; font-family: 'Georgia', serif; font-size: 24px; margin: 0 0 16px 0;">
+                Welcome to Our Rescue Network
+            </h1>
+            <p style="color: #1A1A1A; font-size: 16px; line-height: 1.6; margin: 0 0 24px 0;">
+                Hi %s,
+            </p>
+            <p style="color: #1A1A1A; font-size: 16px; line-height: 1.6; margin: 0 0 24px 0;">
+                Welcome to the Forever Home rescue network! We're excited to partner with you in our
+                mission to connect pets with loving families. Together, we can make a real difference
+                in the lives of animals in need.
+            </p>
+            <h2 style="color: #2D5A47; font-size: 18px; margin: 32px 0 16px 0;">
+                Here's how to get started:
+            </h2>
+            <ul style="color: #1A1A1A; font-size: 16px; line-height: 1.8; margin: 0 0 24px 0; padding-left: 24px;">
+                <li>Complete your organization profile with contact details</li>
+                <li>Wait for admin approval of your organization</li>
+                <li>Verify veterinarians to work with your rescue</li>
+                <li>Start managing pet listings and adoption applications</li>
+            </ul>
+            <div style="text-align: center; margin: 32px 0;">
+                <a href="%s"
+                   style="background-color: #2D5A47; color: #FFFFFF; padding: 14px 32px; text-decoration: none;
+                          border-radius: 6px; font-weight: 600; font-size: 16px; display: inline-block;">
+                    Complete Organization Profile
+                </a>
+            </div>
+            <p style="color: #5C5C5C; font-size: 14px; line-height: 1.6; margin: 24px 0 0 0;">
+                Our admin team will review your application shortly. You'll receive an email once approved.
+            </p>
+            <p style="color: #2D5A47; font-size: 16px; font-style: italic; margin: 24px 0 0 0;">
+                Thank you for joining us,<br>
+                The Forever Home Team
+            </p>
+            """.formatted(escapeHtml(recipientName), baseUrl));
+
+        String textBody = """
+            Welcome to Our Rescue Network
+
+            Hi %s,
+
+            Welcome to the Forever Home rescue network! We're excited to partner with you in our
+            mission to connect pets with loving families. Together, we can make a real difference
+            in the lives of animals in need.
+
+            Here's how to get started:
+            - Complete your organization profile with contact details
+            - Wait for admin approval of your organization
+            - Verify veterinarians to work with your rescue
+            - Start managing pet listings and adoption applications
+
+            Visit: %s
+
+            Our admin team will review your application shortly. You'll receive an email once approved.
+
+            Thank you for joining us,
+            The Forever Home Team
+
+            ---
+            Forever Home - Finding forever families for pets
+            """.formatted(recipientName, baseUrl);
+
+        return new EmailContent(subject, htmlBody, textBody);
+    }
+
+    private EmailContent generateAdminWelcomeEmail(String recipientName, String subject) {
+        String htmlBody = wrapInTemplate(subject, """
+            <h1 style="color: #1D3A2F; font-family: 'Georgia', serif; font-size: 24px; margin: 0 0 16px 0;">
+                Admin Access Granted
+            </h1>
+            <p style="color: #1A1A1A; font-size: 16px; line-height: 1.6; margin: 0 0 24px 0;">
+                Hi %s,
+            </p>
+            <p style="color: #1A1A1A; font-size: 16px; line-height: 1.6; margin: 0 0 24px 0;">
+                You've been granted administrator access to Forever Home. You now have the tools to
+                help manage our platform and support our community of fosters, adopters, vets, and
+                rescue organizations.
+            </p>
+            <h2 style="color: #2D5A47; font-size: 18px; margin: 32px 0 16px 0;">
+                Your admin capabilities include:
+            </h2>
+            <ul style="color: #1A1A1A; font-size: 16px; line-height: 1.8; margin: 0 0 24px 0; padding-left: 24px;">
+                <li>Approve rescue organization registrations</li>
+                <li>Manage user accounts and access</li>
+                <li>Monitor platform activity and metrics</li>
+                <li>Handle support escalations</li>
+            </ul>
+            <div style="text-align: center; margin: 32px 0;">
+                <a href="%s/admin"
+                   style="background-color: #2D5A47; color: #FFFFFF; padding: 14px 32px; text-decoration: none;
+                          border-radius: 6px; font-weight: 600; font-size: 16px; display: inline-block;">
+                    Access Admin Dashboard
+                </a>
+            </div>
+            <p style="color: #5C5C5C; font-size: 14px; line-height: 1.6; margin: 24px 0 0 0;">
+                Please use your admin privileges responsibly.
+            </p>
+            <p style="color: #2D5A47; font-size: 16px; font-style: italic; margin: 24px 0 0 0;">
+                Welcome aboard,<br>
+                The Forever Home Team
+            </p>
+            """.formatted(escapeHtml(recipientName), baseUrl));
+
+        String textBody = """
+            Admin Access Granted
+
+            Hi %s,
+
+            You've been granted administrator access to Forever Home. You now have the tools to
+            help manage our platform and support our community of fosters, adopters, vets, and
+            rescue organizations.
+
+            Your admin capabilities include:
+            - Approve rescue organization registrations
+            - Manage user accounts and access
+            - Monitor platform activity and metrics
+            - Handle support escalations
+
+            Visit: %s/admin
+
+            Please use your admin privileges responsibly.
+
+            Welcome aboard,
             The Forever Home Team
 
             ---

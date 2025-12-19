@@ -1,5 +1,6 @@
 package com.example.foreverhome.service;
 
+import com.example.foreverhome.domain.user.UserRole;
 import com.example.foreverhome.logging.UserJourneyLogger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -106,9 +107,9 @@ public class ConsoleEmailService implements EmailService {
     }
 
     @Override
-    public void sendWelcomeEmail(String to, String name) {
+    public void sendWelcomeEmail(String to, String name, UserRole role) {
         metricsService.recordEmailSent("welcome");
-        journeyLogger.logEmail(UserJourneyLogger.ACTION_EMAIL_SENT, "welcome", to, true, "Welcome email sent");
+        journeyLogger.logEmail(UserJourneyLogger.ACTION_EMAIL_SENT, "welcome", to, true, "Welcome email sent for " + role);
         logger.info("""
 
             ╔══════════════════════════════════════════════════════════════════╗
@@ -116,10 +117,11 @@ public class ConsoleEmailService implements EmailService {
             ╠══════════════════════════════════════════════════════════════════╣
             ║  To: {}
             ║  Name: {}
+            ║  Role: {}
             ║
             ║  Welcome to Forever Home! Your account has been created.
-            ║  You can now browse pets and connect with rescue organizations.
+            ║  Role-specific welcome email sent with personalized next steps.
             ╚══════════════════════════════════════════════════════════════════╝
-            """, to, name);
+            """, to, name, role);
     }
 }

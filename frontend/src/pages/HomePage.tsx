@@ -76,7 +76,7 @@ export function HomePage() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link to="/pets">
                 <Button variant="primary" size="lg">
-                  Browse Pets
+                  Swipe Pets
                 </Button>
               </Link>
               {isAuthenticated ? (
@@ -177,9 +177,9 @@ export function HomePage() {
                 <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <span className="text-3xl">🐾</span>
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">Browse Pets</h3>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">Swipe Pets</h3>
                 <p className="text-gray-600">
-                  Explore our collection of adorable pets from verified rescue organizations.
+                  Swipe through adorable pets from verified rescue organizations.
                 </p>
               </div>
               <div className="text-center">
@@ -291,7 +291,7 @@ export function HomePage() {
                 <div>
                   <h5 className="font-semibold mb-4">For Adopters</h5>
                   <ul className="space-y-1 text-sm text-primary-100">
-                    <li><Link to="/pets" className="hover:text-white block py-2">Browse Pets</Link></li>
+                    <li><Link to="/pets" className="hover:text-white block py-2">Swipe Pets</Link></li>
                     <li><Link to="/rescues" className="hover:text-white block py-2">Find Rescues</Link></li>
                     <li><Link to="/register" className="hover:text-white block py-2">Create Account</Link></li>
                   </ul>

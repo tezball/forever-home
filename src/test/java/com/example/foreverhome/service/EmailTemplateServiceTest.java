@@ -1,5 +1,6 @@
 package com.example.foreverhome.service;
 
+import com.example.foreverhome.domain.user.UserRole;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -181,39 +182,97 @@ class EmailTemplateServiceTest {
     class GenerateWelcomeEmail {
 
         @Test
-        @DisplayName("returns email content with correct subject")
+        @DisplayName("returns email content with correct subject for all roles")
         void returnsEmailContentWithCorrectSubject() {
-            // When
-            EmailTemplateService.EmailContent content = templateService.generateWelcomeEmail("John Doe");
+            for (UserRole role : UserRole.values()) {
+                // When
+                EmailTemplateService.EmailContent content = templateService.generateWelcomeEmail("John Doe", role);
 
-            // Then
-            assertThat(content.subject()).isEqualTo("Welcome to Forever Home!");
+                // Then
+                assertThat(content.subject()).isEqualTo("Welcome to Forever Home!");
+            }
         }
 
         @Test
-        @DisplayName("includes recipient name")
+        @DisplayName("includes recipient name for all roles")
         void includesRecipientName() {
             // Given
             String name = "Jane Smith";
 
-            // When
-            EmailTemplateService.EmailContent content = templateService.generateWelcomeEmail(name);
+            for (UserRole role : UserRole.values()) {
+                // When
+                EmailTemplateService.EmailContent content = templateService.generateWelcomeEmail(name, role);
 
-            // Then
-            assertThat(content.htmlBody()).contains(name);
-            assertThat(content.textBody()).contains(name);
+                // Then
+                assertThat(content.htmlBody()).contains(name);
+                assertThat(content.textBody()).contains(name);
+            }
         }
 
         @Test
-        @DisplayName("includes getting started steps")
-        void includesGettingStartedSteps() {
+        @DisplayName("foster email includes heartfelt message and register pet steps")
+        void fosterEmailIncludesHeartfeltMessageAndRegisterPetSteps() {
             // When
-            EmailTemplateService.EmailContent content = templateService.generateWelcomeEmail("John");
+            EmailTemplateService.EmailContent content = templateService.generateWelcomeEmail("John", UserRole.FOSTER);
 
             // Then
-            assertThat(content.htmlBody()).contains("Complete your profile");
+            assertThat(content.htmlBody()).contains("Thank You for Opening Your Heart");
+            assertThat(content.htmlBody()).contains("Register your pet");
+            assertThat(content.htmlBody()).contains("With gratitude");
+            assertThat(content.textBody()).contains("Register your pet");
+        }
+
+        @Test
+        @DisplayName("adopter email includes journey message and browse pets steps")
+        void adopterEmailIncludesJourneyMessageAndBrowsePetsSteps() {
+            // When
+            EmailTemplateService.EmailContent content = templateService.generateWelcomeEmail("John", UserRole.ADOPTER);
+
+            // Then
+            assertThat(content.htmlBody()).contains("Your Journey to Finding a Friend");
             assertThat(content.htmlBody()).contains("Browse available pets");
-            assertThat(content.textBody()).contains("Complete your profile");
+            assertThat(content.htmlBody()).contains("Submit adoption applications");
+            assertThat(content.textBody()).contains("Browse available pets");
+        }
+
+        @Test
+        @DisplayName("vet email includes thank you and verification steps")
+        void vetEmailIncludesThankYouAndVerificationSteps() {
+            // When
+            EmailTemplateService.EmailContent content = templateService.generateWelcomeEmail("Dr. Smith", UserRole.VET);
+
+            // Then
+            assertThat(content.htmlBody()).contains("Thank You for Joining Our Network");
+            assertThat(content.htmlBody()).contains("veterinary professional");
+            assertThat(content.htmlBody()).contains("verification from a rescue");
+            assertThat(content.textBody()).contains("verification from a rescue");
+        }
+
+        @Test
+        @DisplayName("rescue org email includes network welcome and approval steps")
+        void rescueOrgEmailIncludesNetworkWelcomeAndApprovalSteps() {
+            // When
+            EmailTemplateService.EmailContent content = templateService.generateWelcomeEmail("Happy Tails Rescue", UserRole.RESCUE_ORG);
+
+            // Then
+            assertThat(content.htmlBody()).contains("Welcome to Our Rescue Network");
+            assertThat(content.htmlBody()).contains("admin approval");
+            assertThat(content.htmlBody()).contains("Verify veterinarians");
+            assertThat(content.textBody()).contains("admin approval");
+        }
+
+        @Test
+        @DisplayName("admin email includes admin access and dashboard steps")
+        void adminEmailIncludesAdminAccessAndDashboardSteps() {
+            // When
+            EmailTemplateService.EmailContent content = templateService.generateWelcomeEmail("Admin User", UserRole.ADMIN);
+
+            // Then
+            assertThat(content.htmlBody()).contains("Admin Access Granted");
+            assertThat(content.htmlBody()).contains("administrator access");
+            assertThat(content.htmlBody()).contains("Approve rescue organization");
+            assertThat(content.htmlBody()).contains("/admin");
+            assertThat(content.textBody()).contains("/admin");
         }
     }
 

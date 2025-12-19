@@ -1,5 +1,6 @@
 package com.example.foreverhome.service;
 
+import com.example.foreverhome.domain.user.UserRole;
 import com.example.foreverhome.logging.UserJourneyLogger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -165,15 +166,16 @@ class SmtpEmailServiceTest {
     class SendWelcomeEmail {
 
         @Test
-        @DisplayName("given email and name, when sendWelcomeEmail, then sends personalized welcome email")
-        void givenEmailAndName_whenSendWelcomeEmail_thenSendsPersonalizedWelcomeEmail() {
+        @DisplayName("given email, name, and role, when sendWelcomeEmail, then sends personalized welcome email")
+        void givenEmailNameAndRole_whenSendWelcomeEmail_thenSendsPersonalizedWelcomeEmail() {
             // Given
             String to = "test@example.com";
             String name = "John Doe";
+            UserRole role = UserRole.FOSTER;
             doNothing().when(mailSender).send(any(SimpleMailMessage.class));
 
             // When
-            smtpEmailService.sendWelcomeEmail(to, name);
+            smtpEmailService.sendWelcomeEmail(to, name, role);
 
             // Then
             ArgumentCaptor<SimpleMailMessage> captor = ArgumentCaptor.forClass(SimpleMailMessage.class);
