@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Button, Input } from '../components';
+import { Button, Input, PasswordInput } from '../components';
 import apiClient from '../api/client';
 
 interface TestAccount {
@@ -159,9 +159,8 @@ export function LoginPage() {
             />
 
             <div>
-              <Input
+              <PasswordInput
                 label="Password"
-                type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter your password"

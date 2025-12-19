@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Button, Input, Select } from '../components';
+import { Button, Input, PasswordInput, Select } from '../components';
 import type { UserRole } from '../types';
 
 const roleOptions = [
@@ -142,9 +142,8 @@ export function RegisterPage() {
               required
             />
 
-            <Input
+            <PasswordInput
               label="Password"
-              type="password"
               name="password"
               value={formData.password}
               onChange={handleChange}
@@ -154,9 +153,8 @@ export function RegisterPage() {
               autoComplete="new-password"
             />
 
-            <Input
+            <PasswordInput
               label="Confirm Password"
-              type="password"
               name="confirmPassword"
               value={formData.confirmPassword}
               onChange={handleChange}

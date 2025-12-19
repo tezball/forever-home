@@ -312,6 +312,13 @@ public class AuthService {
         refreshTokenRepository.revokeAllByUserId(userId);
     }
 
+    @Transactional(readOnly = true)
+    public UserDto getCurrentUser(UUID userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new AuthenticationException("User not found"));
+        return UserDto.from(user);
+    }
+
     /**
      * Auto-creates the role-specific profile during registration.
      * This allows users to immediately use role-specific features without completing a separate profile step.

@@ -37,11 +37,13 @@ export function NotificationBell() {
   }, []);
 
   const fetchUnreadCount = async () => {
+    if (!isAuthenticated) return;
     try {
       const res = await apiClient.get<{ count: number }>('/notifications/unread/count');
       setUnreadCount(res.data.count);
-    } catch (err) {
-      console.error('Failed to fetch unread count:', err);
+    } catch {
+      // Silently ignore errors for unauthenticated users or expired sessions
+      setUnreadCount(0);
     }
   };
 

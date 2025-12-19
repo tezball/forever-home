@@ -169,7 +169,6 @@ public class PetController {
     }
 
     @GetMapping("/{id}/history")
-    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<PetStatusHistoryDto>> getStatusHistory(@PathVariable UUID id) {
         List<PetStatusHistory> history = petService.getStatusHistory(id);
         List<PetStatusHistoryDto> dtos = history.stream()

@@ -26,6 +26,24 @@ export function formatBreed(breed: string | null | undefined): string {
 }
 
 /**
+ * Format a size enum value to a human-readable string
+ * e.g., 'SMALL' -> 'Small', 'LARGE' -> 'Large'
+ */
+export function formatSize(size: string | null | undefined): string {
+  if (!size) return '';
+  return size.charAt(0).toUpperCase() + size.slice(1).toLowerCase();
+}
+
+/**
+ * Format a sex enum value to a human-readable string
+ * e.g., 'MALE' -> 'Male', 'FEMALE' -> 'Female'
+ */
+export function formatSex(sex: string | null | undefined): string {
+  if (!sex) return '';
+  return sex.charAt(0).toUpperCase() + sex.slice(1).toLowerCase();
+}
+
+/**
  * Format a date to a relative time string
  * e.g., '2 days ago', 'Today', 'Yesterday', '3 weeks ago'
  */

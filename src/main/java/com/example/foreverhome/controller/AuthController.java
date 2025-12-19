@@ -1,10 +1,14 @@
 package com.example.foreverhome.controller;
 
 import com.example.foreverhome.dto.auth.*;
+import com.example.foreverhome.dto.user.UserDto;
+import com.example.foreverhome.security.UserPrincipal;
 import com.example.foreverhome.service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -17,6 +21,13 @@ public class AuthController {
 
     public AuthController(AuthService authService) {
         this.authService = authService;
+    }
+
+    @GetMapping("/me")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<UserDto> getCurrentUser(@AuthenticationPrincipal UserPrincipal principal) {
+        UserDto user = authService.getCurrentUser(principal.userId());
+        return ResponseEntity.ok(user);
     }
 
     @PostMapping("/register")

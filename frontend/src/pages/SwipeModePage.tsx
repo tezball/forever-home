@@ -9,6 +9,7 @@ import {
   SwipeActions,
   SwipeEmptyState,
 } from '../components/swipe';
+import { formatSize } from '../utils';
 import type { Pet, Species, PetSize, PetSex } from '../types';
 
 interface PagedResponse<T> {
@@ -30,6 +31,7 @@ export function SwipeModePage() {
   const [pets, setPets] = useState<Pet[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [currentPage, setCurrentPage] = useState(0);
   const [showDetails, setShowDetails] = useState(false);
@@ -56,6 +58,9 @@ export function SwipeModePage() {
   }, []);
 
   const fetchPets = useCallback(async (page: number, append = false) => {
+    if (append) {
+      setLoadingMore(true);
+    }
     try {
       const params = new URLSearchParams();
       if (filters.species) params.append('species', filters.species);
@@ -79,6 +84,7 @@ export function SwipeModePage() {
       // Silently handle errors
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   }, [filters]);
 
@@ -90,10 +96,10 @@ export function SwipeModePage() {
   }, [filters, fetchPets]);
 
   useEffect(() => {
-    if (pets.length > 0 && currentIndex >= pets.length - 5 && hasMore && !loading) {
+    if (pets.length > 0 && currentIndex >= pets.length - 5 && hasMore && !loading && !loadingMore) {
       fetchPets(currentPage + 1, true);
     }
-  }, [currentIndex, pets.length, hasMore, loading, currentPage, fetchPets]);
+  }, [currentIndex, pets.length, hasMore, loading, loadingMore, currentPage, fetchPets]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -196,7 +202,7 @@ export function SwipeModePage() {
                 {ageDisplay}
               </span>
               <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm">
-                {currentPet.size.charAt(0) + currentPet.size.slice(1).toLowerCase()}
+                {formatSize(currentPet.size)}
               </span>
               <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm">
                 {currentPet.sex === 'MALE' ? 'Male' : 'Female'}
@@ -249,6 +255,16 @@ export function SwipeModePage() {
           />
         }
       >
+        {/* Loading more indicator */}
+        {loadingMore && (
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50">
+            <div className="flex items-center gap-2 px-4 py-2 bg-black/50 backdrop-blur-sm rounded-full">
+              <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+              <span className="text-sm text-white font-medium">Loading more...</span>
+            </div>
+          </div>
+        )}
+
         {loading ? (
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="animate-spin rounded-full h-12 w-12 border-4 border-white border-t-transparent" />

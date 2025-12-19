@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Button, Modal, ImageCarousel, PetTimeline, Textarea } from '../components';
-import type { Pet, PetStatus } from '../types';
+import { formatSize, formatSex } from '../utils';
+import type { Pet, PetStatus, RescueOrganization } from '../types';
 import apiClient from '../api/client';
 
 const statusLabels: Record<PetStatus, string> = {
@@ -47,6 +48,7 @@ export function PetDetailPage() {
   const [hasApplied, setHasApplied] = useState(false);
   const [activeApplicationCount, setActiveApplicationCount] = useState(0);
   const [applicationSuccess, setApplicationSuccess] = useState(false);
+  const [rescueOrg, setRescueOrg] = useState<RescueOrganization | null>(null);
 
   useEffect(() => {
     fetchPet();
@@ -62,10 +64,23 @@ export function PetDetailPage() {
     try {
       const response = await apiClient.get<Pet>(`/pets/${id}`);
       setPet(response.data);
+      // Fetch rescue org info if available
+      if (response.data.rescueOrgId) {
+        fetchRescueOrg(response.data.rescueOrgId);
+      }
     } catch {
       setError('Failed to load pet details');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchRescueOrg = async (orgId: string) => {
+    try {
+      const response = await apiClient.get<RescueOrganization>(`/rescues/${orgId}`);
+      setRescueOrg(response.data);
+    } catch {
+      // Silently fail - rescue org info is optional
     }
   };
 
@@ -182,7 +197,7 @@ export function PetDetailPage() {
             {isAuthenticated && (
               <button
                 onClick={toggleFavorite}
-                className="p-2 rounded-full hover:bg-secondary-100 transition-colors"
+                className="p-3 -m-1 rounded-full hover:bg-secondary-100 transition-colors"
                 aria-label={favorite ? 'Remove from favorites' : 'Add to favorites'}
               >
                 <svg
@@ -215,11 +230,11 @@ export function PetDetailPage() {
               <p className="text-sm text-gray-500">Age</p>
             </div>
             <div className="text-center border-x border-secondary-200">
-              <p className="text-lg font-semibold text-gray-900 capitalize">{pet.size.toLowerCase()}</p>
+              <p className="text-lg font-semibold text-gray-900">{formatSize(pet.size)}</p>
               <p className="text-sm text-gray-500">Size</p>
             </div>
             <div className="text-center">
-              <p className="text-lg font-semibold text-gray-900 capitalize">{pet.sex.toLowerCase()}</p>
+              <p className="text-lg font-semibold text-gray-900">{formatSex(pet.sex)}</p>
               <p className="text-sm text-gray-500">Sex</p>
             </div>
           </div>
@@ -240,15 +255,47 @@ export function PetDetailPage() {
             </div>
           )}
 
-          {/* Status Timeline - only show to authenticated users with relevant roles */}
-          {isAuthenticated && user && ['FOSTER', 'RESCUE_ORG', 'VET', 'ADMIN'].includes(user.role) && (
+          {/* Rescue Organization */}
+          {rescueOrg && (
             <div className="mb-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Status History</h2>
-              <div className="bg-white border border-gray-200 rounded-lg p-4">
-                <PetTimeline petId={pet.id} />
-              </div>
+              <h2 className="text-lg font-semibold text-gray-900 mb-2">Rescue Organization</h2>
+              <Link
+                to={`/rescues/${rescueOrg.id}`}
+                className="flex items-center gap-3 p-4 bg-secondary-50 rounded-lg hover:bg-secondary-100 transition-colors"
+              >
+                {rescueOrg.logoUrl ? (
+                  <img
+                    src={rescueOrg.logoUrl}
+                    alt={rescueOrg.name}
+                    className="w-12 h-12 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-12 h-12 rounded-full bg-primary-100 flex items-center justify-center">
+                    <svg className="w-6 h-6 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
+                  </div>
+                )}
+                <div className="flex-1">
+                  <p className="font-medium text-gray-900">{rescueOrg.name}</p>
+                  {rescueOrg.location && (
+                    <p className="text-sm text-gray-500">{rescueOrg.location}</p>
+                  )}
+                </div>
+                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </Link>
             </div>
           )}
+
+          {/* Status Timeline */}
+          <div className="mb-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Status History</h2>
+            <div className="bg-white border border-gray-200 rounded-lg p-4">
+              <PetTimeline petId={pet.id} />
+            </div>
+          </div>
 
           {/* Action Button */}
           <div className="mt-8">
@@ -313,6 +360,18 @@ export function PetDetailPage() {
                     Sign In to Apply
                   </Button>
                 </Link>
+              </div>
+            )}
+
+            {/* Authenticated but not an adopter */}
+            {pet.status === 'AVAILABLE' && isAuthenticated && user?.role !== 'ADOPTER' && (
+              <div className="text-center p-4 bg-secondary-100 rounded-lg">
+                <p className="text-gray-600">
+                  To apply for adoption, you need an adopter account.{' '}
+                  <Link to="/register" className="text-primary-500 hover:underline">
+                    Create an adopter account
+                  </Link>
+                </p>
               </div>
             )}
 

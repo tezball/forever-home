@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
-import { Button, Input } from '../components';
+import { Button, PasswordInput } from '../components';
 import apiClient from '../api/client';
 
 export function ResetPasswordPage() {
@@ -127,9 +127,8 @@ export function ResetPasswordPage() {
               </div>
             )}
 
-            <Input
+            <PasswordInput
               label="New Password"
-              type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter your new password"
@@ -138,9 +137,8 @@ export function ResetPasswordPage() {
               autoFocus
             />
 
-            <Input
+            <PasswordInput
               label="Confirm New Password"
-              type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="Confirm your new password"

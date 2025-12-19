@@ -1,7 +1,7 @@
 import { useSpring, animated } from '@react-spring/web';
 import { useDrag } from '@use-gesture/react';
 import type { Pet } from '../../types';
-import { formatBreed } from '../../utils';
+import { formatBreed, formatSize } from '../../utils';
 
 interface SwipeCardProps {
   pet: Pet;
@@ -110,7 +110,7 @@ export function SwipeCard({ pet, onSwipe, onTap, isTop }: SwipeCardProps) {
                 {ageDisplay}
               </span>
               <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-sm text-white">
-                {pet.size.charAt(0) + pet.size.slice(1).toLowerCase()}
+                {formatSize(pet.size)}
               </span>
               <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-sm text-white">
                 {pet.sex === 'MALE' ? '♂' : '♀'}

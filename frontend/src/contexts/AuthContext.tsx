@@ -19,12 +19,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('accessToken');
-    const storedUser = localStorage.getItem('user');
-    if (token && storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setLoading(false);
+    const validateSession = async () => {
+      const token = localStorage.getItem('accessToken');
+      const storedUser = localStorage.getItem('user');
+
+      if (!token || !storedUser) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        // Validate the token by fetching current user info
+        const response = await apiClient.get<User>('/auth/me');
+        setUser(response.data);
+        // Update stored user in case it changed
+        localStorage.setItem('user', JSON.stringify(response.data));
+      } catch {
+        // Token is invalid or expired, clear local storage
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('user');
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    validateSession();
   }, []);
 
   const login = async (data: LoginRequest) => {

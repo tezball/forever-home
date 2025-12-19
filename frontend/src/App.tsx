@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Header, ErrorBoundary } from './components';
@@ -39,13 +40,33 @@ function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
 }
 
 function ConstructionBanner() {
+  const [dismissed, setDismissed] = useState(() => {
+    return localStorage.getItem('construction-banner-dismissed') === 'true';
+  });
+
+  const handleDismiss = () => {
+    localStorage.setItem('construction-banner-dismissed', 'true');
+    setDismissed(true);
+  };
+
+  if (dismissed) return null;
+
   return (
-    <div className="bg-amber-500 text-white py-2 px-4 text-center font-medium">
+    <div className="bg-amber-500 text-white py-2 px-4 text-center font-medium relative">
       <span className="inline-flex items-center gap-2">
         <span>🚧</span>
         <span>Site Under Construction - Coming Soon</span>
         <span>🚧</span>
       </span>
+      <button
+        onClick={handleDismiss}
+        className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-amber-600 rounded transition-colors"
+        aria-label="Dismiss banner"
+      >
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
     </div>
   );
 }
