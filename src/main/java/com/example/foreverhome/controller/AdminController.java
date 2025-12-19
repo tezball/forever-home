@@ -11,9 +11,14 @@ import com.example.foreverhome.domain.user.User;
 import com.example.foreverhome.domain.user.UserRole;
 import com.example.foreverhome.exception.ResourceNotFoundException;
 import com.example.foreverhome.logging.UserJourneyLogger;
+import com.example.foreverhome.repository.AdopterRepository;
 import com.example.foreverhome.repository.AdoptionRepository;
+import com.example.foreverhome.repository.FosterRepository;
 import com.example.foreverhome.repository.PetRepository;
+import com.example.foreverhome.repository.RefreshTokenRepository;
+import com.example.foreverhome.repository.RescueOrganizationRepository;
 import com.example.foreverhome.repository.UserRepository;
+import com.example.foreverhome.repository.VetRepository;
 import com.example.foreverhome.service.EmailService;
 import com.example.foreverhome.service.ModerationService;
 import com.example.foreverhome.service.NotificationService;
@@ -39,12 +44,22 @@ public class AdminController {
     private final ModerationService moderationService;
     private final NotificationService notificationService;
     private final UserJourneyLogger journeyLogger;
+    private final FosterRepository fosterRepository;
+    private final AdopterRepository adopterRepository;
+    private final VetRepository vetRepository;
+    private final RescueOrganizationRepository rescueOrgRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
 
     public AdminController(UserRepository userRepository, PetRepository petRepository,
                           AdoptionRepository adoptionRepository, PasswordEncoder passwordEncoder,
                           EmailService emailService, ModerationService moderationService,
                           NotificationService notificationService,
-                          UserJourneyLogger journeyLogger) {
+                          UserJourneyLogger journeyLogger,
+                          FosterRepository fosterRepository,
+                          AdopterRepository adopterRepository,
+                          VetRepository vetRepository,
+                          RescueOrganizationRepository rescueOrgRepository,
+                          RefreshTokenRepository refreshTokenRepository) {
         this.userRepository = userRepository;
         this.petRepository = petRepository;
         this.adoptionRepository = adoptionRepository;
@@ -53,6 +68,11 @@ public class AdminController {
         this.moderationService = moderationService;
         this.notificationService = notificationService;
         this.journeyLogger = journeyLogger;
+        this.fosterRepository = fosterRepository;
+        this.adopterRepository = adopterRepository;
+        this.vetRepository = vetRepository;
+        this.rescueOrgRepository = rescueOrgRepository;
+        this.refreshTokenRepository = refreshTokenRepository;
     }
 
     @GetMapping("/analytics")
@@ -202,6 +222,45 @@ public class AdminController {
 
         journeyLogger.logAdminAction(UserJourneyLogger.ACTION_ADMIN_REACTIVATE_USER, "USER", userId,
                 "Reactivated user: " + user.getEmail());
+
+        return ResponseEntity.ok().build();
+    }
+
+    /**
+     * Permanently delete a user and all their associated data.
+     * This is a destructive operation and cannot be undone.
+     */
+    @DeleteMapping("/users/{id}")
+    public ResponseEntity<Void> deleteUser(@PathVariable String id) {
+        var userId = java.util.UUID.fromString(id);
+        var user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", userId));
+
+        String email = user.getEmail();
+        UserRole role = user.getRole();
+
+        // Prevent deleting admin accounts (safety measure)
+        if (role == UserRole.ADMIN) {
+            throw new IllegalStateException("Cannot delete admin accounts");
+        }
+
+        // Delete associated profile data based on role
+        switch (role) {
+            case FOSTER -> fosterRepository.findByUserId(userId).ifPresent(fosterRepository::delete);
+            case ADOPTER -> adopterRepository.findByUserId(userId).ifPresent(adopterRepository::delete);
+            case VET -> vetRepository.findByUserId(userId).ifPresent(vetRepository::delete);
+            case RESCUE_ORG -> rescueOrgRepository.findByUserId(userId).ifPresent(rescueOrgRepository::delete);
+            default -> { /* No profile to delete */ }
+        }
+
+        // Delete refresh tokens
+        refreshTokenRepository.deleteByUserId(userId);
+
+        // Delete the user
+        userRepository.delete(user);
+
+        journeyLogger.logAdminAction(UserJourneyLogger.ACTION_ADMIN_DELETE_USER, "USER", userId,
+                "Permanently deleted user: " + email + " (role: " + role + ")");
 
         return ResponseEntity.ok().build();
     }

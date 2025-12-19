@@ -13,17 +13,49 @@ Run the deploy script to build and deploy the application:
 This will:
 1. Validate AWS credentials and prerequisites
 2. Login to ECR (Elastic Container Registry)
-3. Build the Docker image
-4. Push the image to ECR
+3. Build and push the Docker image
+4. **Reset database to seed data** (drops all tables, Flyway recreates schema, seeds demo data)
 5. Force ECS to restart with the new image
 
-## Optional: Deploy with a specific tag
+## Options
 
-To deploy with a custom image tag instead of `latest`:
+```bash
+./deploy.sh [--tag TAG] [--no-reset] [--blank]
+```
 
+- `--tag, -t TAG` - Docker image tag (default: latest)
+- `--no-reset` - Skip database reset (preserves existing data)
+- `--blank` - Deploy with empty database (no demo data, no demo login dropdown)
+
+## Examples
+
+Deploy with demo data (default):
+```bash
+./deploy.sh
+```
+
+Deploy without resetting the database:
+```bash
+./deploy.sh --no-reset
+```
+
+Deploy with blank database (production-ready, no demo content):
+```bash
+./deploy.sh --blank
+```
+
+Deploy with a custom image tag:
 ```bash
 ./deploy.sh --tag v1.0.0
 ```
+
+## Deployment Modes
+
+| Mode | Database | Demo Data | Demo Login |
+|------|----------|-----------|------------|
+| Default (`./deploy.sh`) | Reset | Seeded | Visible |
+| `--no-reset` | Preserved | Unchanged | Unchanged |
+| `--blank` | Reset (empty) | None | Hidden |
 
 ## After deployment
 

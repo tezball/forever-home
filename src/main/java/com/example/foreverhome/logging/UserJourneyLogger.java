@@ -52,6 +52,7 @@ public class UserJourneyLogger {
     public static final String ACTION_ADMIN_RESET_PASSWORD = "ADMIN_RESET_PASSWORD";
     public static final String ACTION_ADMIN_APPROVE_RESCUE = "ADMIN_APPROVE_RESCUE";
     public static final String ACTION_ADMIN_REJECT_RESCUE = "ADMIN_REJECT_RESCUE";
+    public static final String ACTION_ADMIN_DELETE_USER = "ADMIN_DELETE_USER";
 
     // Content moderation actions
     public static final String ACTION_FLAG_CREATE = "FLAG_CREATE";
