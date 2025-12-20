@@ -29,4 +29,7 @@ public interface NotificationRepository extends CrudRepository<Notification, UUI
     @Modifying
     @Query("DELETE FROM notifications WHERE user_id = :userId")
     void deleteByUserId(@Param("userId") UUID userId);
+
+    @Query("SELECT * FROM notifications WHERE id = :notificationId AND user_id = :userId")
+    java.util.Optional<Notification> findByIdAndUserId(@Param("notificationId") UUID notificationId, @Param("userId") UUID userId);
 }

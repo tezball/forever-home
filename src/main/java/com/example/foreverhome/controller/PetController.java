@@ -150,13 +150,31 @@ public class PetController {
 
     @GetMapping("/rescue/{rescueOrgId}")
     @PreAuthorize("hasRole('RESCUE_ORG') or hasRole('ADMIN')")
-    public ResponseEntity<List<PetDto>> getPetsByRescueOrg(@PathVariable UUID rescueOrgId) {
+    public ResponseEntity<List<PetDto>> getPetsByRescueOrg(
+            @PathVariable UUID rescueOrgId,
+            @AuthenticationPrincipal UserPrincipal principal) {
+        // Verify ownership: rescue org users can only access their own organization's pets
+        if (principal.isRescueOrg()) {
+            RescueOrganization userOrg = getRescueOrgForUser(principal.userId());
+            if (!userOrg.getId().equals(rescueOrgId)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+        }
         return ResponseEntity.ok(petService.getPetsByRescueOrg(rescueOrgId));
     }
 
     @GetMapping("/rescue/{rescueOrgId}/pending")
     @PreAuthorize("hasRole('RESCUE_ORG') or hasRole('ADMIN')")
-    public ResponseEntity<List<PetDto>> getPendingPets(@PathVariable UUID rescueOrgId) {
+    public ResponseEntity<List<PetDto>> getPendingPets(
+            @PathVariable UUID rescueOrgId,
+            @AuthenticationPrincipal UserPrincipal principal) {
+        // Verify ownership: rescue org users can only access their own organization's pets
+        if (principal.isRescueOrg()) {
+            RescueOrganization userOrg = getRescueOrgForUser(principal.userId());
+            if (!userOrg.getId().equals(rescueOrgId)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+        }
         return ResponseEntity.ok(petService.getPendingPetsForRescueOrg(rescueOrgId));
     }
 

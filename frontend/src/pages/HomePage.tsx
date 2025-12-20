@@ -74,7 +74,7 @@ export function HomePage() {
               rescue organizations and verified vets ensures every adoption is safe and successful.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link to="/pets">
+              <Link to="/pets/swipe">
                 <Button variant="primary" size="lg">
                   Swipe Pets
                 </Button>

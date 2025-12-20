@@ -1,8 +1,9 @@
 # Security Review - Forever Home
 
 **Date:** 2025-12-20
-**Status:** Under Construction Review
+**Status:** REMEDIATED
 **Reviewer:** Claude Code Security Analysis
+**Last Updated:** 2025-12-20
 
 ---
 
@@ -225,21 +226,21 @@ Remove `microchipId` from `PetPublicResponse` record or mask it (show last 4 dig
 
 ### Critical Priority (Fix Before Launch)
 
-- [ ] **Fix Notification IDOR** - Add ownership verification to `markAsRead` endpoint
-- [ ] **Fix Pet Access Bypass** - Restrict `/rescue/{rescueOrgId}` endpoints or add ownership checks
+- [x] **Fix Notification IDOR** - Add ownership verification to `markAsRead` endpoint *(FIXED: 2025-12-20)*
+- [x] **Fix Pet Access Bypass** - Restrict `/rescue/{rescueOrgId}` endpoints or add ownership checks *(FIXED: 2025-12-20)*
 
 ### High Priority (Fix Within 1 Week of Launch)
 
-- [ ] **Add Pet Creation Rate Limit** - Implement 10 pets/day per user limit
-- [ ] **Add Image Upload Rate Limit** - Implement 50 images/day per user limit
-- [ ] **Fix Content-Type Validation** - Use magic bytes instead of client-supplied MIME type
+- [x] **Add Pet Creation Rate Limit** - Implement 10 pets/day per user limit *(FIXED: 2025-12-20)*
+- [x] **Add Image Upload Rate Limit** - Implement 50 images/day per user limit *(FIXED: 2025-12-20)*
+- [x] **Fix Content-Type Validation** - Use magic bytes instead of client-supplied MIME type *(FIXED: 2025-12-20)*
 
 ### Moderate Priority (Fix Within 1 Month)
 
-- [ ] **Implement Refresh Token Rotation** - Issue new token on each refresh
-- [ ] **Fix X-Forwarded-For Handling** - Only trust header from configured proxies
-- [ ] **Remove JWT Default Secret** - Require environment variable, fail startup if missing
-- [ ] **Hide Microchip IDs** - Remove or mask in public API responses
+- [x] **Implement Refresh Token Rotation** - Issue new token on each refresh *(FIXED: 2025-12-20)*
+- [x] **Fix X-Forwarded-For Handling** - Only trust header from configured proxies *(FIXED: 2025-12-20)*
+- [x] **Remove JWT Default Secret** - Require environment variable, fail startup if missing *(FIXED: 2025-12-20)*
+- [x] **Hide Microchip IDs** - Remove or mask in public API responses *(FIXED: 2025-12-20)*
 
 ### Low Priority (Improvements)
 
@@ -247,6 +248,31 @@ Remove `microchipId` from `PetPublicResponse` record or mask it (show last 4 dig
 - [ ] Implement global API rate limiting (beyond auth endpoints)
 - [ ] Add audit logging for admin actions (password resets, user suspension)
 - [ ] Consider email validation for disposable email providers
+
+---
+
+## Remediation Summary
+
+All critical, high, and moderate priority security issues have been fixed as of 2025-12-20.
+
+### AWS Billing Protection
+- Created SNS topic `forever-home-billing-alerts` for cost alerts
+- Created CloudWatch alarm `ForeverHome-BillingAlarm-50USD` to alert when costs exceed $50
+- Email subscription pending confirmation at tezball86@gmail.com
+
+### Files Modified
+- `NotificationController.java` - Added ownership verification to markAsRead
+- `NotificationService.java` - Added user ID parameter for ownership check
+- `NotificationRepository.java` - Added findByIdAndUserId query
+- `PetController.java` - Added ownership verification for rescue org endpoints
+- `RateLimitFilter.java` - Added pet/image creation rate limits, trusted proxy config
+- `S3StorageService.java` - Added magic byte validation for file uploads
+- `AuthService.java` - Implemented refresh token rotation
+- `AuthController.java` - Updated to return rotated refresh token
+- `PublicController.java` - Removed microchipId from public API
+- `SecurityConfigValidator.java` - Created startup validation for production
+- `application.properties` - Added security configuration defaults
+- `application-prod.properties` - Added trusted proxy configuration
 
 ---
 

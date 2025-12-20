@@ -220,9 +220,57 @@ public class S3StorageService {
             throw new StorageException("File size exceeds maximum allowed size of " + (maxFileSize / 1024 / 1024) + "MB");
         }
 
-        String contentType = file.getContentType();
-        if (contentType == null || !allowedContentTypes.contains(contentType)) {
+        // Validate content type using magic bytes (not client-supplied Content-Type header)
+        String detectedContentType = detectContentTypeFromMagicBytes(file);
+        if (detectedContentType == null || !allowedContentTypes.contains(detectedContentType)) {
             throw new StorageException("File type not allowed. Allowed types: " + String.join(", ", allowedContentTypes));
+        }
+    }
+
+    /**
+     * Detects the actual content type of a file by reading its magic bytes (file signature).
+     * This prevents Content-Type spoofing attacks where malicious files are disguised as images.
+     *
+     * @param file the file to analyze
+     * @return the detected content type, or null if unrecognized
+     */
+    private String detectContentTypeFromMagicBytes(MultipartFile file) {
+        try {
+            byte[] header = new byte[12];
+            int bytesRead = file.getInputStream().read(header);
+            if (bytesRead < 4) {
+                return null;
+            }
+
+            // JPEG: FF D8 FF
+            if (header[0] == (byte) 0xFF && header[1] == (byte) 0xD8 && header[2] == (byte) 0xFF) {
+                return "image/jpeg";
+            }
+
+            // PNG: 89 50 4E 47 0D 0A 1A 0A
+            if (header[0] == (byte) 0x89 && header[1] == 0x50 && header[2] == 0x4E && header[3] == 0x47 &&
+                header[4] == 0x0D && header[5] == 0x0A && header[6] == 0x1A && header[7] == 0x0A) {
+                return "image/png";
+            }
+
+            // GIF: 47 49 46 38 (GIF87a or GIF89a)
+            if (header[0] == 0x47 && header[1] == 0x49 && header[2] == 0x46 && header[3] == 0x38) {
+                return "image/gif";
+            }
+
+            // WebP: 52 49 46 46 ... 57 45 42 50 (RIFF....WEBP)
+            if (header[0] == 0x52 && header[1] == 0x49 && header[2] == 0x46 && header[3] == 0x46 &&
+                bytesRead >= 12 && header[8] == 0x57 && header[9] == 0x45 && header[10] == 0x42 && header[11] == 0x50) {
+                return "image/webp";
+            }
+
+            logger.warn("Unrecognized file format with magic bytes: [{}, {}, {}, {}]",
+                    String.format("%02X", header[0]), String.format("%02X", header[1]),
+                    String.format("%02X", header[2]), String.format("%02X", header[3]));
+            return null;
+        } catch (IOException e) {
+            logger.error("Error reading file magic bytes", e);
+            return null;
         }
     }
 

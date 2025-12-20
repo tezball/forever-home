@@ -205,8 +205,15 @@ public class AuthService {
         );
     }
 
-    @Transactional(readOnly = true)
-    public String refreshAccessToken(String refreshTokenValue) {
+    /**
+     * Refreshes both access and refresh tokens (token rotation for security).
+     * The old refresh token is revoked and a new one is issued.
+     *
+     * @param refreshTokenValue the current refresh token
+     * @return a record containing the new access token and new refresh token
+     */
+    @Transactional
+    public TokenRefreshResult refreshAccessToken(String refreshTokenValue) {
         // Find refresh token
         RefreshToken refreshToken = refreshTokenRepository.findByToken(refreshTokenValue)
                 .orElseThrow(() -> new InvalidTokenException("Invalid refresh token"));
@@ -225,9 +232,30 @@ public class AuthService {
         User user = userRepository.findById(refreshToken.getUserId())
                 .orElseThrow(() -> new InvalidTokenException("User not found"));
 
+        // Revoke the old refresh token (token rotation)
+        refreshToken.revoke();
+        refreshTokenRepository.save(refreshToken);
+
         // Generate new access token
-        return jwtTokenProvider.generateAccessToken(user);
+        String newAccessToken = jwtTokenProvider.generateAccessToken(user);
+
+        // Generate new refresh token (rotation)
+        String newRefreshTokenValue = UUID.randomUUID().toString();
+        RefreshToken newRefreshToken = RefreshToken.create(
+                user.getId(),
+                newRefreshTokenValue,
+                Instant.now().plus(7, ChronoUnit.DAYS)
+        );
+        refreshTokenRepository.save(newRefreshToken);
+
+        logger.debug("Token rotation completed for user {}", user.getId());
+        return new TokenRefreshResult(newAccessToken, newRefreshTokenValue);
     }
+
+    /**
+     * Result of a token refresh operation containing both new tokens.
+     */
+    public record TokenRefreshResult(String accessToken, String refreshToken) {}
 
     public void verifyEmail(String token) {
         User user = userRepository.findByEmailVerificationToken(token)

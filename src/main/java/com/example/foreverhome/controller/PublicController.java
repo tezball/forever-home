@@ -80,15 +80,20 @@ public class PublicController {
     }
 
     /**
-     * Get available pets for a rescue organization (public).
+     * Get pets for a rescue organization (public).
+     * Supports filtering by status: AVAILABLE, IN_PROGRESS, ON_HOLD, ADOPTED.
+     * Defaults to AVAILABLE if no status is specified.
      */
     @GetMapping("/rescues/{id}/pets")
-    public ResponseEntity<List<PetPublicResponse>> getRescuePets(@PathVariable UUID id) {
+    public ResponseEntity<List<PetPublicResponse>> getRescuePets(
+            @PathVariable UUID id,
+            @RequestParam(required = false) PetStatus status) {
         // Verify the rescue org exists and is verified
         return rescueOrganizationRepository.findById(id)
                 .filter(RescueOrganization::isVerified)
                 .map(org -> {
-                    List<Pet> pets = petRepository.findByRescueOrgIdAndStatus(org.getId(), PetStatus.AVAILABLE);
+                    PetStatus effectiveStatus = status != null ? status : PetStatus.AVAILABLE;
+                    List<Pet> pets = petRepository.findByRescueOrgIdAndStatus(org.getId(), effectiveStatus);
                     List<PetPublicResponse> response = pets.stream()
                             .map(pet -> {
                                 List<String> imageUrls = petImageRepository.findByPetIdOrderByDisplayOrder(pet.getId())
@@ -191,6 +196,7 @@ public class PublicController {
             String name,
             String description,
             String location,
+            String fullAddress,
             String website,
             String email,
             String phone,
@@ -199,6 +205,7 @@ public class PublicController {
     ) {
         static RescueOrgPublicResponse from(RescueOrganization org, long petCount) {
             String location = null;
+            String fullAddress = null;
             if (org.getAddress() != null) {
                 String city = org.getAddress().city();
                 String state = org.getAddress().state();
@@ -209,12 +216,14 @@ public class PublicController {
                 } else if (state != null) {
                     location = state;
                 }
+                fullAddress = org.getAddress().toSingleLine();
             }
             return new RescueOrgPublicResponse(
                     org.getId(),
                     org.getName(),
                     org.getDescription(),
                     location,
+                    fullAddress,
                     org.getWebsite(),
                     org.getContactEmail(),
                     org.getPhone(),
@@ -233,7 +242,7 @@ public class PublicController {
             String ageUnit,
             String sex,
             String size,
-            String microchipId,
+            // microchipId removed from public API for security (prevents fraudulent vet lookups)
             String description,
             String healthNotes,
             String status,
@@ -250,7 +259,6 @@ public class PublicController {
                     pet.getAgeUnit().name(),
                     pet.getSex().name(),
                     pet.getSize().name(),
-                    pet.getMicrochipId(),
                     pet.getDescription(),
                     pet.getHealthNotes(),
                     pet.getStatus().name(),

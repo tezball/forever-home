@@ -50,11 +50,24 @@ public class NotificationService {
         return notificationRepository.countUnreadByUserId(userId);
     }
 
-    public void markAsRead(UUID notificationId) {
-        notificationRepository.findById(notificationId).ifPresent(notification -> {
-            notification.markAsRead();
-            notificationRepository.save(notification);
-        });
+    /**
+     * Marks a notification as read, verifying that it belongs to the specified user.
+     * @param notificationId the notification ID
+     * @param userId the user ID (for ownership verification)
+     * @throws IllegalArgumentException if the notification doesn't exist or doesn't belong to the user
+     */
+    public void markAsRead(UUID notificationId, UUID userId) {
+        notificationRepository.findByIdAndUserId(notificationId, userId).ifPresentOrElse(
+            notification -> {
+                notification.markAsRead();
+                notificationRepository.save(notification);
+            },
+            () -> {
+                logger.warn("Attempted to mark notification {} as read by user {} - not found or unauthorized",
+                    notificationId, userId);
+                throw new IllegalArgumentException("Notification not found");
+            }
+        );
     }
 
     public void markAllAsRead(UUID userId) {
