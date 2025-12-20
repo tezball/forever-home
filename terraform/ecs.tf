@@ -253,7 +253,7 @@ resource "aws_ecs_task_definition" "app" {
         },
         {
           name  = "TEST_MODE_ENABLED"
-          value = var.environment == "prod" ? "false" : "true"
+          value = "true"
         },
         {
           name  = "EMAIL_FROM"
