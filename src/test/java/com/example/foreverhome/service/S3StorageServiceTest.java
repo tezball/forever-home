@@ -49,6 +49,12 @@ class S3StorageServiceTest {
     private static final long MAX_FILE_SIZE = 5242880L; // 5MB
     private static final String ALLOWED_CONTENT_TYPES = "image/jpeg,image/png,image/gif,image/webp";
 
+    // Magic bytes for different image formats (used for content-type detection)
+    private static final byte[] JPEG_MAGIC_BYTES = new byte[] { (byte) 0xFF, (byte) 0xD8, (byte) 0xFF, (byte) 0xE0, 0, 0, 0, 0, 0, 0, 0, 0 };
+    private static final byte[] PNG_MAGIC_BYTES = new byte[] { (byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0, 0, 0, 0 };
+    private static final byte[] GIF_MAGIC_BYTES = new byte[] { 0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 0, 0, 0, 0, 0, 0 }; // GIF89a
+    private static final byte[] WEBP_MAGIC_BYTES = new byte[] { 0x52, 0x49, 0x46, 0x46, 0, 0, 0, 0, 0x57, 0x45, 0x42, 0x50 }; // RIFF....WEBP
+
     private S3StorageService s3StorageService;
 
     @BeforeEach
@@ -77,7 +83,8 @@ class S3StorageServiceTest {
             when(mockFile.getSize()).thenReturn(1024L);
             when(mockFile.getContentType()).thenReturn("image/jpeg");
             when(mockFile.getOriginalFilename()).thenReturn("photo.jpg");
-            when(mockFile.getInputStream()).thenReturn(new ByteArrayInputStream(new byte[1024]));
+            // Return fresh stream each time (magic byte detection consumes first call)
+            when(mockFile.getInputStream()).thenAnswer(inv -> new ByteArrayInputStream(JPEG_MAGIC_BYTES));
             when(s3Client.putObject(any(PutObjectRequest.class), any(RequestBody.class)))
                     .thenReturn(PutObjectResponse.builder().build());
 
@@ -103,7 +110,7 @@ class S3StorageServiceTest {
             when(mockFile.getSize()).thenReturn(1024L);
             when(mockFile.getContentType()).thenReturn("image/png");
             when(mockFile.getOriginalFilename()).thenReturn("image.png");
-            when(mockFile.getInputStream()).thenReturn(new ByteArrayInputStream(new byte[1024]));
+            when(mockFile.getInputStream()).thenAnswer(inv -> new ByteArrayInputStream(PNG_MAGIC_BYTES));
             when(s3Client.putObject(any(PutObjectRequest.class), any(RequestBody.class)))
                     .thenReturn(PutObjectResponse.builder().build());
 
@@ -128,12 +135,13 @@ class S3StorageServiceTest {
         }
 
         @Test
-        @DisplayName("given disallowed content type, when upload, then throws StorageException")
-        void givenDisallowedContentType_whenUpload_thenThrowsStorageException() {
-            // Given
+        @DisplayName("given file with unrecognized magic bytes, when upload, then throws StorageException")
+        void givenDisallowedContentType_whenUpload_thenThrowsStorageException() throws IOException {
+            // Given - file has PDF magic bytes (%PDF) which aren't allowed
+            byte[] pdfMagicBytes = new byte[] { 0x25, 0x50, 0x44, 0x46, 0, 0, 0, 0, 0, 0, 0, 0 };
             when(mockFile.isEmpty()).thenReturn(false);
             when(mockFile.getSize()).thenReturn(1024L);
-            when(mockFile.getContentType()).thenReturn("application/pdf");
+            when(mockFile.getInputStream()).thenAnswer(inv -> new ByteArrayInputStream(pdfMagicBytes));
 
             // When/Then
             assertThatThrownBy(() -> s3StorageService.uploadFile(mockFile, "folder"))
@@ -142,12 +150,13 @@ class S3StorageServiceTest {
         }
 
         @Test
-        @DisplayName("given null content type, when upload, then throws StorageException")
-        void givenNullContentType_whenUpload_thenThrowsStorageException() {
-            // Given
+        @DisplayName("given file with random bytes, when upload, then throws StorageException")
+        void givenNullContentType_whenUpload_thenThrowsStorageException() throws IOException {
+            // Given - file has random unrecognized bytes
+            byte[] randomBytes = new byte[] { 0x12, 0x34, 0x56, 0x78, 0, 0, 0, 0, 0, 0, 0, 0 };
             when(mockFile.isEmpty()).thenReturn(false);
             when(mockFile.getSize()).thenReturn(1024L);
-            when(mockFile.getContentType()).thenReturn(null);
+            when(mockFile.getInputStream()).thenAnswer(inv -> new ByteArrayInputStream(randomBytes));
 
             // When/Then
             assertThatThrownBy(() -> s3StorageService.uploadFile(mockFile, "folder"))
@@ -184,7 +193,7 @@ class S3StorageServiceTest {
             when(mockFile.getSize()).thenReturn(1024L);
             when(mockFile.getContentType()).thenReturn("image/jpeg");
             when(mockFile.getOriginalFilename()).thenReturn("photo.jpg");
-            when(mockFile.getInputStream()).thenReturn(new ByteArrayInputStream(new byte[1024]));
+            when(mockFile.getInputStream()).thenAnswer(inv -> new ByteArrayInputStream(JPEG_MAGIC_BYTES));
 
             AwsErrorDetails errorDetails = AwsErrorDetails.builder()
                     .errorCode("AccessDenied")
@@ -210,8 +219,6 @@ class S3StorageServiceTest {
             // Given
             when(mockFile.isEmpty()).thenReturn(false);
             when(mockFile.getSize()).thenReturn(1024L);
-            when(mockFile.getContentType()).thenReturn("image/jpeg");
-            when(mockFile.getOriginalFilename()).thenReturn("photo.jpg");
             when(mockFile.getInputStream()).thenThrow(new IOException("Disk error"));
 
             // When/Then
@@ -228,7 +235,7 @@ class S3StorageServiceTest {
             when(mockFile.getSize()).thenReturn(1024L);
             when(mockFile.getContentType()).thenReturn("image/jpeg");
             when(mockFile.getOriginalFilename()).thenReturn("photo"); // No extension
-            when(mockFile.getInputStream()).thenReturn(new ByteArrayInputStream(new byte[1024]));
+            when(mockFile.getInputStream()).thenAnswer(inv -> new ByteArrayInputStream(JPEG_MAGIC_BYTES));
             when(s3Client.putObject(any(PutObjectRequest.class), any(RequestBody.class)))
                     .thenReturn(PutObjectResponse.builder().build());
 
@@ -253,7 +260,7 @@ class S3StorageServiceTest {
             when(mockFile.isEmpty()).thenReturn(false);
             when(mockFile.getSize()).thenReturn(1024L);
             when(mockFile.getContentType()).thenReturn("image/jpeg");
-            when(mockFile.getInputStream()).thenReturn(new ByteArrayInputStream(new byte[1024]));
+            when(mockFile.getInputStream()).thenAnswer(inv -> new ByteArrayInputStream(JPEG_MAGIC_BYTES));
             when(s3Client.putObject(any(PutObjectRequest.class), any(RequestBody.class)))
                     .thenReturn(PutObjectResponse.builder().build());
 
@@ -544,7 +551,7 @@ class S3StorageServiceTest {
             when(mockFile.getSize()).thenReturn(1024L);
             when(mockFile.getContentType()).thenReturn("image/gif");
             when(mockFile.getOriginalFilename()).thenReturn("animation.gif");
-            when(mockFile.getInputStream()).thenReturn(new ByteArrayInputStream(new byte[1024]));
+            when(mockFile.getInputStream()).thenAnswer(inv -> new ByteArrayInputStream(GIF_MAGIC_BYTES));
             when(s3Client.putObject(any(PutObjectRequest.class), any(RequestBody.class)))
                     .thenReturn(PutObjectResponse.builder().build());
 
@@ -563,7 +570,7 @@ class S3StorageServiceTest {
             when(mockFile.getSize()).thenReturn(1024L);
             when(mockFile.getContentType()).thenReturn("image/webp");
             when(mockFile.getOriginalFilename()).thenReturn("image.webp");
-            when(mockFile.getInputStream()).thenReturn(new ByteArrayInputStream(new byte[1024]));
+            when(mockFile.getInputStream()).thenAnswer(inv -> new ByteArrayInputStream(WEBP_MAGIC_BYTES));
             when(s3Client.putObject(any(PutObjectRequest.class), any(RequestBody.class)))
                     .thenReturn(PutObjectResponse.builder().build());
 
@@ -576,11 +583,12 @@ class S3StorageServiceTest {
 
         @Test
         @DisplayName("given text file, when upload, then rejects it")
-        void givenTextFile_whenUpload_thenRejectsIt() {
+        void givenTextFile_whenUpload_thenRejectsIt() throws IOException {
             // Given
             when(mockFile.isEmpty()).thenReturn(false);
             when(mockFile.getSize()).thenReturn(1024L);
-            when(mockFile.getContentType()).thenReturn("text/plain");
+            // Text file has no valid image magic bytes
+            when(mockFile.getInputStream()).thenAnswer(inv -> new ByteArrayInputStream("Hello World".getBytes()));
 
             // When/Then
             assertThatThrownBy(() -> s3StorageService.uploadFile(mockFile, "folder"))
@@ -596,7 +604,7 @@ class S3StorageServiceTest {
             when(mockFile.getSize()).thenReturn(MAX_FILE_SIZE); // Exactly 5MB
             when(mockFile.getContentType()).thenReturn("image/jpeg");
             when(mockFile.getOriginalFilename()).thenReturn("photo.jpg");
-            when(mockFile.getInputStream()).thenReturn(new ByteArrayInputStream(new byte[1024]));
+            when(mockFile.getInputStream()).thenAnswer(inv -> new ByteArrayInputStream(JPEG_MAGIC_BYTES));
             when(s3Client.putObject(any(PutObjectRequest.class), any(RequestBody.class)))
                     .thenReturn(PutObjectResponse.builder().build());
 

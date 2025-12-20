@@ -188,7 +188,7 @@ class PublicControllerTest {
 
             // When
             ResponseEntity<List<PublicController.PetPublicResponse>> response =
-                    publicController.getRescuePets(orgId);
+                    publicController.getRescuePets(orgId, null);
 
             // Then
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -205,7 +205,7 @@ class PublicControllerTest {
 
             // When
             ResponseEntity<List<PublicController.PetPublicResponse>> response =
-                    publicController.getRescuePets(orgId);
+                    publicController.getRescuePets(orgId, null);
 
             // Then
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);

@@ -233,6 +233,7 @@ public class S3StorageService {
      *
      * @param file the file to analyze
      * @return the detected content type, or null if unrecognized
+     * @throws StorageException if the file cannot be read
      */
     private String detectContentTypeFromMagicBytes(MultipartFile file) {
         try {
@@ -270,7 +271,7 @@ public class S3StorageService {
             return null;
         } catch (IOException e) {
             logger.error("Error reading file magic bytes", e);
-            return null;
+            throw new StorageException("Failed to read file for content type detection", e);
         }
     }
 

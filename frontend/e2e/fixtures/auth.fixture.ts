@@ -14,7 +14,7 @@ async function login(page: Page, email: string, password: string, retries = 3): 
     await page.goto('/login');
 
     await page.getByLabel(/email/i).fill(email);
-    await page.getByLabel(/password/i).fill(password);
+    await page.getByPlaceholder(/enter your password/i).fill(password);
     await page.getByRole('button', { name: /sign in/i }).click();
 
     try {

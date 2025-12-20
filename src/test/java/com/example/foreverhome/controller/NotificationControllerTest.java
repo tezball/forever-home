@@ -156,14 +156,14 @@ class NotificationControllerTest {
         void givenValidNotificationId_whenMarkAsRead_thenReturnsNoContent() {
             // Given
             UUID notificationId = UUID.randomUUID();
-            doNothing().when(notificationService).markAsRead(notificationId);
+            doNothing().when(notificationService).markAsRead(notificationId, userId);
 
             // When
-            ResponseEntity<Void> response = notificationController.markAsRead(notificationId);
+            ResponseEntity<Void> response = notificationController.markAsRead(notificationId, userPrincipal);
 
             // Then
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
-            verify(notificationService).markAsRead(notificationId);
+            verify(notificationService).markAsRead(notificationId, userId);
         }
     }
 

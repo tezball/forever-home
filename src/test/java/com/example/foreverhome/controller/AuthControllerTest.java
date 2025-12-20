@@ -122,11 +122,12 @@ class AuthControllerTest {
     class Refresh {
 
         @Test
-        @DisplayName("given valid refresh token, when refresh, then returns new access token")
+        @DisplayName("given valid refresh token, when refresh, then returns new access and refresh tokens")
         void givenValidRefreshToken_whenRefresh_thenReturnsNewAccessToken() {
             // Given
             RefreshTokenRequest request = new RefreshTokenRequest("valid-refresh-token");
-            when(authService.refreshAccessToken("valid-refresh-token")).thenReturn("new-access-token");
+            var tokenResult = new AuthService.TokenRefreshResult("new-access-token", "new-refresh-token");
+            when(authService.refreshAccessToken("valid-refresh-token")).thenReturn(tokenResult);
 
             // When
             ResponseEntity<Map<String, String>> response = authController.refresh(request);
@@ -134,6 +135,7 @@ class AuthControllerTest {
             // Then
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
             assertThat(response.getBody()).containsEntry("accessToken", "new-access-token");
+            assertThat(response.getBody()).containsEntry("refreshToken", "new-refresh-token");
             verify(authService).refreshAccessToken("valid-refresh-token");
         }
     }

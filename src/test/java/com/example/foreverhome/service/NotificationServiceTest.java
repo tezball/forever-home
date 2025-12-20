@@ -126,25 +126,27 @@ class NotificationServiceTest {
     class MarkAsRead {
 
         @Test
-        @DisplayName("should mark notification as read")
+        @DisplayName("should mark notification as read when owned by user")
         void shouldMarkNotificationAsRead() {
             UUID notificationId = UUID.randomUUID();
             Notification notification = mock(Notification.class);
-            when(notificationRepository.findById(notificationId)).thenReturn(Optional.of(notification));
+            when(notificationRepository.findByIdAndUserId(notificationId, userId)).thenReturn(Optional.of(notification));
 
-            notificationService.markAsRead(notificationId);
+            notificationService.markAsRead(notificationId, userId);
 
             verify(notification).markAsRead();
             verify(notificationRepository).save(notification);
         }
 
         @Test
-        @DisplayName("should do nothing when notification not found")
-        void shouldDoNothingWhenNotificationNotFound() {
+        @DisplayName("should throw when notification not found or not owned by user")
+        void shouldThrowWhenNotificationNotFoundOrNotOwned() {
             UUID notificationId = UUID.randomUUID();
-            when(notificationRepository.findById(notificationId)).thenReturn(Optional.empty());
+            when(notificationRepository.findByIdAndUserId(notificationId, userId)).thenReturn(Optional.empty());
 
-            notificationService.markAsRead(notificationId);
+            org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> {
+                notificationService.markAsRead(notificationId, userId);
+            });
 
             verify(notificationRepository, never()).save(any());
         }

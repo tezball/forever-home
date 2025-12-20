@@ -338,7 +338,7 @@ class AuthServiceTest {
     class RefreshTokenTests {
 
         @Test
-        @DisplayName("given valid refresh token, when refresh, then returns new access token")
+        @DisplayName("given valid refresh token, when refresh, then returns new access and refresh tokens (rotation)")
         void givenValidRefreshToken_whenRefresh_thenReturnsNewAccessToken() {
             // Given
             String tokenValue = UUID.randomUUID().toString();
@@ -354,10 +354,13 @@ class AuthServiceTest {
             when(jwtTokenProvider.generateAccessToken(user)).thenReturn("new-access-token");
 
             // When
-            String newAccessToken = authService.refreshAccessToken(tokenValue);
+            AuthService.TokenRefreshResult result = authService.refreshAccessToken(tokenValue);
 
             // Then
-            assertThat(newAccessToken).isEqualTo("new-access-token");
+            assertThat(result.accessToken()).isEqualTo("new-access-token");
+            assertThat(result.refreshToken()).isNotNull();
+            // Verify old token was revoked and new one saved (token rotation)
+            verify(refreshTokenRepository, times(2)).save(any());
         }
 
         @Test

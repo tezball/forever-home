@@ -36,7 +36,8 @@ class RateLimitFilterTest {
 
     @BeforeEach
     void setUp() {
-        rateLimitFilter = new RateLimitFilter(metricsService);
+        // trustProxy=false means X-Forwarded-For is ignored (secure default)
+        rateLimitFilter = new RateLimitFilter(metricsService, "", false);
         request = new MockHttpServletRequest();
         response = new MockHttpServletResponse();
     }
@@ -57,14 +58,25 @@ class RateLimitFilterTest {
         }
 
         @Test
-        @DisplayName("should not filter non-auth endpoints")
+        @DisplayName("should not filter non-rate-limited endpoints")
         void shouldNotFilterNonAuthEndpoints() {
+            request.setMethod("POST");
+            request.setRequestURI("/api/applications"); // Not rate limited
+
+            boolean result = rateLimitFilter.shouldNotFilter(request);
+
+            assertThat(result).isTrue();
+        }
+
+        @Test
+        @DisplayName("should filter pet creation endpoint")
+        void shouldFilterPetCreationEndpoint() {
             request.setMethod("POST");
             request.setRequestURI("/api/pets");
 
             boolean result = rateLimitFilter.shouldNotFilter(request);
 
-            assertThat(result).isTrue();
+            assertThat(result).isFalse(); // Pet creation is now rate limited
         }
 
         @Test
@@ -281,10 +293,10 @@ class RateLimitFilterTest {
         @DisplayName("should pass through non-auth POST requests without rate limiting")
         void shouldPassThroughNonAuthPostRequests() throws ServletException, IOException {
             request.setMethod("POST");
-            request.setRequestURI("/api/pets");
+            request.setRequestURI("/api/applications"); // Not rate limited
             request.setRemoteAddr("192.168.1.8");
 
-            // Make many requests - should all pass through
+            // Make many requests - should all pass through (not rate limited)
             for (int i = 0; i < 100; i++) {
                 MockHttpServletResponse freshResponse = new MockHttpServletResponse();
                 rateLimitFilter.doFilterInternal(request, freshResponse, filterChain);
