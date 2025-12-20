@@ -1,0 +1,32 @@
+spring:
+  main:
+    banner-mode: off
+  shell:
+    interactive:
+      enabled: true
+    noninteractive:
+      enabled: true
+    script:
+      enabled: true
+    command:
+      help:
+        enabled: true
+      version:
+        enabled: false
+
+# Custom CLI properties
+fh:
+  version: 0.0.1-SNAPSHOT
+  name: Forever Home CLI
+  app-port: 8080
+  postgres-port: 5432
+  localstack-port: 4566
+  grafana-port: 3000
+  loki-port: 3100
+  mailpit-ui-port: 8025
+  mailpit-smtp-port: 1025
+
+logging:
+  level:
+    root: WARN
+    com.example.foreverhome.cli: INFO
