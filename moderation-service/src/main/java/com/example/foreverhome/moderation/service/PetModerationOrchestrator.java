@@ -158,6 +158,7 @@ public class PetModerationOrchestrator {
         // Create job
         ModerationJob job = ModerationJob.create(pets.size(), textOnly, imagesOnly);
         job = jobRepository.save(job);
+        job.setIsNew(false);  // Mark as existing for subsequent saves
         job.start();
         job = jobRepository.save(job);
         log.info("[BATCH] Created job: {}", job.getId());

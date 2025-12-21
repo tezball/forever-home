@@ -73,7 +73,7 @@ public class ForeverHomeApiClient {
                     .body(new ParameterizedTypeReference<>() {});
         } catch (RestClientException e) {
             log.error("Failed to fetch available pets: {}", e.getMessage());
-            return new PagedResponse<>(List.of(), page, pageSize, 0, 0);
+            return new PagedResponse<>(List.of(), page, pageSize, 0, 0, true, true);
         }
     }
 

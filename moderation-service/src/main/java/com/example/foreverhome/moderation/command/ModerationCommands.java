@@ -16,7 +16,7 @@ import java.util.UUID;
  * Spring Shell commands for content moderation.
  */
 @Component
-@Command(group = "Moderation Commands")
+@Command(command = "moderate", group = "Moderation Commands")
 public class ModerationCommands {
 
     private final PetModerationOrchestrator orchestrator;
@@ -30,7 +30,7 @@ public class ModerationCommands {
         this.resultService = resultService;
     }
 
-    @Command(command = "moderate pet", description = "Moderate a single pet profile")
+    @Command(command = "pet", description = "Moderate a single pet profile")
     public String moderatePet(
             @Option(longNames = "pet-id", required = true, description = "Pet UUID") String petIdStr,
             @Option(longNames = "text-only", defaultValue = "false", description = "Only moderate text content") boolean textOnly,
@@ -56,7 +56,7 @@ public class ModerationCommands {
         return formatResults(results);
     }
 
-    @Command(command = "moderate batch", description = "Run batch moderation on available pets")
+    @Command(command = "batch", description = "Run batch moderation on available pets")
     public String moderateBatch(
             @Option(longNames = "limit", defaultValue = "100", description = "Maximum pets to process") int limit,
             @Option(longNames = "text-only", defaultValue = "false", description = "Only moderate text content") boolean textOnly,
@@ -71,6 +71,12 @@ public class ModerationCommands {
 
         ModerationJob job = orchestrator.runBatch(limit, textOnly, imagesOnly,
                 progress -> System.out.println(progress));
+
+        if (job == null) {
+            output.append("No pets found to moderate.\n");
+            output.append("Make sure there are pets with 'AVAILABLE' status in the Forever Home database.\n");
+            return output.toString();
+        }
 
         output.append(String.format("Job ID: %s\n", job.getId()));
         output.append(String.format("Status: %s\n", job.getStatus()));
@@ -88,7 +94,7 @@ public class ModerationCommands {
         return output.toString();
     }
 
-    @Command(command = "moderate status", description = "Check moderation status for a pet")
+    @Command(command = "status", description = "Check moderation status for a pet")
     public String checkStatus(
             @Option(longNames = "pet-id", required = true, description = "Pet UUID") String petIdStr) {
 
@@ -108,7 +114,7 @@ public class ModerationCommands {
         return formatResults(results);
     }
 
-    @Command(command = "moderate flagged", description = "List flagged content awaiting review")
+    @Command(command = "flagged", description = "List flagged content awaiting review")
     public String listFlagged(
             @Option(longNames = "limit", defaultValue = "50", description = "Maximum results to show") int limit,
             @Option(longNames = "category", description = "Filter by category (e.g., INAPPROPRIATE, NOT_PET)") String category) {
@@ -127,7 +133,7 @@ public class ModerationCommands {
         return formatFlaggedResults(results);
     }
 
-    @Command(command = "moderate review", description = "Mark a moderation result as reviewed")
+    @Command(command = "review", description = "Mark a moderation result as reviewed")
     public String reviewResult(
             @Option(longNames = "result-id", required = true, description = "Result UUID") String resultIdStr,
             @Option(longNames = "action", required = true, description = "Action: approve or reject") String action,
@@ -154,7 +160,7 @@ public class ModerationCommands {
         }
     }
 
-    @Command(command = "moderate stats", description = "Show moderation statistics")
+    @Command(command = "stats", description = "Show moderation statistics")
     public String showStats() {
         ModerationStats stats = resultService.getStatistics();
 
@@ -184,7 +190,7 @@ public class ModerationCommands {
         return sb.toString();
     }
 
-    @Command(command = "moderate jobs", description = "Show recent moderation jobs")
+    @Command(command = "jobs", description = "Show recent moderation jobs")
     public String showJobs(
             @Option(longNames = "limit", defaultValue = "10", description = "Maximum jobs to show") int limit) {
 
@@ -220,7 +226,7 @@ public class ModerationCommands {
         return sb.toString();
     }
 
-    @Command(command = "moderate check-api", description = "Check if Forever Home API is available")
+    @Command(command = "check-api", description = "Check if Forever Home API is available")
     public String checkApi() {
         boolean available = orchestrator.isApiAvailable();
         return available ?
@@ -228,7 +234,7 @@ public class ModerationCommands {
                 "Forever Home API is not available. Make sure the server is running.";
     }
 
-    @Command(command = "moderate config", description = "Show current moderation configuration")
+    @Command(command = "config", description = "Show current moderation configuration")
     public String showConfig() {
         StringBuilder sb = new StringBuilder();
         sb.append("\n=== Moderation Configuration ===\n\n");

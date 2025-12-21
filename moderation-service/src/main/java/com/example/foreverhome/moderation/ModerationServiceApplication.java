@@ -3,6 +3,7 @@ package com.example.foreverhome.moderation;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
+import org.springframework.shell.command.annotation.CommandScan;
 
 /**
  * Moderation Service - AI-powered content moderation for Forever Home pet profiles.
@@ -17,6 +18,7 @@ import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
  */
 @SpringBootApplication
 @ConfigurationPropertiesScan
+@CommandScan
 public class ModerationServiceApplication {
 
     public static void main(String[] args) {

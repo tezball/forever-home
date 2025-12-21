@@ -4,15 +4,22 @@ import java.util.List;
 
 /**
  * Paginated response from Forever Home API.
+ * Must match the main app's PagedResponse format.
  */
 public record PagedResponse<T>(
         List<T> content,
         int page,
-        int pageSize,
+        int size,
         long totalElements,
-        int totalPages
+        int totalPages,
+        boolean first,
+        boolean last
 ) {
     public boolean hasMore() {
-        return page < totalPages - 1;
+        return !last;
+    }
+
+    public int pageSize() {
+        return size;
     }
 }
