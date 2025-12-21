@@ -10,6 +10,13 @@ import org.springframework.shell.standard.ShellComponent;
 import org.springframework.shell.standard.ShellMethod;
 import org.springframework.shell.standard.ShellOption;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 /**
  * Development environment commands.
  * Ports functionality from dev.sh for managing local development services.
@@ -222,6 +229,70 @@ public class DevCommands {
         output.info("Connecting to PostgreSQL...");
         executor.run("docker", "compose", "exec", "postgres",
             "psql", "-U", "postgres", "-d", "foreverhome");
+    }
+
+    @ShellMethod(key = "dev moderation-reset", value = "Reset all pet moderation statuses to PENDING for AI re-check")
+    public void moderationReset(
+            @ShellOption(value = {"-u", "--url"}, defaultValue = "http://localhost:8080",
+                    help = "Base URL of the Forever Home API")
+            String baseUrl) {
+
+        if (!portChecker.isPortOpen(properties.appPort()) && baseUrl.contains("localhost:8080")) {
+            output.error("Application is not running. Start services first: fh dev start");
+            return;
+        }
+
+        output.header("Resetting Pet Moderation Statuses");
+        output.println();
+
+        progress.start("Calling moderation reset API");
+
+        try {
+            HttpClient client = HttpClient.newHttpClient();
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(baseUrl + "/api/dev/moderation/reset"))
+                    .POST(HttpRequest.BodyPublishers.noBody())
+                    .header("Content-Type", "application/json")
+                    .build();
+
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() == 200) {
+                progress.complete();
+
+                // Parse simple JSON response: {"petsAffected":N,"message":"..."}
+                String body = response.body();
+                int petsAffected = 0;
+                String message = "Moderation statuses reset";
+
+                Matcher countMatcher = Pattern.compile("\"petsAffected\"\\s*:\\s*(\\d+)").matcher(body);
+                if (countMatcher.find()) {
+                    petsAffected = Integer.parseInt(countMatcher.group(1));
+                }
+
+                Matcher msgMatcher = Pattern.compile("\"message\"\\s*:\\s*\"([^\"]+)\"").matcher(body);
+                if (msgMatcher.find()) {
+                    message = msgMatcher.group(1);
+                }
+
+                output.println();
+                output.success(message);
+                output.info("Pets affected: %d", petsAffected);
+                output.println();
+                output.info("All pets will be re-checked by the AI moderation service.");
+            } else if (response.statusCode() == 404) {
+                progress.fail("Endpoint not found");
+                output.error("The moderation reset endpoint is not available.");
+                output.info("Make sure test mode is enabled (app.test-mode.enabled=true)");
+            } else {
+                progress.fail("HTTP " + response.statusCode());
+                output.error("Failed to reset moderation statuses: %s", response.body());
+            }
+        } catch (Exception e) {
+            progress.fail(e.getMessage());
+            output.error("Failed to connect to the API: %s", e.getMessage());
+            output.info("Make sure the application is running: fh dev start");
+        }
     }
 
     private void checkPrerequisites() {

@@ -447,6 +447,23 @@ public class AdminController {
         return ResponseEntity.ok(responses);
     }
 
+    /**
+     * Reset all pet moderation statuses to PENDING.
+     * Used to re-queue all pets for AI moderation after system changes.
+     */
+    @PostMapping("/moderation/reset")
+    public ResponseEntity<ModerationResetResponse> resetModerationStatuses(
+            @org.springframework.security.core.annotation.AuthenticationPrincipal
+            com.example.foreverhome.security.UserPrincipal principal) {
+
+        int count = petRepository.resetAllModerationStatuses();
+
+        journeyLogger.logAdminAction("MODERATION_RESET", "PET", principal.userId(),
+                "Reset all pet moderation statuses to PENDING. " + count + " pets affected");
+
+        return ResponseEntity.ok(new ModerationResetResponse(count, "All pet moderation statuses reset to PENDING"));
+    }
+
     private FlagResponse toFlagResponse(ContentFlag flag) {
         return new FlagResponse(
                 flag.getId().toString(),
@@ -552,4 +569,6 @@ public class AdminController {
             String details,
             String createdAt
     ) {}
+
+    record ModerationResetResponse(int petsAffected, String message) {}
 }

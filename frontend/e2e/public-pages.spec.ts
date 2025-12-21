@@ -103,14 +103,50 @@ test.describe('Public Pages (Unauthenticated)', () => {
       await expect(page.locator('main')).not.toBeEmpty();
     });
 
-    test('should navigate to rescue profile', async ({ page }) => {
+    test('should navigate to rescue profile via View Profile link', async ({ page }) => {
       await page.goto('/rescues');
       await page.waitForTimeout(2000);
 
-      const rescueLink = page.locator('a[href*="/rescues/"]').first();
-      if (await rescueLink.isVisible()) {
-        await rescueLink.click();
+      // Click the "View Profile" link on a rescue card
+      const viewProfileLink = page.getByRole('link', { name: /view profile/i }).first();
+      if (await viewProfileLink.isVisible()) {
+        await viewProfileLink.click();
         await expect(page).toHaveURL(/.*rescues\/.+/);
+
+        // Verify profile page loaded with organization details
+        await expect(page.locator('.card').first()).toBeVisible();
+
+        // Verify status tabs are present
+        await expect(page.getByRole('button', { name: /available/i })).toBeVisible();
+        await expect(page.getByRole('button', { name: /in progress/i })).toBeVisible();
+        await expect(page.getByRole('button', { name: /on hold/i })).toBeVisible();
+        await expect(page.getByRole('button', { name: /adopted/i })).toBeVisible();
+      }
+    });
+
+    test('should filter rescue pets by status tabs', async ({ page }) => {
+      await page.goto('/rescues');
+      await page.waitForTimeout(2000);
+
+      // Navigate to a rescue profile
+      const viewProfileLink = page.getByRole('link', { name: /view profile/i }).first();
+      if (await viewProfileLink.isVisible()) {
+        await viewProfileLink.click();
+        await expect(page).toHaveURL(/.*rescues\/.+/);
+
+        // Click different status tabs and verify they work
+        const inProgressTab = page.getByRole('button', { name: /in progress/i });
+        if (await inProgressTab.isVisible()) {
+          await inProgressTab.click();
+          // Tab should be active (has primary color styling)
+          await expect(inProgressTab).toHaveClass(/text-primary-500/);
+        }
+
+        const adoptedTab = page.getByRole('button', { name: /adopted/i });
+        if (await adoptedTab.isVisible()) {
+          await adoptedTab.click();
+          await expect(adoptedTab).toHaveClass(/text-primary-500/);
+        }
       }
     });
 
@@ -239,7 +275,7 @@ test.describe('Public Pages (Unauthenticated)', () => {
       const emailInput = page.getByLabel(/email/i);
       await expect(emailInput).toBeVisible();
 
-      const passwordInput = page.getByLabel(/password/i);
+      const passwordInput = page.getByPlaceholder(/enter your password/i);
       await expect(passwordInput).toBeVisible();
     });
   });

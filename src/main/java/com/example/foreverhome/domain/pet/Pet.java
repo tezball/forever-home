@@ -67,6 +67,15 @@ public class Pet implements Persistable<UUID> {
     @Column("health_notes")
     private String healthNotes;
 
+    @Column("moderation_status")
+    private ModerationStatus moderationStatus;
+
+    @Column("moderated_at")
+    private Instant moderatedAt;
+
+    @Column("moderation_notes")
+    private String moderationNotes;
+
     @Transient
     private boolean isNew = false;
 
@@ -75,7 +84,8 @@ public class Pet implements Persistable<UUID> {
 
     private Pet(UUID id, String name, Species species, Breed breed, int age, AgeUnit ageUnit,
                 PetSex sex, PetSize size, String description, String microchipId, PetStatus status,
-                UUID fosterId, UUID rescueOrgId, Instant createdAt, Instant updatedAt, String healthNotes) {
+                UUID fosterId, UUID rescueOrgId, Instant createdAt, Instant updatedAt, String healthNotes,
+                ModerationStatus moderationStatus, Instant moderatedAt, String moderationNotes) {
         this.id = id;
         this.name = name;
         this.species = species;
@@ -92,6 +102,9 @@ public class Pet implements Persistable<UUID> {
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
         this.healthNotes = healthNotes;
+        this.moderationStatus = moderationStatus;
+        this.moderatedAt = moderatedAt;
+        this.moderationNotes = moderationNotes;
     }
 
     public static Pet create(String name, Species species, Breed breed, int age, AgeUnit ageUnit,
@@ -119,7 +132,8 @@ public class Pet implements Persistable<UUID> {
         Instant now = Instant.now();
         Pet pet = new Pet(UUID.randomUUID(), name.trim(), species, breed, age, ageUnit,
                 sex, size, description, microchipId.trim(), PetStatus.DRAFT,
-                fosterId, null, now, now, healthNotes);
+                fosterId, null, now, now, healthNotes,
+                ModerationStatus.PENDING, null, null);
         pet.isNew = true;
         return pet;
     }
@@ -164,7 +178,8 @@ public class Pet implements Persistable<UUID> {
                 sex, size, description, microchipId.trim(), PetStatus.PENDING_VET,
                 null,       // fosterId is null for rescue-created pets
                 rescueOrgId, // rescueOrgId is set at creation
-                now, now, healthNotes);
+                now, now, healthNotes,
+                ModerationStatus.PENDING, null, null);
         pet.isNew = true;
         return pet;
     }
@@ -202,6 +217,9 @@ public class Pet implements Persistable<UUID> {
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
     public String getHealthNotes() { return healthNotes; }
+    public ModerationStatus getModerationStatus() { return moderationStatus; }
+    public Instant getModeratedAt() { return moderatedAt; }
+    public String getModerationNotes() { return moderationNotes; }
 
     public String getFormattedAge() {
         return ageUnit.formatAge(age);
@@ -213,6 +231,28 @@ public class Pet implements Persistable<UUID> {
      */
     public boolean isRescueOwned() {
         return fosterId == null;
+    }
+
+    /**
+     * Returns true if the moderation status is blocking the pet from becoming publicly visible.
+     * Only APPROVED status allows visibility.
+     */
+    public boolean isModerationBlocking() {
+        return moderationStatus == null || moderationStatus.isBlocking();
+    }
+
+    /**
+     * Updates the moderation status of this pet.
+     *
+     * @param status the new moderation status
+     * @param notes optional notes explaining the status (e.g., reason for flagging)
+     */
+    public void markModerated(ModerationStatus status, String notes) {
+        validateRequired(status, "status");
+        this.moderationStatus = status;
+        this.moderatedAt = Instant.now();
+        this.moderationNotes = notes;
+        this.updatedAt = Instant.now();
     }
 
     public boolean isPubliclyVisible() {
@@ -244,6 +284,10 @@ public class Pet implements Persistable<UUID> {
     }
 
     public void signOffByVet() {
+        if (isModerationBlocking()) {
+            throw new IllegalStateException(
+                    "Pet cannot become available: moderation status is " + moderationStatus);
+        }
         transitionTo(PetStatus.AVAILABLE);
     }
 

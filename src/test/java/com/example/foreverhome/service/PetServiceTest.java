@@ -202,6 +202,7 @@ class PetServiceTest {
             Pet pet1 = createTestPet();
             pet1.submitForReview(UUID.randomUUID());
             pet1.acceptByRescue();
+            pet1.markModerated(ModerationStatus.APPROVED, null);
             pet1.signOffByVet();
 
             when(petRepository.findByStatus(PetStatus.AVAILABLE)).thenReturn(List.of(pet1));

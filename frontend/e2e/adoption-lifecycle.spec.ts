@@ -15,7 +15,7 @@ test.describe('Full Adoption Lifecycle', () => {
   async function login(page: any, email: string, password: string) {
     await page.goto('/login');
     await page.getByLabel(/email/i).fill(email);
-    await page.getByLabel(/password/i).fill(password);
+    await page.getByPlaceholder(/enter your password/i).fill(password);
     await page.getByRole('button', { name: /sign in/i }).click();
     await page.waitForURL(/.*dashboard|.*\/$/i, { timeout: 10000 });
   }

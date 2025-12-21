@@ -6,7 +6,7 @@ test.describe('Authentication', () => {
       await page.goto('/login');
 
       await expect(page.getByLabel(/email/i)).toBeVisible();
-      await expect(page.getByLabel(/password/i)).toBeVisible();
+      await expect(page.getByPlaceholder(/enter your password/i)).toBeVisible();
       await expect(page.getByRole('button', { name: /sign in/i })).toBeVisible();
     });
 
@@ -37,7 +37,7 @@ test.describe('Authentication', () => {
       await page.goto('/login');
 
       await page.getByLabel(/email/i).fill('invalid@test.com');
-      await page.getByLabel(/password/i).fill('wrongpassword');
+      await page.getByPlaceholder(/enter your password/i).fill('wrongpassword');
       await page.getByRole('button', { name: /sign in/i }).click();
 
       // Should show an error message
@@ -51,7 +51,7 @@ test.describe('Authentication', () => {
 
       await expect(page.getByLabel(/full name/i)).toBeVisible();
       await expect(page.getByLabel(/email/i)).toBeVisible();
-      await expect(page.getByLabel(/^password$/i)).toBeVisible();
+      await expect(page.getByPlaceholder(/at least 8 characters/i)).toBeVisible();
       await expect(page.getByRole('button', { name: /create account/i })).toBeVisible();
     });
 

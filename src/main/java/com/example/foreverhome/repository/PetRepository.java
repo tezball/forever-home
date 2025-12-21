@@ -1,10 +1,12 @@
 package com.example.foreverhome.repository;
 
+import com.example.foreverhome.domain.pet.ModerationStatus;
 import com.example.foreverhome.domain.pet.Pet;
 import com.example.foreverhome.domain.pet.PetSex;
 import com.example.foreverhome.domain.pet.PetSize;
 import com.example.foreverhome.domain.pet.PetStatus;
 import com.example.foreverhome.domain.pet.Species;
+import org.springframework.data.jdbc.repository.query.Modifying;
 import org.springframework.data.jdbc.repository.query.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
@@ -120,4 +122,38 @@ public interface PetRepository extends CrudRepository<Pet, UUID> {
             @Param("minAge") Integer minAge,
             @Param("maxAge") Integer maxAge
     );
+
+    // Moderation status queries
+
+    /**
+     * Find all pets with the given moderation status.
+     */
+    List<Pet> findByModerationStatus(ModerationStatus moderationStatus);
+
+    /**
+     * Count pets by moderation status.
+     */
+    @Query("SELECT COUNT(*) FROM pets WHERE moderation_status = :status")
+    long countByModerationStatus(@Param("status") String status);
+
+    /**
+     * Find pets that need moderation review (FLAGGED status).
+     */
+    @Query("SELECT * FROM pets WHERE moderation_status = 'FLAGGED' ORDER BY moderated_at DESC")
+    List<Pet> findPetsFlaggedForReview();
+
+    /**
+     * Find pets pending moderation check.
+     */
+    @Query("SELECT * FROM pets WHERE moderation_status = 'PENDING' ORDER BY created_at ASC")
+    List<Pet> findPetsPendingModeration();
+
+    /**
+     * Reset all pet moderation statuses to PENDING.
+     * Used to re-queue all pets for AI moderation after system changes.
+     * Returns the number of pets updated.
+     */
+    @Modifying
+    @Query("UPDATE pets SET moderation_status = 'PENDING', moderated_at = NULL, moderation_notes = NULL")
+    int resetAllModerationStatuses();
 }

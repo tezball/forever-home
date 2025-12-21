@@ -20,78 +20,52 @@ Forever Home is a pet adoption platform that connects pet owners looking to reho
 - GraalVM Native Image support
 - Docker Compose for local development
 
-## Common Commands
+## Development CLI
+
+Use `./dev.sh` for all development tasks. Run `./dev.sh --help` for full options.
+
+### Local Development
 
 ```bash
-# Run application (starts PostgreSQL via Docker Compose automatically)
-./mvnw spring-boot:run
-
-# Run all tests
-./mvnw test
-
-# Run a single test class
-./mvnw test -Dtest=ForeverHomeApplicationTests
-
-# Run a single test method
-./mvnw test -Dtest=ForeverHomeApplicationTests#contextLoads
-
-# Build the project
-./mvnw package
-
-# Build native image
-./mvnw spring-boot:build-image -Pnative
-
-# Compile native executable (requires GraalVM 25+)
-./mvnw native:compile -Pnative
-
-# Run tests in native image
-./mvnw test -PnativeTest
-
-# Run Gatling load tests (default: user registration simulation)
-./mvnw gatling:test
-
-# Run specific Gatling simulation
-./mvnw gatling:test -Dgatling.simulationClass=com.example.foreverhome.simulation.UserRegistrationSimulation
-
-# Run stress test simulation
-./mvnw gatling:test -Dgatling.simulationClass=com.example.foreverhome.simulation.RegistrationStressSimulation
-
-# Gatling with custom parameters
-./mvnw gatling:test -DBASE_URL=http://localhost:8080 -DUSERS=20 -DRAMP_DURATION=30
+./dev.sh start           # Start app + Docker services (LocalStack S3)
+./dev.sh start --s3      # Start with real AWS S3
+./dev.sh stop            # Stop all services
+./dev.sh restart         # Restart with clean data
+./dev.sh clean           # Stop and remove all data
+./dev.sh status          # Show service status
 ```
 
-## Development Script
-
-Use `./dev.sh` to manage local development environment:
+### Testing
 
 ```bash
-# Start all services with LocalStack S3 (default)
-./dev.sh start
-
-# Start all services with real AWS S3
-./dev.sh start --s3
-
-# Stop all services (preserves data)
-./dev.sh stop
-
-# Stop and remove all data (fresh start)
-./dev.sh clean
-
-# Restart with clean data
-./dev.sh restart
-./dev.sh restart --s3    # With AWS S3
-
-# Check service status
-./dev.sh status
-
-# Run Gatling load tests
-./dev.sh gatling
-
-# Run Playwright E2E tests
-./dev.sh e2e
+./dev.sh test                     # Run all unit tests
+./dev.sh test unit PetServiceTest # Run specific test class
+./dev.sh test e2e                 # Run all Playwright E2E tests
+./dev.sh test e2e auth            # Run auth E2E tests only
+./dev.sh test e2e ui              # Interactive Playwright UI
+./dev.sh test gatling             # Run load tests (all user flows)
+./dev.sh test gatling stress      # Run stress test
 ```
 
-## S3 Storage Profiles
+### Building
+
+```bash
+./dev.sh build              # Build JAR
+./dev.sh build docker       # Build Docker image
+./dev.sh build native       # Build GraalVM native image
+```
+
+### Deployment
+
+```bash
+./dev.sh deploy             # Deploy to AWS ECS
+./dev.sh deploy --no-reset  # Deploy without DB reset
+./dev.sh deploy --blank     # Production deploy (no demo data)
+./dev.sh deploy infra       # Provision AWS infrastructure
+./dev.sh deploy destroy     # Tear down all infrastructure
+```
+
+### S3 Storage Modes
 
 ```bash
 # LocalStack S3 (default) - fully local, no AWS required
@@ -100,13 +74,6 @@ Use `./dev.sh` to manage local development environment:
 # AWS S3 mode - uses real AWS S3 (requires .env file)
 cp .env.example .env  # Edit with your AWS credentials
 ./dev.sh start --s3
-
-# Or manually with environment variables
-export AWS_ACCESS_KEY_ID=your-key
-export AWS_SECRET_ACCESS_KEY=your-secret
-export AWS_REGION=eu-west-1
-export AWS_S3_BUCKET=your-bucket
-./mvnw spring-boot:run -Dspring-boot.run.profiles=s3-aws
 ```
 
 ## Architecture

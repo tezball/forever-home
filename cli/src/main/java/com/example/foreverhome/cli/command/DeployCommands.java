@@ -82,8 +82,8 @@ public class DeployCommands {
             output.info("Skipping Docker build");
         }
 
-        // Push to ECR
-        push(ecrUrl, tag);
+        // Push to ECR (skip auto-deploy since we trigger manually below)
+        push(ecrUrl, tag, true);
 
         // Trigger ECS deployment
         triggerDeployment(ecsCluster, ecsService);
@@ -119,7 +119,7 @@ public class DeployCommands {
         output.success("Image built: forever-home:%s", tag);
     }
 
-    @Command(command = "push", description = "Push image to ECR")
+    @Command(command = "push", description = "Push image to ECR and trigger ECS deployment")
     public void push(
             @Option(longNames = "ecr-url",
                     description = "ECR repository URL (auto-detected from Terraform)")
@@ -127,7 +127,10 @@ public class DeployCommands {
             @Option(longNames = "tag", shortNames = 't',
                     defaultValue = "latest",
                     description = "Docker image tag")
-            String tag) {
+            String tag,
+            @Option(longNames = "no-deploy",
+                    description = "Skip triggering ECS deployment after push")
+            boolean noDeploy) {
 
         // Auto-detect ECR URL if not provided
         if (ecrUrl == null || ecrUrl.isBlank()) {
@@ -181,6 +184,18 @@ public class DeployCommands {
         progress.complete();
 
         output.success("Pushed: %s", fullTag);
+
+        // Trigger ECS deployment
+        if (!noDeploy) {
+            String ecsCluster = getTerraformOutput("ecs_cluster_name");
+            String ecsService = getTerraformOutput("ecs_service_name");
+
+            if (!ecsCluster.isBlank() && !ecsService.isBlank()) {
+                triggerDeployment(ecsCluster, ecsService);
+            } else {
+                output.warning("Could not find ECS cluster/service. Skipping deployment trigger.");
+            }
+        }
     }
 
     @Command(command = "status", description = "Check deployment status")
@@ -204,7 +219,7 @@ public class DeployCommands {
         String ecsCluster = getTerraformOutput("ecs_cluster_name");
         String ecsService = getTerraformOutput("ecs_service_name");
         String dbEndpoint = getTerraformOutput("db_endpoint");
-        String region = getTerraformOutput("aws_region");
+        String region = getAwsRegion();
 
         output.println("  Region:      " + region);
         output.println("  ALB DNS:     " + (albDns.isBlank() ? output.dim("N/A") : albDns));
@@ -235,7 +250,7 @@ public class DeployCommands {
             int tail) {
 
         String logGroup = getTerraformOutput("log_group_name");
-        String region = getTerraformOutput("aws_region");
+        String region = getAwsRegion();
 
         if (logGroup.isBlank()) {
             output.error("Log group not found. Is infrastructure deployed?");
@@ -362,7 +377,7 @@ public class DeployCommands {
     }
 
     private void triggerDeployment(String cluster, String service) {
-        String region = getTerraformOutput("aws_region");
+        String region = getAwsRegion();
 
         progress.start("Triggering ECS deployment");
         int result = executor.runQuiet("aws", "ecs", "update-service",
@@ -388,6 +403,18 @@ public class DeployCommands {
         } else {
             progress.skip("Service may still be deploying");
         }
+    }
+
+    private String getAwsRegion() {
+        // Try to extract from ECR URL first
+        String ecrUrl = getTerraformOutput("ecr_repository_url");
+        if (!ecrUrl.isBlank()) {
+            String region = extractRegion(ecrUrl);
+            if (!region.isBlank()) return region;
+        }
+        // Fallback to AWS CLI configured region
+        String region = executor.capture("aws", "configure", "get", "region").trim();
+        return region.isBlank() ? "us-east-1" : region;
     }
 
     private void checkEcsServiceStatus(String cluster, String service, String region) {

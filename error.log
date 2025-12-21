@@ -1,0 +1,92 @@
+r details.
+[INFO] -------------------------------------------------------------
+[ERROR] COMPILATION ERROR :
+[INFO] -------------------------------------------------------------
+[ERROR] /home/tezball/projects/forever-home/cli/src/main/java/com/example/foreverhome/cli/command/DevCommands.java:[70,6] cannot find symbol
+  symbol:   class Command
+  location: class com.example.foreverhome.cli.command.DevCommands
+[ERROR] /home/tezball/projects/forever-home/cli/src/main/java/com/example/foreverhome/cli/command/DevCommands.java:[92,6] cannot find symbol
+  symbol:   class Command
+  location: class com.example.foreverhome.cli.command.DevCommands
+[ERROR] /home/tezball/projects/forever-home/cli/src/main/java/com/example/foreverhome/cli/command/DevCommands.java:[118,14] cannot find symbol
+  symbol:   class Option
+  location: class com.example.foreverhome.cli.command.DevCommands
+[ERROR] /home/tezball/projects/forever-home/cli/src/main/java/com/example/foreverhome/cli/command/DevCommands.java:[116,6] cannot find symbol
+  symbol:   class Command
+  location: class com.example.foreverhome.cli.command.DevCommands
+[ERROR] /home/tezball/projects/forever-home/cli/src/main/java/com/example/foreverhome/cli/command/DevCommands.java:[132,6] cannot find symbol
+  symbol:   class Command
+  location: class com.example.foreverhome.cli.command.DevCommands
+[ERROR] /home/tezball/projects/forever-home/cli/src/main/java/com/example/foreverhome/cli/command/DevCommands.java:[149,14] cannot find symbol
+  symbol:   class Option
+  location: class com.example.foreverhome.cli.command.DevCommands
+[ERROR] /home/tezball/projects/forever-home/cli/src/main/java/com/example/foreverhome/cli/command/DevCommands.java:[153,14] cannot find symbol
+  symbol:   class Option
+  location: class com.example.foreverhome.cli.command.DevCommands
+[ERROR] /home/tezball/projects/forever-home/cli/src/main/java/com/example/foreverhome/cli/command/DevCommands.java:[156,14] cannot find symbol
+  symbol:   class Option
+  location: class com.example.foreverhome.cli.command.DevCommands
+[ERROR] /home/tezball/projects/forever-home/cli/src/main/java/com/example/foreverhome/cli/command/DevCommands.java:[147,6] cannot find symbol
+  symbol:   class Command
+  location: class com.example.foreverhome.cli.command.DevCommands
+[ERROR] /home/tezball/projects/forever-home/cli/src/main/java/com/example/foreverhome/cli/command/DevCommands.java:[172,6] cannot find symbol
+  symbol:   class Command
+  location: class com.example.foreverhome.cli.command.DevCommands
+[ERROR] /home/tezball/projects/forever-home/cli/src/main/java/com/example/foreverhome/cli/command/DevCommands.java:[179,6] cannot find symbol
+  symbol:   class Command
+  location: class com.example.foreverhome.cli.command.DevCommands
+[ERROR] /home/tezball/projects/forever-home/cli/src/main/java/com/example/foreverhome/cli/command/DevCommands.java:[217,6] cannot find symbol
+  symbol:   class Command
+  location: class com.example.foreverhome.cli.command.DevCommands
+[INFO] 12 errors
+[INFO] -------------------------------------------------------------
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  0.844 s
+[INFO] Finished at: 2025-12-20T15:28:45Z
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.14.1:compile (default-compile) on project forever-home-cli: Compilation failure: Compilation failure:
+[ERROR] /home/tezball/projects/forever-home/cli/src/main/java/com/example/foreverhome/cli/command/DevCommands.java:[70,6] cannot find symbol
+[ERROR]   symbol:   class Command
+[ERROR]   location: class com.example.foreverhome.cli.command.DevCommands
+[ERROR] /home/tezball/projects/forever-home/cli/src/main/java/com/example/foreverhome/cli/command/DevCommands.java:[92,6] cannot find symbol
+[ERROR]   symbol:   class Command
+[ERROR]   location: class com.example.foreverhome.cli.command.DevCommands
+[ERROR] /home/tezball/projects/forever-home/cli/src/main/java/com/example/foreverhome/cli/command/DevCommands.java:[118,14] cannot find symbol
+[ERROR]   symbol:   class Option
+[ERROR]   location: class com.example.foreverhome.cli.command.DevCommands
+[ERROR] /home/tezball/projects/forever-home/cli/src/main/java/com/example/foreverhome/cli/command/DevCommands.java:[116,6] cannot find symbol
+[ERROR]   symbol:   class Command
+[ERROR]   location: class com.example.foreverhome.cli.command.DevCommands
+[ERROR] /home/tezball/projects/forever-home/cli/src/main/java/com/example/foreverhome/cli/command/DevCommands.java:[132,6] cannot find symbol
+[ERROR]   symbol:   class Command
+[ERROR]   location: class com.example.foreverhome.cli.command.DevCommands
+[ERROR] /home/tezball/projects/forever-home/cli/src/main/java/com/example/foreverhome/cli/command/DevCommands.java:[149,14] cannot find symbol
+[ERROR]   symbol:   class Option
+[ERROR]   location: class com.example.foreverhome.cli.command.DevCommands
+[ERROR] /home/tezball/projects/forever-home/cli/src/main/java/com/example/foreverhome/cli/command/DevCommands.java:[153,14] cannot find symbol
+[ERROR]   symbol:   class Option
+[ERROR]   location: class com.example.foreverhome.cli.command.DevCommands
+[ERROR] /home/tezball/projects/forever-home/cli/src/main/java/com/example/foreverhome/cli/command/DevCommands.java:[156,14] cannot find symbol
+[ERROR]   symbol:   class Option
+[ERROR]   location: class com.example.foreverhome.cli.command.DevCommands
+[ERROR] /home/tezball/projects/forever-home/cli/src/main/java/com/example/foreverhome/cli/command/DevCommands.java:[147,6] cannot find symbol
+[ERROR]   symbol:   class Command
+[ERROR]   location: class com.example.foreverhome.cli.command.DevCommands
+[ERROR] /home/tezball/projects/forever-home/cli/src/main/java/com/example/foreverhome/cli/command/DevCommands.java:[172,6] cannot find symbol
+[ERROR]   symbol:   class Command
+[ERROR]   location: class com.example.foreverhome.cli.command.DevCommands
+[ERROR] /home/tezball/projects/forever-home/cli/src/main/java/com/example/foreverhome/cli/command/DevCommands.java:[179,6] cannot find symbol
+[ERROR]   symbol:   class Command
+[ERROR]   location: class com.example.foreverhome.cli.command.DevCommands
+[ERROR] /home/tezball/projects/forever-home/cli/src/main/java/com/example/foreverhome/cli/command/DevCommands.java:[217,6] cannot find symbol
+[ERROR]   symbol:   class Command
+[ERROR]   location: class com.example.foreverhome.cli.command.DevCommands
+[ERROR] -> [Help 1]
+[ERROR]
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR]
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException

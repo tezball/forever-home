@@ -10,8 +10,8 @@ test.describe('Authentication Flows', () => {
 
       await page.getByLabel(/full name/i).fill(userData.name);
       await page.getByLabel(/email/i).fill(userData.email);
-      await page.getByLabel(/^password$/i).fill(userData.password);
-      await page.getByLabel(/confirm password/i).fill(userData.password);
+      await page.getByPlaceholder(/at least 8 characters/i).fill(userData.password);
+      await page.getByPlaceholder(/confirm your password/i).fill(userData.password);
       await page.getByLabel(/i want to/i).selectOption('FOSTER');
 
       await page.getByRole('button', { name: /create account/i }).click();
@@ -27,8 +27,8 @@ test.describe('Authentication Flows', () => {
 
       await page.getByLabel(/full name/i).fill(userData.name);
       await page.getByLabel(/email/i).fill(userData.email);
-      await page.getByLabel(/^password$/i).fill(userData.password);
-      await page.getByLabel(/confirm password/i).fill(userData.password);
+      await page.getByPlaceholder(/at least 8 characters/i).fill(userData.password);
+      await page.getByPlaceholder(/confirm your password/i).fill(userData.password);
       await page.getByLabel(/i want to/i).selectOption('ADOPTER');
 
       await page.getByRole('button', { name: /create account/i }).click();
@@ -43,8 +43,8 @@ test.describe('Authentication Flows', () => {
 
       await page.getByLabel(/full name/i).fill(userData.name);
       await page.getByLabel(/email/i).fill(userData.email);
-      await page.getByLabel(/^password$/i).fill(userData.password);
-      await page.getByLabel(/confirm password/i).fill(userData.password);
+      await page.getByPlaceholder(/at least 8 characters/i).fill(userData.password);
+      await page.getByPlaceholder(/confirm your password/i).fill(userData.password);
       await page.getByLabel(/i want to/i).selectOption('RESCUE_ORG');
 
       await page.getByRole('button', { name: /create account/i }).click();
@@ -59,8 +59,8 @@ test.describe('Authentication Flows', () => {
 
       await page.getByLabel(/full name/i).fill(userData.name);
       await page.getByLabel(/email/i).fill(userData.email);
-      await page.getByLabel(/^password$/i).fill(userData.password);
-      await page.getByLabel(/confirm password/i).fill(userData.password);
+      await page.getByPlaceholder(/at least 8 characters/i).fill(userData.password);
+      await page.getByPlaceholder(/confirm your password/i).fill(userData.password);
       await page.getByLabel(/i want to/i).selectOption('VET');
 
       await page.getByRole('button', { name: /create account/i }).click();
@@ -73,8 +73,8 @@ test.describe('Authentication Flows', () => {
 
       await page.getByLabel(/full name/i).fill('Duplicate User');
       await page.getByLabel(/email/i).fill(TEST_ACCOUNTS.foster.email);
-      await page.getByLabel(/^password$/i).fill('TestPass123!');
-      await page.getByLabel(/confirm password/i).fill('TestPass123!');
+      await page.getByPlaceholder(/at least 8 characters/i).fill('TestPass123!');
+      await page.getByPlaceholder(/confirm your password/i).fill('TestPass123!');
       await page.getByLabel(/i want to/i).selectOption('FOSTER');
 
       await page.getByRole('button', { name: /create account/i }).click();
@@ -90,8 +90,8 @@ test.describe('Authentication Flows', () => {
 
       await page.getByLabel(/full name/i).fill('Test User');
       await page.getByLabel(/email/i).fill('weak@test.com');
-      await page.getByLabel(/^password$/i).fill('weak');
-      await page.getByLabel(/confirm password/i).fill('weak');
+      await page.getByPlaceholder(/at least 8 characters/i).fill('weak');
+      await page.getByPlaceholder(/confirm your password/i).fill('weak');
       await page.getByLabel(/i want to/i).selectOption('FOSTER');
 
       await page.getByRole('button', { name: /create account/i }).click();
@@ -107,7 +107,7 @@ test.describe('Authentication Flows', () => {
       await page.goto('/login');
 
       await page.getByLabel(/email/i).fill(TEST_ACCOUNTS.foster.email);
-      await page.getByLabel(/password/i).fill(TEST_ACCOUNTS.foster.password);
+      await page.getByPlaceholder(/enter your password/i).fill(TEST_ACCOUNTS.foster.password);
       await page.getByRole('button', { name: /sign in/i }).click();
 
       await expect(page).toHaveURL(/.*dashboard|.*\/$/i, { timeout: 10000 });
@@ -117,7 +117,7 @@ test.describe('Authentication Flows', () => {
       await page.goto('/login');
 
       await page.getByLabel(/email/i).fill(TEST_ACCOUNTS.adopter.email);
-      await page.getByLabel(/password/i).fill(TEST_ACCOUNTS.adopter.password);
+      await page.getByPlaceholder(/enter your password/i).fill(TEST_ACCOUNTS.adopter.password);
       await page.getByRole('button', { name: /sign in/i }).click();
 
       await expect(page).toHaveURL(/.*dashboard|.*\/$/i, { timeout: 10000 });
@@ -127,7 +127,7 @@ test.describe('Authentication Flows', () => {
       await page.goto('/login');
 
       await page.getByLabel(/email/i).fill(TEST_ACCOUNTS.rescue.email);
-      await page.getByLabel(/password/i).fill(TEST_ACCOUNTS.rescue.password);
+      await page.getByPlaceholder(/enter your password/i).fill(TEST_ACCOUNTS.rescue.password);
       await page.getByRole('button', { name: /sign in/i }).click();
 
       await expect(page).toHaveURL(/.*dashboard|.*\/$/i, { timeout: 10000 });
@@ -137,7 +137,7 @@ test.describe('Authentication Flows', () => {
       await page.goto('/login');
 
       await page.getByLabel(/email/i).fill(TEST_ACCOUNTS.vet.email);
-      await page.getByLabel(/password/i).fill(TEST_ACCOUNTS.vet.password);
+      await page.getByPlaceholder(/enter your password/i).fill(TEST_ACCOUNTS.vet.password);
       await page.getByRole('button', { name: /sign in/i }).click();
 
       await expect(page).toHaveURL(/.*dashboard|.*\/$/i, { timeout: 10000 });
@@ -147,7 +147,7 @@ test.describe('Authentication Flows', () => {
       await page.goto('/login');
 
       await page.getByLabel(/email/i).fill(TEST_ACCOUNTS.admin.email);
-      await page.getByLabel(/password/i).fill(TEST_ACCOUNTS.admin.password);
+      await page.getByPlaceholder(/enter your password/i).fill(TEST_ACCOUNTS.admin.password);
       await page.getByRole('button', { name: /sign in/i }).click();
 
       await expect(page).toHaveURL(/.*dashboard|.*admin|.*\/$/i, { timeout: 10000 });
@@ -157,7 +157,7 @@ test.describe('Authentication Flows', () => {
       await page.goto('/login');
 
       await page.getByLabel(/email/i).fill('invalid@test.com');
-      await page.getByLabel(/password/i).fill('wrongpassword');
+      await page.getByPlaceholder(/enter your password/i).fill('wrongpassword');
       await page.getByRole('button', { name: /sign in/i }).click();
 
       await expect(page.getByText(/invalid|incorrect|error|failed/i)).toBeVisible({
@@ -174,7 +174,7 @@ test.describe('Authentication Flows', () => {
 
       // Login
       await page.getByLabel(/email/i).fill(TEST_ACCOUNTS.foster.email);
-      await page.getByLabel(/password/i).fill(TEST_ACCOUNTS.foster.password);
+      await page.getByPlaceholder(/enter your password/i).fill(TEST_ACCOUNTS.foster.password);
       await page.getByRole('button', { name: /sign in/i }).click();
 
       // Should redirect after login (either to dashboard or home)
@@ -187,7 +187,7 @@ test.describe('Authentication Flows', () => {
       // First login
       await page.goto('/login');
       await page.getByLabel(/email/i).fill(TEST_ACCOUNTS.foster.email);
-      await page.getByLabel(/password/i).fill(TEST_ACCOUNTS.foster.password);
+      await page.getByPlaceholder(/enter your password/i).fill(TEST_ACCOUNTS.foster.password);
       await page.getByRole('button', { name: /sign in/i }).click();
 
       await expect(page).toHaveURL(/.*dashboard|.*\/$/i, { timeout: 10000 });
@@ -236,7 +236,7 @@ test.describe('Authentication Flows', () => {
       // Login
       await page.goto('/login');
       await page.getByLabel(/email/i).fill(TEST_ACCOUNTS.foster.email);
-      await page.getByLabel(/password/i).fill(TEST_ACCOUNTS.foster.password);
+      await page.getByPlaceholder(/enter your password/i).fill(TEST_ACCOUNTS.foster.password);
       await page.getByRole('button', { name: /sign in/i }).click();
 
       await expect(page).toHaveURL(/.*dashboard|.*\/$/i, { timeout: 10000 });
@@ -258,7 +258,7 @@ test.describe('Authentication Flows', () => {
     test('should prevent foster from accessing adopter dashboard', async ({ page }) => {
       await page.goto('/login');
       await page.getByLabel(/email/i).fill(TEST_ACCOUNTS.foster.email);
-      await page.getByLabel(/password/i).fill(TEST_ACCOUNTS.foster.password);
+      await page.getByPlaceholder(/enter your password/i).fill(TEST_ACCOUNTS.foster.password);
       await page.getByRole('button', { name: /sign in/i }).click();
 
       await expect(page).toHaveURL(/.*dashboard|.*\/$/i, { timeout: 10000 });
@@ -273,7 +273,7 @@ test.describe('Authentication Flows', () => {
     test('should prevent non-admin from accessing admin dashboard', async ({ page }) => {
       await page.goto('/login');
       await page.getByLabel(/email/i).fill(TEST_ACCOUNTS.foster.email);
-      await page.getByLabel(/password/i).fill(TEST_ACCOUNTS.foster.password);
+      await page.getByPlaceholder(/enter your password/i).fill(TEST_ACCOUNTS.foster.password);
       await page.getByRole('button', { name: /sign in/i }).click();
 
       await expect(page).toHaveURL(/.*dashboard|.*\/$/i, { timeout: 10000 });
