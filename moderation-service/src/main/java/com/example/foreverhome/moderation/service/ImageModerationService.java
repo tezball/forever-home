@@ -34,6 +34,7 @@ public class ImageModerationService {
     private final OllamaChatModel chatModel;
     private final ForeverHomeApiClient apiClient;
     private final ModerationConfig config;
+    private final AiInteractionLogService aiLogService;
 
     private static final Pattern IS_PET_PATTERN = Pattern.compile("IS_PET:\\s*(YES|NO)", Pattern.CASE_INSENSITIVE);
     private static final Pattern SAFE_PATTERN = Pattern.compile("FAMILY_SAFE:\\s*(YES|NO)", Pattern.CASE_INSENSITIVE);
@@ -43,10 +44,11 @@ public class ImageModerationService {
     );
 
     public ImageModerationService(OllamaChatModel chatModel, ForeverHomeApiClient apiClient,
-                                   ModerationConfig config) {
+                                   ModerationConfig config, AiInteractionLogService aiLogService) {
         this.chatModel = chatModel;
         this.apiClient = apiClient;
         this.config = config;
+        this.aiLogService = aiLogService;
         log.info("ImageModerationService initialized - enabled={}, model={}, debug={}",
                 config.imageEnabled(), config.visionModel(), config.debug());
     }
@@ -61,12 +63,12 @@ public class ImageModerationService {
     /**
      * Moderate a single image.
      */
-    public ModerationResult moderateImage(UUID petId, String imageUrl) {
+    public ModerationResult moderateImage(UUID petId, UUID jobId, String imageUrl) {
         log.info("[IMAGE] Starting moderation for pet={} url={}", petId, truncateUrl(imageUrl));
 
         if (!config.imageEnabled()) {
             log.info("[IMAGE] Image moderation is DISABLED - auto-approving pet={}", petId);
-            return ModerationResult.createApproved(petId, ContentType.IMAGE, imageUrl, "disabled", 1.0);
+            return ModerationResult.createApproved(petId, jobId, ContentType.IMAGE, imageUrl, "disabled", 1.0);
         }
 
         Instant startTime = Instant.now();
@@ -121,13 +123,17 @@ public class ImageModerationService {
 
             log.info("[IMAGE] Vision LLM responded in {}ms for pet={}", llmDuration.toMillis(), petId);
 
+            // Log AI interaction
+            aiLogService.logSuccess(petId, ContentType.IMAGE, truncateUrl(imageUrl), config.visionModel(),
+                    promptText, responseText, llmDuration.toMillis());
+
             if (config.debug()) {
                 log.info("[IMAGE][DEBUG] ========== RESPONSE START ==========");
                 log.info("[IMAGE][DEBUG] Raw response:\n{}", responseText);
                 log.info("[IMAGE][DEBUG] ========== RESPONSE END ==========");
             }
 
-            ModerationResult result = parseImageModerationResponse(petId, imageUrl, responseText);
+            ModerationResult result = parseImageModerationResponse(petId, jobId, imageUrl, responseText);
             Duration totalDuration = Duration.between(startTime, Instant.now());
 
             log.info("[IMAGE] Moderation complete: pet={} status={} confidence={} flags={} totalTime={}ms (fetch={}ms, llm={}ms)",
@@ -140,7 +146,12 @@ public class ImageModerationService {
         } catch (Exception e) {
             Duration duration = Duration.between(startTime, Instant.now());
             log.error("[IMAGE] Error moderating pet={} after {}ms: {}", petId, duration.toMillis(), e.getMessage(), e);
-            return ModerationResult.createPending(petId, ContentType.IMAGE, imageUrl,
+
+            // Log AI interaction failure
+            aiLogService.logFailure(petId, ContentType.IMAGE, truncateUrl(imageUrl), config.visionModel(),
+                    null, duration.toMillis(), e.getMessage());
+
+            return ModerationResult.createPending(petId, jobId, ContentType.IMAGE, imageUrl,
                     config.visionModel(), e.getMessage());
         }
     }
@@ -153,7 +164,7 @@ public class ImageModerationService {
     /**
      * Moderate all images for a pet.
      */
-    public List<ModerationResult> moderatePetImages(UUID petId, List<String> imageUrls) {
+    public List<ModerationResult> moderatePetImages(UUID petId, UUID jobId, List<String> imageUrls) {
         log.info("[IMAGE] ===== Starting image moderation for pet={} imageCount={} =====",
                 petId, imageUrls != null ? imageUrls.size() : 0);
 
@@ -167,7 +178,7 @@ public class ImageModerationService {
 
         for (int i = 0; i < imageUrls.size(); i++) {
             log.info("[IMAGE] Processing image {}/{} for pet={}", i + 1, imageUrls.size(), petId);
-            results.add(moderateImage(petId, imageUrls.get(i)));
+            results.add(moderateImage(petId, jobId, imageUrls.get(i)));
         }
 
         Duration totalDuration = Duration.between(startTime, Instant.now());
@@ -214,7 +225,7 @@ public class ImageModerationService {
                 """;
     }
 
-    private ModerationResult parseImageModerationResponse(UUID petId, String imageUrl, String response) {
+    private ModerationResult parseImageModerationResponse(UUID petId, UUID jobId, String imageUrl, String response) {
         List<FlaggedContent> flags = new ArrayList<>();
         double confidenceScore = 0.8;
 
@@ -275,10 +286,10 @@ public class ImageModerationService {
         }
 
         if (flags.isEmpty()) {
-            return ModerationResult.createApproved(petId, ContentType.IMAGE, imageUrl,
+            return ModerationResult.createApproved(petId, jobId, ContentType.IMAGE, imageUrl,
                     config.visionModel(), confidenceScore);
         } else {
-            ModerationResult result = ModerationResult.createFlagged(petId, ContentType.IMAGE, imageUrl,
+            ModerationResult result = ModerationResult.createFlagged(petId, jobId, ContentType.IMAGE, imageUrl,
                     config.visionModel(), confidenceScore, response);
             for (FlaggedContent flag : flags) {
                 flag.setModerationResultId(result.getId());

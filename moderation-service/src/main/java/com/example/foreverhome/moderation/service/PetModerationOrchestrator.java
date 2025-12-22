@@ -77,15 +77,15 @@ public class PetModerationOrchestrator {
             return List.of();
         }
 
-        return moderatePetProfile(petOpt.get(), textOnly, imagesOnly);
+        return moderatePetProfile(petOpt.get(), null, textOnly, imagesOnly);
     }
 
     /**
      * Moderate a pet profile.
      */
-    public List<ModerationResult> moderatePetProfile(PetProfileDto pet, boolean textOnly, boolean imagesOnly) {
+    public List<ModerationResult> moderatePetProfile(PetProfileDto pet, UUID jobId, boolean textOnly, boolean imagesOnly) {
         log.info("[ORCHESTRATOR] ========== MODERATING PET: {} ({}) ==========", pet.name(), pet.id());
-        log.info("[ORCHESTRATOR] Options: textOnly={}, imagesOnly={}", textOnly, imagesOnly);
+        log.info("[ORCHESTRATOR] Options: textOnly={}, imagesOnly={}, jobId={}", textOnly, imagesOnly, jobId);
         log.info("[ORCHESTRATOR] Config: textEnabled={}, imageEnabled={}", config.textEnabled(), config.imageEnabled());
 
         Instant startTime = Instant.now();
@@ -105,7 +105,7 @@ public class PetModerationOrchestrator {
                 log.info("[ORCHESTRATOR] Skipping text moderation - DISABLED by config");
             }
             List<ModerationResult> textResults = textModerationService.moderatePetTextContent(
-                    pet.id(), pet.name(), pet.description(), pet.healthNotes());
+                    pet.id(), jobId, pet.name(), pet.description(), pet.healthNotes());
             results.addAll(saveResults(textResults));
         }
 
@@ -115,7 +115,7 @@ public class PetModerationOrchestrator {
                 log.info("[ORCHESTRATOR] Skipping image moderation - DISABLED by config");
             }
             List<ModerationResult> imageResults = imageModerationService.moderatePetImages(
-                    pet.id(), pet.imageUrls());
+                    pet.id(), jobId, pet.imageUrls());
             results.addAll(saveResults(imageResults));
         }
 
@@ -145,9 +145,9 @@ public class PetModerationOrchestrator {
 
         Instant batchStart = Instant.now();
 
-        // Fetch pets to moderate
-        log.info("[BATCH] Fetching available pets from API...");
-        List<PetProfileDto> pets = apiClient.getAllAvailablePets(limit);
+        // Fetch pets to moderate (only those with moderation_status = 'PENDING')
+        log.info("[BATCH] Fetching pets pending moderation from API...");
+        List<PetProfileDto> pets = apiClient.getPetsPendingModeration(limit);
         log.info("[BATCH] Found {} pets to moderate", pets.size());
 
         if (pets.isEmpty()) {
@@ -176,7 +176,7 @@ public class PetModerationOrchestrator {
                     progressCallback.accept(progress);
                 }
 
-                List<ModerationResult> results = moderatePetProfile(pet, textOnly, imagesOnly);
+                List<ModerationResult> results = moderatePetProfile(pet, job.getId(), textOnly, imagesOnly);
 
                 boolean wasFlagged = results.stream()
                         .anyMatch(r -> r.getStatus() == ModerationStatus.FLAGGED);

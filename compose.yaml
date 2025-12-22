@@ -103,8 +103,59 @@ services:
       timeout: 5s
       retries: 5
 
+  moderation-service:
+    build:
+      context: ./moderation-service
+      dockerfile: Dockerfile
+    ports:
+      - '8081:8081'
+    environment:
+      # Database - use Docker network hostname
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/foreverhome
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres
+      # Ollama - use Docker service name
+      - SPRING_AI_OLLAMA_BASE_URL=http://ollama:11434
+      # Forever Home API - use host.docker.internal for native app
+      - FOREVERHOME_API_BASE_URL=http://host.docker.internal:8080
+      - FOREVERHOME_API_TOKEN=${FOREVERHOME_API_TOKEN:-}
+      # Image URL rewrite: translate localhost S3 URLs to Docker service name
+      # This fixes the Docker networking issue where localhost:4566 is unreachable from containers
+      - FOREVERHOME_API_IMAGE_URL_REWRITE_FROM=http://localhost:4566
+      - FOREVERHOME_API_IMAGE_URL_REWRITE_TO=http://localstack:4566
+      # Disable interactive shell in container
+      - SPRING_SHELL_INTERACTIVE_ENABLED=false
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      localstack:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 60s
+      retries: 3
+
+  ollama:
+    build:
+      context: ./ollama
+      dockerfile: Dockerfile
+    ports:
+      - '11434:11434'
+    volumes:
+      - ollama_data:/root/.ollama
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
 volumes:
   postgres_data:
   loki_data:
   grafana_data:
   prometheus_data:
+  ollama_data:

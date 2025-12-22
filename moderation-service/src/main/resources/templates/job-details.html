@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Job Details - Moderation Service</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#2D5A47',
+                        secondary: '#F5F0E8',
+                        accent: '#C4705A',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-primary text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center space-x-8">
+                    <a href="/" class="font-serif text-xl font-bold">Moderation Service</a>
+                    <div class="hidden md:flex space-x-4">
+                        <a href="/" class="text-gray-200 hover:text-white hover:bg-primary/50 px-3 py-2 rounded-md text-sm font-medium">Dashboard</a>
+                        <a href="/flagged" class="text-gray-200 hover:text-white hover:bg-primary/50 px-3 py-2 rounded-md text-sm font-medium">Flagged Content</a>
+                        <a href="/batch" class="text-gray-200 hover:text-white hover:bg-primary/50 px-3 py-2 rounded-md text-sm font-medium">Batch Moderation</a>
+                        <a href="/pet" class="text-gray-200 hover:text-white hover:bg-primary/50 px-3 py-2 rounded-md text-sm font-medium">Pet Lookup</a>
+                        <a href="/jobs" class="bg-primary/80 text-white px-3 py-2 rounded-md text-sm font-medium">Jobs</a>
+                        <a href="/logs" class="text-gray-200 hover:text-white hover:bg-primary/50 px-3 py-2 rounded-md text-sm font-medium">AI Logs</a>
+                    </div>
+                </div>
+                <div class="flex items-center">
+                    <span class="flex items-center text-sm">
+                        <span th:if="${apiStatus == 'AVAILABLE'}" class="flex items-center text-green-300">
+                            <span class="w-2 h-2 bg-green-400 rounded-full mr-2"></span>
+                            API Connected
+                        </span>
+                        <span th:unless="${apiStatus == 'AVAILABLE'}" class="flex items-center text-red-300">
+                            <span class="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
+                            API Unavailable
+                        </span>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 py-8">
+        <!-- Breadcrumb -->
+        <nav class="mb-6">
+            <ol class="flex items-center space-x-2 text-sm text-gray-500">
+                <li><a href="/jobs" class="hover:text-primary">Jobs</a></li>
+                <li>/</li>
+                <li class="text-gray-900 font-medium" th:text="${#strings.substring(job.id.toString(), 0, 8)} + '...'">Job ID</li>
+            </ol>
+        </nav>
+
+        <!-- Job Header -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900 mb-2">Job Details</h1>
+                    <p class="text-sm text-gray-500 font-mono" th:text="${job.id}">job-uuid</p>
+                </div>
+                <span th:switch="${job.status.name()}">
+                    <span th:case="'COMPLETED'" class="px-3 py-1 text-sm font-medium rounded-full bg-green-100 text-green-800">Completed</span>
+                    <span th:case="'RUNNING'" class="px-3 py-1 text-sm font-medium rounded-full bg-blue-100 text-blue-800">Running</span>
+                    <span th:case="'FAILED'" class="px-3 py-1 text-sm font-medium rounded-full bg-red-100 text-red-800">Failed</span>
+                    <span th:case="'PENDING'" class="px-3 py-1 text-sm font-medium rounded-full bg-gray-100 text-gray-800">Pending</span>
+                    <span th:case="'CANCELLED'" class="px-3 py-1 text-sm font-medium rounded-full bg-yellow-100 text-yellow-800">Cancelled</span>
+                    <span th:case="*" class="px-3 py-1 text-sm font-medium rounded-full bg-gray-100 text-gray-800" th:text="${job.status}">Unknown</span>
+                </span>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+                <div>
+                    <div class="text-sm text-gray-500">Progress</div>
+                    <div class="text-lg font-semibold" th:text="${job.processedPets} + ' / ' + ${job.totalPets}">0 / 0</div>
+                    <div class="w-full bg-gray-200 rounded-full h-2 mt-1">
+                        <div class="bg-primary h-2 rounded-full" th:style="'width: ' + ${job.progressPercent} + '%'"></div>
+                    </div>
+                </div>
+                <div>
+                    <div class="text-sm text-gray-500">Flagged</div>
+                    <div class="text-lg font-semibold" th:class="${job.flaggedPets > 0} ? 'text-amber-600' : 'text-gray-900'" th:text="${job.flaggedPets}">0</div>
+                </div>
+                <div>
+                    <div class="text-sm text-gray-500">Mode</div>
+                    <div class="text-lg font-semibold">
+                        <span th:if="${job.textOnly}">Text Only</span>
+                        <span th:if="${job.imagesOnly}">Images Only</span>
+                        <span th:unless="${job.textOnly or job.imagesOnly}">All Content</span>
+                    </div>
+                </div>
+                <div>
+                    <div class="text-sm text-gray-500">Created</div>
+                    <div class="text-lg font-semibold" th:text="${#temporals.format(job.createdAt, 'MMM d, HH:mm')}">-</div>
+                </div>
+            </div>
+
+            <div th:if="${job.errorMessage}" class="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                <div class="text-sm font-medium text-red-800">Error</div>
+                <div class="text-sm text-red-600" th:text="${job.errorMessage}">Error message</div>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div class="bg-white rounded-lg shadow overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-900">Moderation Results</h2>
+                <p class="text-sm text-gray-500" th:text="'Showing ' + ${#lists.size(results)} + ' results'">Showing 0 results</p>
+            </div>
+
+            <div th:if="${#lists.isEmpty(results)}" class="px-6 py-12 text-center text-gray-500">
+                <div class="text-lg font-medium">No results yet</div>
+                <div class="text-sm">Results will appear here once the job starts processing.</div>
+            </div>
+
+            <div th:unless="${#lists.isEmpty(results)}" class="divide-y divide-gray-200">
+                <div th:each="rv : ${results}" class="p-6 hover:bg-gray-50">
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1">
+                            <!-- Header row -->
+                            <div class="flex items-center gap-3 mb-2">
+                                <span class="font-medium text-gray-900" th:text="${rv.petName}">Pet Name</span>
+                                <span th:if="${rv.text}" class="px-2 py-0.5 text-xs font-medium rounded bg-blue-100 text-blue-800">TEXT</span>
+                                <span th:if="${rv.image}" class="px-2 py-0.5 text-xs font-medium rounded bg-purple-100 text-purple-800">IMAGE</span>
+                                <span th:if="${rv.text}" class="text-xs text-gray-500" th:text="'Field: ' + ${rv.result.contentIdentifier}">Field: name</span>
+                            </div>
+
+                            <!-- Content preview -->
+                            <div class="mt-2">
+                                <!-- Text content -->
+                                <div th:if="${rv.text}" class="bg-gray-50 rounded-md p-3 text-sm text-gray-700">
+                                    <div th:if="${rv.textContent != null and rv.textContent.length() > 0}" th:text="${rv.textContent}">Text content here</div>
+                                    <div th:unless="${rv.textContent != null and rv.textContent.length() > 0}" class="text-gray-400 italic">No content</div>
+                                </div>
+
+                                <!-- Image content -->
+                                <div th:if="${rv.image}" class="mt-2">
+                                    <img th:src="${rv.imageUrl}" alt="Pet image"
+                                         class="max-w-xs max-h-48 rounded-lg border border-gray-200 cursor-pointer hover:opacity-90"
+                                         onclick="window.open(this.src, '_blank')">
+                                    <div class="text-xs text-gray-400 mt-1 truncate max-w-xs" th:text="${rv.imageUrl}">Image URL</div>
+                                </div>
+                            </div>
+
+                            <!-- Flags if any -->
+                            <div th:if="${rv.result.flags != null and !rv.result.flags.isEmpty()}" class="mt-3">
+                                <div class="text-xs font-medium text-gray-500 uppercase mb-1">Issues Found</div>
+                                <div class="space-y-1">
+                                    <div th:each="flag : ${rv.result.flags}" class="flex items-center gap-2 text-sm">
+                                        <span th:switch="${flag.severity.name()}">
+                                            <span th:case="'HIGH'" class="w-2 h-2 rounded-full bg-red-500"></span>
+                                            <span th:case="'MEDIUM'" class="w-2 h-2 rounded-full bg-amber-500"></span>
+                                            <span th:case="'LOW'" class="w-2 h-2 rounded-full bg-yellow-400"></span>
+                                            <span th:case="*" class="w-2 h-2 rounded-full bg-gray-400"></span>
+                                        </span>
+                                        <span class="font-medium" th:text="${flag.category}">Category</span>
+                                        <span class="text-gray-600" th:text="${flag.description}">Description</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Status badge -->
+                        <div class="ml-4">
+                            <span th:switch="${rv.result.status.name()}">
+                                <span th:case="'APPROVED'" class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">Approved</span>
+                                <span th:case="'FLAGGED'" class="px-2 py-1 text-xs font-medium rounded-full bg-amber-100 text-amber-800">Flagged</span>
+                                <span th:case="'REJECTED'" class="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">Rejected</span>
+                                <span th:case="'PENDING'" class="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">Pending</span>
+                                <span th:case="*" class="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800" th:text="${rv.result.status}">Unknown</span>
+                            </span>
+                            <div class="text-xs text-gray-400 mt-1" th:if="${rv.result.confidenceScore != null}"
+                                 th:text="'Confidence: ' + ${#numbers.formatDecimal(rv.result.confidenceScore * 100, 1, 0)} + '%'">
+                                Confidence: 95%
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Back button -->
+        <div class="mt-6">
+            <a href="/jobs" class="inline-flex items-center text-sm text-gray-500 hover:text-primary">
+                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                </svg>
+                Back to Jobs
+            </a>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-100 border-t mt-auto">
+        <div class="max-w-7xl mx-auto px-4 py-4 text-center text-gray-500 text-sm">
+            Forever Home Moderation Service - AI-powered content moderation
+        </div>
+    </footer>
+</body>
+</html>

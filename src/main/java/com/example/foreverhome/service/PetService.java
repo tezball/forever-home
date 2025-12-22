@@ -189,6 +189,18 @@ public class PetService {
                 .toList();
     }
 
+    /**
+     * Get pets pending moderation (moderation_status = 'PENDING').
+     * Used by the moderation service for batch processing.
+     */
+    @Transactional(readOnly = true)
+    public List<PetDto> getPetsPendingModeration(int limit) {
+        return petRepository.findPetsPendingModeration().stream()
+                .limit(limit)
+                .map(this::toPetDtoWithImages)
+                .toList();
+    }
+
     @Transactional(readOnly = true)
     public List<PetDto> getAvailablePetsWithFilters(String species, String size, String sex,
                                                      Integer minAge, Integer maxAge) {

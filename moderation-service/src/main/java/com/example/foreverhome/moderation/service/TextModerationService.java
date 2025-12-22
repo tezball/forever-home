@@ -28,6 +28,7 @@ public class TextModerationService {
 
     private final OllamaChatModel chatModel;
     private final ModerationConfig config;
+    private final AiInteractionLogService aiLogService;
 
     private static final Pattern SCORE_PATTERN = Pattern.compile("SCORE:\\s*(\\d+\\.?\\d*)");
     private static final Pattern FLAG_PATTERN = Pattern.compile(
@@ -35,9 +36,11 @@ public class TextModerationService {
             Pattern.CASE_INSENSITIVE
     );
 
-    public TextModerationService(OllamaChatModel chatModel, ModerationConfig config) {
+    public TextModerationService(OllamaChatModel chatModel, ModerationConfig config,
+                                  AiInteractionLogService aiLogService) {
         this.chatModel = chatModel;
         this.config = config;
+        this.aiLogService = aiLogService;
         log.info("TextModerationService initialized - enabled={}, model={}, debug={}",
                 config.textEnabled(), config.textModel(), config.debug());
     }
@@ -52,17 +55,17 @@ public class TextModerationService {
     /**
      * Moderate a text field.
      */
-    public ModerationResult moderateText(UUID petId, String fieldName, String content) {
+    public ModerationResult moderateText(UUID petId, UUID jobId, String fieldName, String content) {
         log.info("[TEXT] Starting moderation for pet={} field={}", petId, fieldName);
 
         if (!config.textEnabled()) {
             log.info("[TEXT] Text moderation is DISABLED - auto-approving pet={} field={}", petId, fieldName);
-            return ModerationResult.createApproved(petId, ContentType.TEXT, fieldName, "disabled", 1.0);
+            return ModerationResult.createApproved(petId, jobId, ContentType.TEXT, fieldName, "disabled", 1.0);
         }
 
         if (content == null || content.isBlank()) {
             log.info("[TEXT] Skipping empty content for pet={} field={}", petId, fieldName);
-            return ModerationResult.createApproved(petId, ContentType.TEXT, fieldName, "skip", 1.0);
+            return ModerationResult.createApproved(petId, jobId, ContentType.TEXT, fieldName, "skip", 1.0);
         }
 
         Instant startTime = Instant.now();
@@ -93,13 +96,17 @@ public class TextModerationService {
 
             log.info("[TEXT] LLM responded in {}ms for pet={} field={}", duration.toMillis(), petId, fieldName);
 
+            // Log AI interaction
+            aiLogService.logSuccess(petId, ContentType.TEXT, fieldName, config.textModel(),
+                    prompt, responseText, duration.toMillis());
+
             if (config.debug()) {
                 log.info("[TEXT][DEBUG] ========== RESPONSE START ==========");
                 log.info("[TEXT][DEBUG] Raw response:\n{}", responseText);
                 log.info("[TEXT][DEBUG] ========== RESPONSE END ==========");
             }
 
-            ModerationResult result = parseTextModerationResponse(petId, fieldName, responseText);
+            ModerationResult result = parseTextModerationResponse(petId, jobId, fieldName, responseText);
 
             log.info("[TEXT] Moderation complete: pet={} field={} status={} confidence={} flags={} duration={}ms",
                     petId, fieldName, result.getStatus(), result.getConfidenceScore(),
@@ -111,7 +118,12 @@ public class TextModerationService {
             Duration duration = Duration.between(startTime, Instant.now());
             log.error("[TEXT] Error moderating pet={} field={} after {}ms: {}",
                     petId, fieldName, duration.toMillis(), e.getMessage(), e);
-            return ModerationResult.createPending(petId, ContentType.TEXT, fieldName,
+
+            // Log AI interaction failure
+            aiLogService.logFailure(petId, ContentType.TEXT, fieldName, config.textModel(),
+                    null, duration.toMillis(), e.getMessage());
+
+            return ModerationResult.createPending(petId, jobId, ContentType.TEXT, fieldName,
                     config.textModel(), e.getMessage());
         }
     }
@@ -119,16 +131,16 @@ public class TextModerationService {
     /**
      * Moderate all text content for a pet.
      */
-    public List<ModerationResult> moderatePetTextContent(UUID petId, String name,
+    public List<ModerationResult> moderatePetTextContent(UUID petId, UUID jobId, String name,
                                                           String description, String healthNotes) {
         log.info("[TEXT] ===== Starting text moderation for pet={} =====", petId);
         Instant startTime = Instant.now();
 
         List<ModerationResult> results = new ArrayList<>();
 
-        results.add(moderateText(petId, "name", name));
-        results.add(moderateText(petId, "description", description));
-        results.add(moderateText(petId, "healthNotes", healthNotes));
+        results.add(moderateText(petId, jobId, "name", name));
+        results.add(moderateText(petId, jobId, "description", description));
+        results.add(moderateText(petId, jobId, "healthNotes", healthNotes));
 
         Duration totalDuration = Duration.between(startTime, Instant.now());
         long flaggedCount = results.stream()
@@ -173,7 +185,7 @@ public class TextModerationService {
                 """.formatted(fieldName, content);
     }
 
-    private ModerationResult parseTextModerationResponse(UUID petId, String fieldName, String response) {
+    private ModerationResult parseTextModerationResponse(UUID petId, UUID jobId, String fieldName, String response) {
         List<FlaggedContent> flags = new ArrayList<>();
         double confidenceScore = 0.5;
 
@@ -213,10 +225,10 @@ public class TextModerationService {
         }
 
         if (flags.isEmpty()) {
-            return ModerationResult.createApproved(petId, ContentType.TEXT, fieldName,
+            return ModerationResult.createApproved(petId, jobId, ContentType.TEXT, fieldName,
                     config.textModel(), confidenceScore);
         } else {
-            ModerationResult result = ModerationResult.createFlagged(petId, ContentType.TEXT, fieldName,
+            ModerationResult result = ModerationResult.createFlagged(petId, jobId, ContentType.TEXT, fieldName,
                     config.textModel(), confidenceScore, response);
             for (FlaggedContent flag : flags) {
                 flag.setModerationResultId(result.getId());

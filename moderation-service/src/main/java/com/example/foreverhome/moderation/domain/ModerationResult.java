@@ -23,6 +23,9 @@ public class ModerationResult implements Persistable<UUID> {
     @Column("pet_id")
     private UUID petId;
 
+    @Column("job_id")
+    private UUID jobId;
+
     @Column("content_type")
     private ContentType contentType;
 
@@ -61,12 +64,13 @@ public class ModerationResult implements Persistable<UUID> {
     protected ModerationResult() {
     }
 
-    public static ModerationResult create(UUID petId, ContentType contentType, String contentIdentifier,
+    public static ModerationResult create(UUID petId, UUID jobId, ContentType contentType, String contentIdentifier,
                                           ModerationStatus status, Double confidenceScore,
                                           String modelUsed, String rawResponse) {
         ModerationResult result = new ModerationResult();
         result.id = UUID.randomUUID();
         result.petId = petId;
+        result.jobId = jobId;
         result.contentType = contentType;
         result.contentIdentifier = contentIdentifier;
         result.status = status;
@@ -78,21 +82,21 @@ public class ModerationResult implements Persistable<UUID> {
         return result;
     }
 
-    public static ModerationResult createApproved(UUID petId, ContentType contentType, String contentIdentifier,
+    public static ModerationResult createApproved(UUID petId, UUID jobId, ContentType contentType, String contentIdentifier,
                                                    String modelUsed, Double confidenceScore) {
-        return create(petId, contentType, contentIdentifier, ModerationStatus.APPROVED,
+        return create(petId, jobId, contentType, contentIdentifier, ModerationStatus.APPROVED,
                 confidenceScore, modelUsed, null);
     }
 
-    public static ModerationResult createFlagged(UUID petId, ContentType contentType, String contentIdentifier,
+    public static ModerationResult createFlagged(UUID petId, UUID jobId, ContentType contentType, String contentIdentifier,
                                                   String modelUsed, Double confidenceScore, String rawResponse) {
-        return create(petId, contentType, contentIdentifier, ModerationStatus.FLAGGED,
+        return create(petId, jobId, contentType, contentIdentifier, ModerationStatus.FLAGGED,
                 confidenceScore, modelUsed, rawResponse);
     }
 
-    public static ModerationResult createPending(UUID petId, ContentType contentType, String contentIdentifier,
+    public static ModerationResult createPending(UUID petId, UUID jobId, ContentType contentType, String contentIdentifier,
                                                   String modelUsed, String errorMessage) {
-        return create(petId, contentType, contentIdentifier, ModerationStatus.PENDING,
+        return create(petId, jobId, contentType, contentIdentifier, ModerationStatus.PENDING,
                 null, modelUsed, "Error: " + errorMessage);
     }
 
@@ -123,6 +127,10 @@ public class ModerationResult implements Persistable<UUID> {
 
     public UUID getPetId() {
         return petId;
+    }
+
+    public UUID getJobId() {
+        return jobId;
     }
 
     public ContentType getContentType() {

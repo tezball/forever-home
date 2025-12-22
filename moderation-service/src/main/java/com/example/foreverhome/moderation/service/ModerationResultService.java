@@ -150,6 +150,40 @@ public class ModerationResultService {
     }
 
     /**
+     * Get a job by ID.
+     */
+    @Transactional(readOnly = true)
+    public Optional<ModerationJob> getJob(UUID jobId) {
+        return jobRepository.findById(jobId);
+    }
+
+    /**
+     * Get all moderation results for a job.
+     */
+    @Transactional(readOnly = true)
+    public List<ModerationResult> getResultsForJob(UUID jobId) {
+        List<ModerationResult> results = resultRepository.findByJobIdOrderByCreatedAtAsc(jobId);
+        // Load flags for each result
+        for (ModerationResult result : results) {
+            List<FlaggedContent> flags = flagRepository.findByModerationResultId(result.getId());
+            result.setFlags(flags);
+        }
+        return results;
+    }
+
+    /**
+     * Clear all moderation data (results, flags, and jobs).
+     * Used to reset state for re-running moderation.
+     */
+    public void clearAllData() {
+        log.info("Clearing all moderation data...");
+        flagRepository.deleteAll();
+        resultRepository.deleteAll();
+        jobRepository.deleteAll();
+        log.info("All moderation data cleared");
+    }
+
+    /**
      * Moderation statistics record.
      */
     public record ModerationStats(

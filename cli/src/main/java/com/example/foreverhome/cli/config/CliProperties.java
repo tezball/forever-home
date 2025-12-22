@@ -15,7 +15,8 @@ public record CliProperties(
     int grafanaPort,
     int lokiPort,
     int mailpitUiPort,
-    int mailpitSmtpPort
+    int mailpitSmtpPort,
+    int moderationServicePort
 ) {
     public CliProperties {
         if (version == null) version = "0.0.1-SNAPSHOT";
@@ -27,5 +28,6 @@ public record CliProperties(
         if (lokiPort == 0) lokiPort = 3100;
         if (mailpitUiPort == 0) mailpitUiPort = 8025;
         if (mailpitSmtpPort == 0) mailpitSmtpPort = 1025;
+        if (moderationServicePort == 0) moderationServicePort = 8081;
     }
 }

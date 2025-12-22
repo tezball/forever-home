@@ -1,12 +1,15 @@
 package com.example.foreverhome.controller;
 
 import com.example.foreverhome.domain.user.UserRole;
+import com.example.foreverhome.dto.pet.PetDto;
 import com.example.foreverhome.repository.PetRepository;
+import com.example.foreverhome.service.PetService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -24,9 +27,11 @@ public class DevController {
     private static final String TEST_PASSWORD = "password123";
 
     private final PetRepository petRepository;
+    private final PetService petService;
 
-    public DevController(PetRepository petRepository) {
+    public DevController(PetRepository petRepository, PetService petService) {
         this.petRepository = petRepository;
+        this.petService = petService;
     }
 
     @PostMapping("/moderation/reset")
@@ -36,6 +41,17 @@ public class DevController {
             "petsAffected", count,
             "message", "All pet moderation statuses reset to PENDING"
         ));
+    }
+
+    /**
+     * Get pets pending moderation (moderation_status = 'PENDING').
+     * Used by the moderation service for batch processing.
+     */
+    @GetMapping("/moderation/pending")
+    public ResponseEntity<List<PetDto>> getPetsPendingModeration(
+            @RequestParam(defaultValue = "100") int limit) {
+        List<PetDto> pets = petService.getPetsPendingModeration(limit);
+        return ResponseEntity.ok(pets);
     }
 
     @GetMapping("/test-accounts")

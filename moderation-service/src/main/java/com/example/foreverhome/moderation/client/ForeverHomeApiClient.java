@@ -25,11 +25,17 @@ public class ForeverHomeApiClient {
 
     private final RestClient restClient;
     private final String baseUrl;
+    private final String imageUrlRewriteFrom;
+    private final String imageUrlRewriteTo;
 
     public ForeverHomeApiClient(
             @Value("${foreverhome.api.base-url}") String baseUrl,
-            @Value("${foreverhome.api.token:}") String apiToken) {
+            @Value("${foreverhome.api.token:}") String apiToken,
+            @Value("${foreverhome.api.image-url-rewrite-from:}") String imageUrlRewriteFrom,
+            @Value("${foreverhome.api.image-url-rewrite-to:}") String imageUrlRewriteTo) {
         this.baseUrl = baseUrl;
+        this.imageUrlRewriteFrom = imageUrlRewriteFrom;
+        this.imageUrlRewriteTo = imageUrlRewriteTo;
 
         RestClient.Builder builder = RestClient.builder()
                 .baseUrl(baseUrl);
@@ -40,6 +46,9 @@ public class ForeverHomeApiClient {
 
         this.restClient = builder.build();
         log.info("Initialized ForeverHomeApiClient with base URL: {}", baseUrl);
+        if (imageUrlRewriteFrom != null && !imageUrlRewriteFrom.isBlank()) {
+            log.info("Image URL rewrite enabled: {} -> {}", imageUrlRewriteFrom, imageUrlRewriteTo);
+        }
     }
 
     /**
@@ -79,7 +88,9 @@ public class ForeverHomeApiClient {
 
     /**
      * Fetch all available pets up to a limit.
+     * @deprecated Use {@link #getPetsPendingModeration(int)} for moderation batch processing.
      */
+    @Deprecated
     public List<PetProfileDto> getAllAvailablePets(int limit) {
         List<PetProfileDto> allPets = new ArrayList<>();
         int page = 0;
@@ -108,12 +119,34 @@ public class ForeverHomeApiClient {
     }
 
     /**
+     * Fetch pets that are pending moderation (moderation_status = 'PENDING').
+     * This is the correct endpoint for batch moderation processing.
+     */
+    public List<PetProfileDto> getPetsPendingModeration(int limit) {
+        try {
+            return restClient.get()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/api/dev/moderation/pending")
+                            .queryParam("limit", limit)
+                            .build())
+                    .retrieve()
+                    .body(new ParameterizedTypeReference<>() {});
+        } catch (RestClientException e) {
+            log.error("Failed to fetch pets pending moderation: {}", e.getMessage());
+            return List.of();
+        }
+    }
+
+    /**
      * Fetch image bytes from a URL.
      */
     public byte[] fetchImageBytes(String imageUrl) {
         try {
             // If it's a relative URL, prefix with base URL
             String fullUrl = imageUrl.startsWith("http") ? imageUrl : baseUrl + imageUrl;
+
+            // Apply URL rewrite for Docker networking (e.g., localhost:4566 -> localstack:4566)
+            fullUrl = rewriteImageUrl(fullUrl);
 
             return RestClient.create()
                     .get()
@@ -124,6 +157,20 @@ public class ForeverHomeApiClient {
             log.error("Failed to fetch image from {}: {}", imageUrl, e.getMessage());
             throw new RuntimeException("Failed to fetch image: " + e.getMessage(), e);
         }
+    }
+
+    /**
+     * Rewrite image URL for Docker networking.
+     * Translates localhost URLs to Docker service names when configured.
+     */
+    private String rewriteImageUrl(String url) {
+        if (imageUrlRewriteFrom != null && !imageUrlRewriteFrom.isBlank()
+                && imageUrlRewriteTo != null && url.startsWith(imageUrlRewriteFrom)) {
+            String rewritten = url.replace(imageUrlRewriteFrom, imageUrlRewriteTo);
+            log.debug("Rewrote image URL: {} -> {}", url, rewritten);
+            return rewritten;
+        }
+        return url;
     }
 
     /**
@@ -139,6 +186,28 @@ public class ForeverHomeApiClient {
         } catch (RestClientException e) {
             log.warn("Forever Home API not available: {}", e.getMessage());
             return false;
+        }
+    }
+
+    /**
+     * Reset all pet moderation statuses to PENDING.
+     * @return the number of pets affected, or -1 if the call failed
+     */
+    public int resetModerationStatuses() {
+        try {
+            var response = restClient.post()
+                    .uri("/api/dev/moderation/reset")
+                    .retrieve()
+                    .body(new ParameterizedTypeReference<java.util.Map<String, Object>>() {});
+            if (response != null && response.containsKey("petsAffected")) {
+                int count = ((Number) response.get("petsAffected")).intValue();
+                log.info("Reset moderation statuses for {} pets", count);
+                return count;
+            }
+            return 0;
+        } catch (RestClientException e) {
+            log.error("Failed to reset moderation statuses: {}", e.getMessage());
+            return -1;
         }
     }
 

@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pet Lookup - Moderation Service</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#2D5A47',
+                        secondary: '#F5F0E8',
+                        accent: '#C4705A',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-primary text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center space-x-8">
+                    <a href="/" class="font-serif text-xl font-bold">Moderation Service</a>
+                    <div class="hidden md:flex space-x-4">
+                        <a href="/" class="text-gray-200 hover:text-white hover:bg-primary/50 px-3 py-2 rounded-md text-sm font-medium">Dashboard</a>
+                        <a href="/flagged" class="text-gray-200 hover:text-white hover:bg-primary/50 px-3 py-2 rounded-md text-sm font-medium">Flagged Content</a>
+                        <a href="/batch" class="text-gray-200 hover:text-white hover:bg-primary/50 px-3 py-2 rounded-md text-sm font-medium">Batch Moderation</a>
+                        <a href="/pet" class="bg-primary/80 text-white px-3 py-2 rounded-md text-sm font-medium">Pet Lookup</a>
+                        <a href="/jobs" class="text-gray-200 hover:text-white hover:bg-primary/50 px-3 py-2 rounded-md text-sm font-medium">Jobs</a>
+                        <a href="/logs" class="text-gray-200 hover:text-white hover:bg-primary/50 px-3 py-2 rounded-md text-sm font-medium">AI Logs</a>
+                    </div>
+                </div>
+                <div class="flex items-center">
+                    <span class="flex items-center text-sm">
+                        <span th:if="${apiStatus == 'AVAILABLE'}" class="flex items-center text-green-300">
+                            <span class="w-2 h-2 bg-green-400 rounded-full mr-2"></span>
+                            API Connected
+                        </span>
+                        <span th:unless="${apiStatus == 'AVAILABLE'}" class="flex items-center text-red-300">
+                            <span class="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
+                            API Unavailable
+                        </span>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold text-gray-900 mb-8">Pet Lookup</h1>
+
+        <!-- Alerts -->
+        <div th:if="${success}" class="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded">
+            <span th:text="${success}">Success message</span>
+        </div>
+        <div th:if="${info}" class="mb-4 p-4 bg-blue-100 border border-blue-400 text-blue-700 rounded">
+            <span th:text="${info}">Info message</span>
+        </div>
+        <div th:if="${error}" class="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+            <span th:text="${error}">Error message</span>
+        </div>
+
+        <!-- Search Form -->
+        <div class="bg-white rounded-lg shadow p-6 mb-8">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">Search Pet</h2>
+            <form method="get" class="flex gap-4">
+                <div class="flex-1">
+                    <input type="text" name="id" th:value="${searchedId}"
+                           placeholder="Enter Pet UUID (e.g., 123e4567-e89b-12d3-a456-426614174000)"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary">
+                </div>
+                <button type="submit" class="px-6 py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors">
+                    <svg class="w-5 h-5 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                    Search
+                </button>
+            </form>
+        </div>
+
+        <!-- Pet Details -->
+        <div th:if="${pet}" class="bg-white rounded-lg shadow p-6 mb-8">
+            <div class="flex justify-between items-start mb-6">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-900" th:text="${pet.name()}">Pet Name</h2>
+                    <p class="text-gray-500 font-mono text-sm" th:text="${pet.id()}">pet-uuid</p>
+                </div>
+                <form action="/pet/moderate" method="post" class="flex items-center gap-2">
+                    <input type="hidden" name="petId" th:value="${pet.id()}">
+                    <label class="flex items-center text-sm">
+                        <input type="checkbox" name="textOnly" value="true" class="rounded border-gray-300 text-primary focus:ring-primary mr-1">
+                        Text Only
+                    </label>
+                    <label class="flex items-center text-sm">
+                        <input type="checkbox" name="imagesOnly" value="true" class="rounded border-gray-300 text-primary focus:ring-primary mr-1">
+                        Images Only
+                    </label>
+                    <button type="submit" class="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors">
+                        Run Moderation
+                    </button>
+                </form>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <h3 class="text-sm font-medium text-gray-500 mb-2">Details</h3>
+                    <dl class="space-y-2">
+                        <div class="flex">
+                            <dt class="w-24 text-gray-500">Species:</dt>
+                            <dd class="text-gray-900" th:text="${pet.species()}">-</dd>
+                        </div>
+                        <div class="flex">
+                            <dt class="w-24 text-gray-500">Breed:</dt>
+                            <dd class="text-gray-900" th:text="${pet.breed()}">-</dd>
+                        </div>
+                        <div class="flex">
+                            <dt class="w-24 text-gray-500">Age:</dt>
+                            <dd class="text-gray-900" th:text="${pet.age()} + ' years'">-</dd>
+                        </div>
+                        <div class="flex">
+                            <dt class="w-24 text-gray-500">Sex:</dt>
+                            <dd class="text-gray-900" th:text="${pet.sex()}">-</dd>
+                        </div>
+                        <div class="flex">
+                            <dt class="w-24 text-gray-500">Size:</dt>
+                            <dd class="text-gray-900" th:text="${pet.size()}">-</dd>
+                        </div>
+                        <div class="flex">
+                            <dt class="w-24 text-gray-500">Status:</dt>
+                            <dd class="text-gray-900" th:text="${pet.status()}">-</dd>
+                        </div>
+                    </dl>
+                </div>
+                <div>
+                    <h3 class="text-sm font-medium text-gray-500 mb-2">Description</h3>
+                    <p class="text-gray-900" th:text="${pet.description() ?: 'No description'}">Description</p>
+
+                    <h3 class="text-sm font-medium text-gray-500 mt-4 mb-2">Health Notes</h3>
+                    <p class="text-gray-900" th:text="${pet.healthNotes() ?: 'No health notes'}">Health notes</p>
+                </div>
+            </div>
+
+            <!-- Images -->
+            <div th:if="${pet.imageUrls() != null and !pet.imageUrls().isEmpty()}" class="mt-6">
+                <h3 class="text-sm font-medium text-gray-500 mb-3">Images (<span th:text="${#lists.size(pet.imageUrls())}">0</span>)</h3>
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    <div th:each="url, iterStat : ${pet.imageUrls()}" class="relative group">
+                        <img th:src="${url}"
+                             th:alt="${pet.name() + ' - Image ' + (iterStat.index + 1)}"
+                             class="w-full h-48 object-cover rounded-lg shadow-md border border-gray-200 hover:shadow-lg transition-shadow">
+                        <div class="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs px-2 py-1 rounded-b-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                            <span th:text="'Image ' + (${iterStat.index} + 1)">Image 1</span>
+                        </div>
+                        <a th:href="${url}" target="_blank" class="absolute top-2 right-2 bg-white/80 hover:bg-white p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity" title="Open full size">
+                            <svg class="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+                <div class="mt-2 text-xs text-gray-400">
+                    <span th:each="url, iterStat : ${pet.imageUrls()}">
+                        <span th:if="${iterStat.index > 0}">, </span>
+                        <a th:href="${url}" target="_blank" class="hover:text-primary hover:underline" th:text="${url}">url</a>
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Moderation Results -->
+        <div th:if="${results != null}" class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">Moderation Results</h2>
+
+            <div th:if="${#lists.isEmpty(results)}" class="text-center py-8 text-gray-500">
+                <p class="text-lg font-medium">No moderation results</p>
+                <p class="text-sm">Run moderation to analyze this pet's content.</p>
+            </div>
+
+            <div th:unless="${#lists.isEmpty(results)}" class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Content</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Confidence</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Flags</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Created</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <tr th:each="result : ${results}">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span th:if="${result.contentType.name() == 'TEXT'}" class="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">TEXT</span>
+                                <span th:if="${result.contentType.name() == 'IMAGE'}" class="px-2 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-800">IMAGE</span>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-900" th:text="${result.contentIdentifier}">content</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span th:switch="${result.status.name()}">
+                                    <span th:case="'APPROVED'" class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">Approved</span>
+                                    <span th:case="'FLAGGED'" class="px-2 py-1 text-xs font-medium rounded-full bg-amber-100 text-amber-800">Flagged</span>
+                                    <span th:case="'REJECTED'" class="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">Rejected</span>
+                                    <span th:case="'PENDING'" class="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">Pending</span>
+                                    <span th:case="*" class="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800" th:text="${result.status}">Unknown</span>
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" th:text="${#numbers.formatDecimal(result.confidenceScore * 100, 1, 0)} + '%'">0%</td>
+                            <td class="px-6 py-4">
+                                <div th:if="${result.flags != null and !result.flags.isEmpty()}">
+                                    <div th:each="flag : ${result.flags}" class="text-xs mb-1">
+                                        <span th:if="${flag.severity.name() == 'HIGH'}" class="px-2 py-0.5 rounded-full bg-red-100 text-red-800" th:text="${flag.category.name()}">FLAG</span>
+                                        <span th:if="${flag.severity.name() == 'MEDIUM'}" class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800" th:text="${flag.category.name()}">FLAG</span>
+                                        <span th:if="${flag.severity.name() == 'LOW'}" class="px-2 py-0.5 rounded-full bg-gray-100 text-gray-800" th:text="${flag.category.name()}">FLAG</span>
+                                        <span class="text-gray-500 ml-1" th:text="${flag.description}">desc</span>
+                                    </div>
+                                </div>
+                                <span th:unless="${result.flags != null and !result.flags.isEmpty()}" class="text-gray-400 text-xs">None</span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" th:text="${#temporals.format(result.createdAt, 'MMM d, HH:mm')}">-</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-100 border-t mt-auto">
+        <div class="max-w-7xl mx-auto px-4 py-4 text-center text-gray-500 text-sm">
+            Forever Home Moderation Service - AI-powered content moderation
+        </div>
+    </footer>
+</body>
+</html>

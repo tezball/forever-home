@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Batch Moderation - Moderation Service</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#2D5A47',
+                        secondary: '#F5F0E8',
+                        accent: '#C4705A',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-primary text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center space-x-8">
+                    <a href="/" class="font-serif text-xl font-bold">Moderation Service</a>
+                    <div class="hidden md:flex space-x-4">
+                        <a href="/" class="text-gray-200 hover:text-white hover:bg-primary/50 px-3 py-2 rounded-md text-sm font-medium">Dashboard</a>
+                        <a href="/flagged" class="text-gray-200 hover:text-white hover:bg-primary/50 px-3 py-2 rounded-md text-sm font-medium">Flagged Content</a>
+                        <a href="/batch" class="bg-primary/80 text-white px-3 py-2 rounded-md text-sm font-medium">Batch Moderation</a>
+                        <a href="/pet" class="text-gray-200 hover:text-white hover:bg-primary/50 px-3 py-2 rounded-md text-sm font-medium">Pet Lookup</a>
+                        <a href="/jobs" class="text-gray-200 hover:text-white hover:bg-primary/50 px-3 py-2 rounded-md text-sm font-medium">Jobs</a>
+                        <a href="/logs" class="text-gray-200 hover:text-white hover:bg-primary/50 px-3 py-2 rounded-md text-sm font-medium">AI Logs</a>
+                    </div>
+                </div>
+                <div class="flex items-center">
+                    <span class="flex items-center text-sm">
+                        <span th:if="${apiStatus == 'AVAILABLE'}" class="flex items-center text-green-300">
+                            <span class="w-2 h-2 bg-green-400 rounded-full mr-2"></span>
+                            API Connected
+                        </span>
+                        <span th:unless="${apiStatus == 'AVAILABLE'}" class="flex items-center text-red-300">
+                            <span class="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
+                            API Unavailable
+                        </span>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold text-gray-900 mb-8">Batch Moderation</h1>
+
+        <!-- Alerts -->
+        <div th:if="${success}" class="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded">
+            <span th:text="${success}">Success message</span>
+        </div>
+        <div th:if="${info}" class="mb-4 p-4 bg-blue-100 border border-blue-400 text-blue-700 rounded">
+            <span th:text="${info}">Info message</span>
+        </div>
+        <div th:if="${error}" class="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+            <span th:text="${error}">Error message</span>
+        </div>
+
+        <!-- Run Batch Form -->
+        <div class="bg-white rounded-lg shadow p-6 mb-8">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">Run New Batch</h2>
+            <form action="/batch/run" method="post">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Pet Limit</label>
+                        <select name="limit" class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary">
+                            <option value="10">10 pets</option>
+                            <option value="25">25 pets</option>
+                            <option value="50">50 pets</option>
+                            <option value="100" selected>100 pets</option>
+                            <option value="200">200 pets</option>
+                        </select>
+                    </div>
+                    <div class="flex items-end">
+                        <label class="flex items-center">
+                            <input type="checkbox" name="textOnly" value="true" class="rounded border-gray-300 text-primary focus:ring-primary">
+                            <span class="ml-2 text-sm text-gray-700">Text Only</span>
+                        </label>
+                    </div>
+                    <div class="flex items-end">
+                        <label class="flex items-center">
+                            <input type="checkbox" name="imagesOnly" value="true" class="rounded border-gray-300 text-primary focus:ring-primary">
+                            <span class="ml-2 text-sm text-gray-700">Images Only</span>
+                        </label>
+                    </div>
+                    <div class="flex items-end">
+                        <button type="submit" class="w-full px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors">
+                            <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            Start Batch
+                        </button>
+                    </div>
+                </div>
+                <p class="text-sm text-gray-500">
+                    Note: This will process available pets that have moderation status of PENDING. The operation runs synchronously.
+                </p>
+            </form>
+        </div>
+
+        <!-- Recent Jobs -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-semibold text-gray-900">Recent Jobs</h2>
+                <a href="/jobs" class="text-primary hover:underline text-sm">View all jobs</a>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Job ID</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Progress</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Flagged</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Options</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Started</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Completed</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <tr th:each="job : ${recentJobs}">
+                            <td class="px-6 py-4 whitespace-nowrap font-mono text-sm text-gray-900" th:text="${#strings.substring(job.id.toString(), 0, 8)} + '...'">job-id</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span th:switch="${job.status.name()}">
+                                    <span th:case="'COMPLETED'" class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">Completed</span>
+                                    <span th:case="'RUNNING'" class="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">Running</span>
+                                    <span th:case="'FAILED'" class="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">Failed</span>
+                                    <span th:case="'PENDING'" class="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">Pending</span>
+                                    <span th:case="'CANCELLED'" class="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">Cancelled</span>
+                                    <span th:case="*" class="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800" th:text="${job.status}">Unknown</span>
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                <div class="flex items-center">
+                                    <div class="w-24 bg-gray-200 rounded-full h-2 mr-2">
+                                        <div class="bg-primary h-2 rounded-full" th:style="'width: ' + ${job.progressPercent} + '%'"></div>
+                                    </div>
+                                    <span th:text="${job.processedPets} + '/' + ${job.totalPets}">0/0</span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                <span th:if="${job.flaggedPets > 0}" class="text-amber-600 font-medium" th:text="${job.flaggedPets}">0</span>
+                                <span th:unless="${job.flaggedPets > 0}" class="text-gray-400">0</span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-xs text-gray-500">
+                                <span th:if="${job.textOnly}" class="px-2 py-0.5 bg-blue-100 text-blue-800 rounded mr-1">Text</span>
+                                <span th:if="${job.imagesOnly}" class="px-2 py-0.5 bg-purple-100 text-purple-800 rounded mr-1">Images</span>
+                                <span th:unless="${job.textOnly or job.imagesOnly}" class="text-gray-400">All</span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" th:text="${job.startedAt != null} ? ${#temporals.format(job.startedAt, 'MMM d, HH:mm')} : '-'">-</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" th:text="${job.completedAt != null} ? ${#temporals.format(job.completedAt, 'MMM d, HH:mm')} : '-'">-</td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(recentJobs)}">
+                            <td colspan="7" class="px-6 py-8 text-center text-gray-500">
+                                <div class="text-lg font-medium">No jobs yet</div>
+                                <div class="text-sm">Run a batch to start moderating pet profiles.</div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-100 border-t mt-auto">
+        <div class="max-w-7xl mx-auto px-4 py-4 text-center text-gray-500 text-sm">
+            Forever Home Moderation Service - AI-powered content moderation
+        </div>
+    </footer>
+</body>
+</html>

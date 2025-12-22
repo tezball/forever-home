@@ -18,6 +18,8 @@ public interface ModerationResultRepository extends CrudRepository<ModerationRes
 
     List<ModerationResult> findByPetIdOrderByCreatedAtDesc(UUID petId);
 
+    List<ModerationResult> findByJobIdOrderByCreatedAtAsc(UUID jobId);
+
     List<ModerationResult> findByStatus(ModerationStatus status);
 
     @Query("SELECT * FROM moderation_results WHERE status = :status ORDER BY created_at DESC LIMIT :limit")

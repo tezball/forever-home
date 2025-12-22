@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${pageTitle} + ' - Moderation Service'">Moderation Service</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#2D5A47',
+                        secondary: '#F5F0E8',
+                        accent: '#C4705A',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        serif: ['Lora', 'Georgia', 'serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        [x-cloak] { display: none !important; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-primary text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center space-x-8">
+                    <a href="/" class="font-serif text-xl font-bold">Moderation Service</a>
+                    <div class="hidden md:flex space-x-4">
+                        <a href="/" th:classappend="${currentPage == 'dashboard'} ? 'bg-primary/80 text-white' : 'text-gray-200 hover:text-white hover:bg-primary/50'"
+                           class="px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                            Dashboard
+                        </a>
+                        <a href="/flagged" th:classappend="${currentPage == 'flagged'} ? 'bg-primary/80 text-white' : 'text-gray-200 hover:text-white hover:bg-primary/50'"
+                           class="px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                            Flagged Content
+                        </a>
+                        <a href="/batch" th:classappend="${currentPage == 'batch'} ? 'bg-primary/80 text-white' : 'text-gray-200 hover:text-white hover:bg-primary/50'"
+                           class="px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                            Batch Moderation
+                        </a>
+                        <a href="/pet" th:classappend="${currentPage == 'pet'} ? 'bg-primary/80 text-white' : 'text-gray-200 hover:text-white hover:bg-primary/50'"
+                           class="px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                            Pet Lookup
+                        </a>
+                        <a href="/jobs" th:classappend="${currentPage == 'jobs'} ? 'bg-primary/80 text-white' : 'text-gray-200 hover:text-white hover:bg-primary/50'"
+                           class="px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                            Jobs
+                        </a>
+                        <a href="/logs" th:classappend="${currentPage == 'logs'} ? 'bg-primary/80 text-white' : 'text-gray-200 hover:text-white hover:bg-primary/50'"
+                           class="px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                            AI Logs
+                        </a>
+                    </div>
+                </div>
+                <div class="flex items-center">
+                    <span th:if="${apiStatus}" class="flex items-center text-sm">
+                        <span th:if="${apiStatus == 'AVAILABLE'}" class="flex items-center text-green-300">
+                            <span class="w-2 h-2 bg-green-400 rounded-full mr-2"></span>
+                            API Connected
+                        </span>
+                        <span th:unless="${apiStatus == 'AVAILABLE'}" class="flex items-center text-red-300">
+                            <span class="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
+                            API Unavailable
+                        </span>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 py-8">
+        <div th:replace="${content}">
+            <!-- Page content will be inserted here -->
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-100 border-t mt-auto">
+        <div class="max-w-7xl mx-auto px-4 py-4 text-center text-gray-500 text-sm">
+            Forever Home Moderation Service - AI-powered content moderation
+        </div>
+    </footer>
+</body>
+</html>

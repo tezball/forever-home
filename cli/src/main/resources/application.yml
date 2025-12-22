@@ -25,6 +25,7 @@ fh:
   loki-port: 3100
   mailpit-ui-port: 8025
   mailpit-smtp-port: 1025
+  moderation-service-port: 8081
 
 logging:
   level:

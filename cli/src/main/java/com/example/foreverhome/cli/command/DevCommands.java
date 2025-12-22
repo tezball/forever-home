@@ -146,6 +146,7 @@ public class DevCommands {
         checkService("Loki", properties.lokiPort(), "http://localhost:" + properties.lokiPort());
         checkService("Grafana", properties.grafanaPort(), "http://localhost:" + properties.grafanaPort() + " (admin/admin)");
         checkService("Mailpit", properties.mailpitUiPort(), "http://localhost:" + properties.mailpitUiPort());
+        checkService("Moderation", properties.moderationServicePort(), "http://localhost:" + properties.moderationServicePort());
         checkService("App", properties.appPort(), "http://localhost:" + properties.appPort());
 
         output.println();
@@ -358,6 +359,7 @@ public class DevCommands {
         waitForService("Loki", properties.lokiPort(), 30);
         waitForService("Grafana", properties.grafanaPort(), 30);
         waitForService("Mailpit", properties.mailpitUiPort(), 30);
+        waitForService("Moderation", properties.moderationServicePort(), 90);
     }
 
     private void waitForService(String name, int port, int timeout) {

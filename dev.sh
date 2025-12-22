@@ -25,6 +25,7 @@ LOKI_PORT=3100
 GRAFANA_PORT=3000
 MAILPIT_UI_PORT=8025
 MAILPIT_SMTP_PORT=1025
+MODERATION_PORT=8081
 
 # Default settings
 S3_MODE="local"
@@ -101,6 +102,7 @@ cmd_start() {
     wait_for_port $LOCALSTACK_PORT "LocalStack" 30 || true
     wait_for_port $GRAFANA_PORT "Grafana" 30 || true
     wait_for_port $MAILPIT_UI_PORT "Mailpit" 30 || true
+    wait_for_port $MODERATION_PORT "Moderation" 90 || true
 
     if ! port_in_use $APP_PORT; then
         echo -e "${YELLOW}Starting application...${NC}"
@@ -147,6 +149,7 @@ cmd_status() {
         "$LOKI_PORT:Loki"
         "$GRAFANA_PORT:Grafana (http://localhost:$GRAFANA_PORT)"
         "$MAILPIT_UI_PORT:Mailpit (http://localhost:$MAILPIT_UI_PORT)"
+        "$MODERATION_PORT:Moderation (http://localhost:$MODERATION_PORT)"
         "$APP_PORT:App (http://localhost:$APP_PORT)"
     )
     for svc in "${services[@]}"; do

@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Interaction Logs - Moderation Service</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#2D5A47',
+                        secondary: '#F5F0E8',
+                        accent: '#C4705A',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-primary text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center space-x-8">
+                    <a href="/" class="font-serif text-xl font-bold">Moderation Service</a>
+                    <div class="hidden md:flex space-x-4">
+                        <a href="/" class="text-gray-200 hover:text-white hover:bg-primary/50 px-3 py-2 rounded-md text-sm font-medium">Dashboard</a>
+                        <a href="/flagged" class="text-gray-200 hover:text-white hover:bg-primary/50 px-3 py-2 rounded-md text-sm font-medium">Flagged Content</a>
+                        <a href="/batch" class="text-gray-200 hover:text-white hover:bg-primary/50 px-3 py-2 rounded-md text-sm font-medium">Batch Moderation</a>
+                        <a href="/pet" class="text-gray-200 hover:text-white hover:bg-primary/50 px-3 py-2 rounded-md text-sm font-medium">Pet Lookup</a>
+                        <a href="/jobs" class="text-gray-200 hover:text-white hover:bg-primary/50 px-3 py-2 rounded-md text-sm font-medium">Jobs</a>
+                        <a href="/logs" class="bg-primary/80 text-white px-3 py-2 rounded-md text-sm font-medium">AI Logs</a>
+                    </div>
+                </div>
+                <div class="flex items-center">
+                    <span class="flex items-center text-sm">
+                        <span th:if="${apiStatus == 'AVAILABLE'}" class="flex items-center text-green-300">
+                            <span class="w-2 h-2 bg-green-400 rounded-full mr-2"></span>
+                            API Connected
+                        </span>
+                        <span th:unless="${apiStatus == 'AVAILABLE'}" class="flex items-center text-red-300">
+                            <span class="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
+                            API Unavailable
+                        </span>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 py-8">
+        <!-- Flash Messages -->
+        <div th:if="${param.success}" class="mb-6 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">
+            <span th:text="${param.success}">Success</span>
+        </div>
+        <div th:if="${param.error}" class="mb-6 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
+            <span th:text="${param.error}">Error</span>
+        </div>
+
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-900">AI Interaction Logs</h1>
+            <form action="/logs/clear" method="post" onsubmit="return confirm('Clear all AI interaction logs?');">
+                <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors text-sm">
+                    Clear Logs
+                </button>
+            </form>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+            <div class="bg-white rounded-lg shadow p-4">
+                <div class="text-sm text-gray-500">Total Logs</div>
+                <div class="text-2xl font-bold text-gray-900" th:text="${stats.totalLogs()}">0</div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4">
+                <div class="text-sm text-gray-500">Successful</div>
+                <div class="text-2xl font-bold text-green-600" th:text="${stats.successfulLogs()}">0</div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4">
+                <div class="text-sm text-gray-500">Failed</div>
+                <div class="text-2xl font-bold text-red-600" th:text="${stats.failedLogs()}">0</div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4">
+                <div class="text-sm text-gray-500">Text Checks</div>
+                <div class="text-2xl font-bold text-blue-600" th:text="${stats.textLogs()}">0</div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4">
+                <div class="text-sm text-gray-500">Image Checks</div>
+                <div class="text-2xl font-bold text-purple-600" th:text="${stats.imageLogs()}">0</div>
+            </div>
+        </div>
+
+        <!-- Avg Duration -->
+        <div class="bg-white rounded-lg shadow p-4 mb-6">
+            <span class="text-sm text-gray-500">Average Response Time:</span>
+            <span class="text-lg font-semibold ml-2" th:text="${#numbers.formatDecimal(stats.avgDurationMs(), 1, 0)} + 'ms'">0ms</span>
+        </div>
+
+        <!-- Filters -->
+        <div class="bg-white rounded-lg shadow p-4 mb-6">
+            <form method="get" class="flex items-center gap-4 flex-wrap">
+                <div>
+                    <label class="text-sm text-gray-700 mr-2">Type:</label>
+                    <select name="type" class="rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary">
+                        <option value="">All</option>
+                        <option value="TEXT" th:selected="${selectedType == 'TEXT'}">Text</option>
+                        <option value="IMAGE" th:selected="${selectedType == 'IMAGE'}">Image</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-sm text-gray-700 mr-2">Show:</label>
+                    <select name="limit" class="rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary">
+                        <option value="25" th:selected="${limit == 25}">25 logs</option>
+                        <option value="50" th:selected="${limit == 50}">50 logs</option>
+                        <option value="100" th:selected="${limit == 100}">100 logs</option>
+                        <option value="200" th:selected="${limit == 200}">200 logs</option>
+                    </select>
+                </div>
+                <button type="submit" class="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors text-sm">
+                    Apply Filters
+                </button>
+            </form>
+        </div>
+
+        <!-- Logs Table -->
+        <div class="bg-white rounded-lg shadow overflow-hidden">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Time</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Model</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Pet ID</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Content</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Duration</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Response Preview</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    <tr th:each="log : ${logs}"
+                        th:data-log-id="${log.id()}"
+                        onclick="window.location.href='/logs/' + this.dataset.logId"
+                        class="cursor-pointer hover:bg-gray-50 transition-colors">
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500" th:text="${#temporals.format(log.timestamp(), 'HH:mm:ss')}">00:00:00</td>
+                        <td class="px-4 py-3 whitespace-nowrap">
+                            <span th:if="${log.contentType().name() == 'TEXT'}" class="px-2 py-0.5 text-xs font-medium rounded bg-blue-100 text-blue-800">TEXT</span>
+                            <span th:if="${log.contentType().name() == 'IMAGE'}" class="px-2 py-0.5 text-xs font-medium rounded bg-purple-100 text-purple-800">IMAGE</span>
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm font-mono text-gray-700" th:text="${log.modelUsed()}">model</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm font-mono text-gray-500" th:text="${#strings.substring(log.petId().toString(), 0, 8)} + '...'">pet-id</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600" th:text="${log.contentIdentifier()}">content</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                            <span th:text="${log.durationMs()} + 'ms'">0ms</span>
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap">
+                            <span th:if="${log.success()}" class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">OK</span>
+                            <span th:unless="${log.success()}" class="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">FAIL</span>
+                        </td>
+                        <td class="px-4 py-3 text-sm text-gray-600 max-w-xs truncate">
+                            <span th:if="${log.success()}" th:text="${log.truncatedResponse(60)}">Response...</span>
+                            <span th:unless="${log.success()}" class="text-red-600" th:text="${log.errorMessage()}">Error...</span>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(logs)}">
+                        <td colspan="8" class="px-6 py-8 text-center text-gray-500">
+                            <div class="text-lg font-medium">No AI interaction logs yet</div>
+                            <div class="text-sm">Run a moderation check to see AI interactions here.</div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="mt-4 text-sm text-gray-500">
+            Showing <span th:text="${#lists.size(logs)}">0</span> logs (max 500 stored in memory)
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-100 border-t mt-auto">
+        <div class="max-w-7xl mx-auto px-4 py-4 text-center text-gray-500 text-sm">
+            Forever Home Moderation Service - AI-powered content moderation
+        </div>
+    </footer>
+</body>
+</html>

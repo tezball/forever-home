@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log Details - Moderation Service</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#2D5A47',
+                        secondary: '#F5F0E8',
+                        accent: '#C4705A',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-primary text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center space-x-8">
+                    <a href="/" class="font-serif text-xl font-bold">Moderation Service</a>
+                    <div class="hidden md:flex space-x-4">
+                        <a href="/" class="text-gray-200 hover:text-white hover:bg-primary/50 px-3 py-2 rounded-md text-sm font-medium">Dashboard</a>
+                        <a href="/flagged" class="text-gray-200 hover:text-white hover:bg-primary/50 px-3 py-2 rounded-md text-sm font-medium">Flagged Content</a>
+                        <a href="/batch" class="text-gray-200 hover:text-white hover:bg-primary/50 px-3 py-2 rounded-md text-sm font-medium">Batch Moderation</a>
+                        <a href="/pet" class="text-gray-200 hover:text-white hover:bg-primary/50 px-3 py-2 rounded-md text-sm font-medium">Pet Lookup</a>
+                        <a href="/jobs" class="text-gray-200 hover:text-white hover:bg-primary/50 px-3 py-2 rounded-md text-sm font-medium">Jobs</a>
+                        <a href="/logs" class="bg-primary/80 text-white px-3 py-2 rounded-md text-sm font-medium">AI Logs</a>
+                    </div>
+                </div>
+                <div class="flex items-center">
+                    <span class="flex items-center text-sm">
+                        <span th:if="${apiStatus == 'AVAILABLE'}" class="flex items-center text-green-300">
+                            <span class="w-2 h-2 bg-green-400 rounded-full mr-2"></span>
+                            API Connected
+                        </span>
+                        <span th:unless="${apiStatus == 'AVAILABLE'}" class="flex items-center text-red-300">
+                            <span class="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
+                            API Unavailable
+                        </span>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 py-8">
+        <!-- Breadcrumb -->
+        <nav class="mb-6">
+            <ol class="flex items-center space-x-2 text-sm text-gray-500">
+                <li><a href="/logs" class="hover:text-primary">AI Logs</a></li>
+                <li>/</li>
+                <li class="text-gray-900 font-medium" th:text="${#strings.substring(log.id().toString(), 0, 8)} + '...'">Log ID</li>
+            </ol>
+        </nav>
+
+        <!-- Log Header -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <div class="flex justify-between items-start mb-4">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900 mb-2">AI Interaction Log</h1>
+                    <p class="text-sm text-gray-500 font-mono" th:text="${log.id()}">log-uuid</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span th:if="${log.contentType().name() == 'TEXT'}" class="px-3 py-1 text-sm font-medium rounded-full bg-blue-100 text-blue-800">TEXT</span>
+                    <span th:if="${log.contentType().name() == 'IMAGE'}" class="px-3 py-1 text-sm font-medium rounded-full bg-purple-100 text-purple-800">IMAGE</span>
+                    <span th:if="${log.success()}" class="px-3 py-1 text-sm font-medium rounded-full bg-green-100 text-green-800">Success</span>
+                    <span th:unless="${log.success()}" class="px-3 py-1 text-sm font-medium rounded-full bg-red-100 text-red-800">Failed</span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div>
+                    <div class="text-sm text-gray-500">Timestamp</div>
+                    <div class="text-lg font-semibold" th:text="${#temporals.format(log.timestamp(), 'yyyy-MM-dd HH:mm:ss')}">-</div>
+                </div>
+                <div>
+                    <div class="text-sm text-gray-500">Model Used</div>
+                    <div class="text-lg font-semibold font-mono" th:text="${log.modelUsed()}">-</div>
+                </div>
+                <div>
+                    <div class="text-sm text-gray-500">Duration</div>
+                    <div class="text-lg font-semibold" th:text="${log.durationMs()} + 'ms'">-</div>
+                </div>
+                <div>
+                    <div class="text-sm text-gray-500">Content</div>
+                    <div class="text-lg font-semibold" th:text="${log.contentIdentifier()}">-</div>
+                </div>
+            </div>
+
+            <div class="mt-4 pt-4 border-t">
+                <div class="text-sm text-gray-500">Pet ID</div>
+                <div class="font-mono text-gray-700" th:text="${log.petId()}">-</div>
+            </div>
+        </div>
+
+        <!-- Error Message (if failed) -->
+        <div th:if="${!log.success()}" class="bg-red-50 border border-red-200 rounded-lg p-6 mb-6">
+            <h2 class="text-lg font-semibold text-red-800 mb-2">Error</h2>
+            <pre class="text-red-700 whitespace-pre-wrap font-mono text-sm" th:text="${log.errorMessage()}">Error message</pre>
+        </div>
+
+        <!-- Prompt Section -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-semibold text-gray-900">AI Prompt (Input)</h2>
+                <button onclick="copyToClipboard('prompt-content')" class="text-sm text-primary hover:underline">Copy</button>
+            </div>
+            <div id="prompt-content" class="bg-gray-50 rounded-lg p-4 overflow-x-auto">
+                <pre class="text-sm text-gray-700 whitespace-pre-wrap font-mono" th:text="${log.prompt() != null ? log.prompt() : 'No prompt recorded'}">Prompt content</pre>
+            </div>
+        </div>
+
+        <!-- Response Section -->
+        <div th:if="${log.success()}" class="bg-white rounded-lg shadow p-6 mb-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-semibold text-gray-900">AI Response (Output)</h2>
+                <button onclick="copyToClipboard('response-content')" class="text-sm text-primary hover:underline">Copy</button>
+            </div>
+            <div id="response-content" class="bg-gray-50 rounded-lg p-4 overflow-x-auto">
+                <pre class="text-sm text-gray-700 whitespace-pre-wrap font-mono" th:text="${log.response() != null ? log.response() : 'No response recorded'}">Response content</pre>
+            </div>
+        </div>
+
+        <!-- Back button -->
+        <div class="mt-6">
+            <a href="/logs" class="inline-flex items-center text-sm text-gray-500 hover:text-primary">
+                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                </svg>
+                Back to Logs
+            </a>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-100 border-t mt-auto">
+        <div class="max-w-7xl mx-auto px-4 py-4 text-center text-gray-500 text-sm">
+            Forever Home Moderation Service - AI-powered content moderation
+        </div>
+    </footer>
+
+    <script>
+        function copyToClipboard(elementId) {
+            const element = document.getElementById(elementId);
+            const text = element.innerText;
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Copied to clipboard!');
+            });
+        }
+    </script>
+</body>
+</html>
