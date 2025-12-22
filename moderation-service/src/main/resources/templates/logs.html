@@ -105,7 +105,7 @@
             <form method="get" class="flex items-center gap-4 flex-wrap">
                 <div>
                     <label class="text-sm text-gray-700 mr-2">Type:</label>
-                    <select name="type" class="rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary">
+                    <select name="type" class="rounded-md border border-gray-300 shadow-sm focus:border-primary focus:ring-primary">
                         <option value="">All</option>
                         <option value="TEXT" th:selected="${selectedType == 'TEXT'}">Text</option>
                         <option value="IMAGE" th:selected="${selectedType == 'IMAGE'}">Image</option>
@@ -113,7 +113,7 @@
                 </div>
                 <div>
                     <label class="text-sm text-gray-700 mr-2">Show:</label>
-                    <select name="limit" class="rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary">
+                    <select name="limit" class="rounded-md border border-gray-300 shadow-sm focus:border-primary focus:ring-primary">
                         <option value="25" th:selected="${limit == 25}">25 logs</option>
                         <option value="50" th:selected="${limit == 50}">50 logs</option>
                         <option value="100" th:selected="${limit == 100}">100 logs</option>

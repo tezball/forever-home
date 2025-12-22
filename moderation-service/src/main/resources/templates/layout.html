@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title th:text="${pageTitle} + ' - Moderation Service'">Moderation Service</title>
+    <link rel="icon" href="data:,">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <script>
@@ -34,6 +35,7 @@
             <div class="flex justify-between h-16">
                 <div class="flex items-center space-x-8">
                     <a href="/" class="font-serif text-xl font-bold">Moderation Service</a>
+                    <!-- Desktop Navigation -->
                     <div class="hidden md:flex space-x-4">
                         <a href="/" th:classappend="${currentPage == 'dashboard'} ? 'bg-primary/80 text-white' : 'text-gray-200 hover:text-white hover:bg-primary/50'"
                            class="px-3 py-2 rounded-md text-sm font-medium transition-colors">
@@ -61,8 +63,9 @@
                         </a>
                     </div>
                 </div>
-                <div class="flex items-center">
-                    <span th:if="${apiStatus}" class="flex items-center text-sm">
+                <div class="flex items-center space-x-4">
+                    <!-- API Status (Desktop) -->
+                    <span th:if="${apiStatus}" class="hidden md:flex items-center text-sm">
                         <span th:if="${apiStatus == 'AVAILABLE'}" class="flex items-center text-green-300">
                             <span class="w-2 h-2 bg-green-400 rounded-full mr-2"></span>
                             API Connected
@@ -72,10 +75,74 @@
                             API Unavailable
                         </span>
                     </span>
+                    <!-- API Status Indicator (Mobile - just the dot) -->
+                    <span th:if="${apiStatus}" class="md:hidden">
+                        <span th:if="${apiStatus == 'AVAILABLE'}" class="w-2 h-2 bg-green-400 rounded-full inline-block"></span>
+                        <span th:unless="${apiStatus == 'AVAILABLE'}" class="w-2 h-2 bg-red-400 rounded-full inline-block"></span>
+                    </span>
+                    <!-- Mobile Menu Button -->
+                    <button onclick="toggleMobileMenu()" class="md:hidden p-2 rounded-md hover:bg-primary/80 transition-colors" aria-label="Toggle menu">
+                        <svg id="menu-icon-open" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                        </svg>
+                        <svg id="menu-icon-close" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- Mobile Navigation Menu -->
+        <div id="mobile-menu" class="hidden md:hidden border-t border-primary/50">
+            <div class="px-4 py-3 space-y-2">
+                <a href="/" th:classappend="${currentPage == 'dashboard'} ? 'bg-primary/80' : 'hover:bg-primary/50'"
+                   class="block px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                    Dashboard
+                </a>
+                <a href="/flagged" th:classappend="${currentPage == 'flagged'} ? 'bg-primary/80' : 'hover:bg-primary/50'"
+                   class="block px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                    Flagged Content
+                </a>
+                <a href="/batch" th:classappend="${currentPage == 'batch'} ? 'bg-primary/80' : 'hover:bg-primary/50'"
+                   class="block px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                    Batch Moderation
+                </a>
+                <a href="/pet" th:classappend="${currentPage == 'pet'} ? 'bg-primary/80' : 'hover:bg-primary/50'"
+                   class="block px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                    Pet Lookup
+                </a>
+                <a href="/jobs" th:classappend="${currentPage == 'jobs'} ? 'bg-primary/80' : 'hover:bg-primary/50'"
+                   class="block px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                    Jobs
+                </a>
+                <a href="/logs" th:classappend="${currentPage == 'logs'} ? 'bg-primary/80' : 'hover:bg-primary/50'"
+                   class="block px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                    AI Logs
+                </a>
+                <!-- API Status in Mobile Menu -->
+                <div th:if="${apiStatus}" class="pt-2 border-t border-primary/30 mt-2">
+                    <span th:if="${apiStatus == 'AVAILABLE'}" class="flex items-center text-sm text-green-300 px-3 py-2">
+                        <span class="w-2 h-2 bg-green-400 rounded-full mr-2"></span>
+                        API Connected
+                    </span>
+                    <span th:unless="${apiStatus == 'AVAILABLE'}" class="flex items-center text-sm text-red-300 px-3 py-2">
+                        <span class="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
+                        API Unavailable
+                    </span>
                 </div>
             </div>
         </div>
     </nav>
+    <script>
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobile-menu');
+            const iconOpen = document.getElementById('menu-icon-open');
+            const iconClose = document.getElementById('menu-icon-close');
+            menu.classList.toggle('hidden');
+            iconOpen.classList.toggle('hidden');
+            iconClose.classList.toggle('hidden');
+        }
+    </script>
 
     <!-- Main Content -->
     <main class="max-w-7xl mx-auto px-4 py-8">

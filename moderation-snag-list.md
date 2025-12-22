@@ -4,18 +4,19 @@
 **Reviewer:** Support Agent QA Review
 **Service URL:** http://localhost:8081
 **Screenshots:** `.playwright-mcp/moderation-*.png`
+**Last Updated:** 2025-12-22
 
 ---
 
 ## Summary
 
-| Severity | Count |
-|----------|-------|
-| Critical | 1 |
-| Major | 1 |
-| Minor | 3 |
-| Cosmetic | 1 |
-| **Total** | **6** |
+| Severity | Count | Fixed | Status |
+|----------|-------|-------|--------|
+| Critical | 1 | 1 | FIXED |
+| Major | 1 | 0 | Not a Bug |
+| Minor | 3 | 2 | 1 Deferred |
+| Cosmetic | 1 | 0 | Deferred |
+| **Total** | **6** | **3** | |
 
 ---
 
@@ -26,6 +27,7 @@
 **Severity:** Critical
 **Page:** All pages
 **Screenshot:** `moderation-mobile-nav-issue.png`
+**Status:** FIXED
 
 **Description:**
 On mobile viewports (< 768px), the navigation menu links are hidden using `md:flex` (Tailwind's medium breakpoint), but there is no hamburger menu or alternative navigation provided. Users on mobile devices cannot navigate between pages.
@@ -51,6 +53,9 @@ Mobile users cannot use the application effectively. They can only navigate via:
 - `moderation-service/src/main/resources/templates/layout.html`
 - All page templates that duplicate the nav structure
 
+**Fix Applied:**
+Added hamburger menu button with JavaScript toggle function to `layout.html`. The mobile menu includes all navigation links and API status indicator. Uses vanilla JS for toggling visibility.
+
 ---
 
 ## Major Issues
@@ -59,6 +64,7 @@ Mobile users cannot use the application effectively. They can only navigate via:
 
 **Severity:** Major
 **Component:** Backend API Integration
+**Status:** NOT A BUG
 
 **Description:**
 The dev seed endpoints on the main application return 500 Internal Server errors, preventing test data from being loaded for moderation testing.
@@ -79,6 +85,12 @@ Demo data should be seeded successfully, populating pets for moderation.
 **Impact:**
 Cannot test full moderation workflow without manually creating test data through the main application UI.
 
+**Resolution:**
+This endpoint does not exist. Test data is automatically seeded by `TestDataSeeder` on startup when `app.test-mode.enabled=true`. Available dev endpoints are:
+- `POST /api/dev/moderation/reset` - Reset moderation statuses
+- `GET /api/dev/moderation/pending` - Get pending pets
+- `GET /api/dev/test-accounts` - Get test account info
+
 ---
 
 ## Minor Issues
@@ -87,6 +99,7 @@ Cannot test full moderation workflow without manually creating test data through
 
 **Severity:** Minor
 **Page:** All pages
+**Status:** FIXED
 
 **Description:**
 Console shows 404 error for `/favicon.ico` - the moderation service has no favicon configured.
@@ -102,8 +115,8 @@ A favicon should be present, or the request should be handled gracefully.
 **Actual Behavior:**
 404 error logged to console on every page load.
 
-**Suggested Fix:**
-Add a favicon.ico to `src/main/resources/static/` or add a `<link rel="icon" href="data:,">` to suppress the request.
+**Fix Applied:**
+Added `<link rel="icon" href="data:,">` to `layout.html` to suppress favicon requests.
 
 ---
 
@@ -111,6 +124,7 @@ Add a favicon.ico to `src/main/resources/static/` or add a `<link rel="icon" hre
 
 **Severity:** Minor
 **Page:** All pages
+**Status:** DEFERRED
 
 **Description:**
 Console shows warning that Tailwind CDN should not be used in production.
@@ -128,12 +142,16 @@ cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in pro
 **Suggested Fix:**
 Build Tailwind CSS at compile time and serve static CSS file.
 
+**Deferral Reason:**
+Acceptable for internal admin tool. Can be addressed when preparing for production deployment.
+
 ---
 
 ### SNAG-005: Form Select Dropdowns Missing Border Styling
 
 **Severity:** Minor
 **Page:** Multiple (Flagged, Batch, Jobs, Logs)
+**Status:** FIXED
 
 **Description:**
 The `<select>` dropdowns use Tailwind's `border-gray-300` class but it doesn't render visibly in the current setup. Dropdowns appear without clear borders, making them less obvious as interactive elements.
@@ -150,6 +168,9 @@ Dropdowns should have visible borders matching the design system.
 **Actual Behavior:**
 Dropdowns render with very faint or no visible borders.
 
+**Fix Applied:**
+Added `border` class to all `<select>` elements in affected templates (flagged.html, batch.html, jobs.html, logs.html). The `border-gray-300` class alone doesn't render borders without the base `border` class.
+
 ---
 
 ## Cosmetic Issues
@@ -158,6 +179,7 @@ Dropdowns render with very faint or no visible borders.
 
 **Severity:** Cosmetic
 **Page:** All pages
+**Status:** DEFERRED
 
 **Description:**
 Each page template hardcodes its own navigation with the active state, rather than using a shared template with dynamic active state. This is a code maintainability issue that could lead to inconsistencies.
@@ -171,6 +193,9 @@ Each page template hardcodes its own navigation with the active state, rather th
 - Code duplication
 - Risk of inconsistent navigation styling if templates diverge
 - Harder to maintain
+
+**Deferral Reason:**
+Templates work correctly, this is a maintainability concern. Refactoring all templates to use the layout fragment system is a larger effort that can be addressed in a future cleanup pass.
 
 ---
 

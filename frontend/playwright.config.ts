@@ -16,18 +16,30 @@ export default defineConfig({
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
+      testIgnore: /moderation-service\.spec\.ts/,
     },
     {
       name: 'firefox',
       use: { ...devices['Desktop Firefox'] },
+      testIgnore: /moderation-service\.spec\.ts/,
     },
     {
       name: 'webkit',
       use: { ...devices['Desktop Safari'] },
+      testIgnore: /moderation-service\.spec\.ts/,
     },
     {
       name: 'Mobile Chrome',
       use: { ...devices['Pixel 5'] },
+      testIgnore: /moderation-service\.spec\.ts/,
+    },
+    {
+      name: 'moderation-service',
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:8081',
+      },
+      testMatch: /moderation-service\.spec\.ts/,
     },
   ],
   webServer: {
