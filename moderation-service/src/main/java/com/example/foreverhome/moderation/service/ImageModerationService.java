@@ -194,34 +194,22 @@ public class ImageModerationService {
 
     private String buildImageModerationPrompt() {
         return """
-                You are a content moderator for a pet adoption platform called Forever Home.
-                Analyze this image that was uploaded as a pet profile photo.
+                Look at this image carefully. This is a pet profile photo for an adoption website.
 
-                CHECK THE FOLLOWING:
-                1. Does this image contain a pet (dog or cat)?
-                2. Is the image family-friendly and appropriate for all ages?
-                3. Is the image clear enough to see the pet?
-                4. Are there any concerning elements (violence, inappropriate content, etc.)?
+                Answer these two questions:
 
-                RESPOND IN THIS EXACT FORMAT:
-                IS_PET: [YES/NO]
-                FAMILY_SAFE: [YES/NO]
+                1. IS_PET: Does this image show a dog, cat, or other pet animal? Answer YES or NO.
+                   - Answer YES if you see any pet animal (dog, cat, rabbit, bird, hamster, etc.)
+                   - Answer NO only if there is definitely no animal in the image
 
-                If there are specific issues, add lines:
-                ISSUE: [CATEGORY] - [Description]
+                2. FAMILY_SAFE: Is this image appropriate for all ages? Answer YES or NO.
 
+                Reply with ONLY these two lines:
+                IS_PET: YES or NO
+                FAMILY_SAFE: YES or NO
+
+                If you see a problem, add: ISSUE: [CATEGORY] - [description]
                 Categories: NOT_PET, NSFW, UNCLEAR, MISLEADING, INAPPROPRIATE
-
-                EXAMPLE RESPONSES:
-
-                For a good pet photo:
-                "IS_PET: YES
-                FAMILY_SAFE: YES"
-
-                For a problematic image:
-                "IS_PET: NO
-                FAMILY_SAFE: YES
-                ISSUE: NOT_PET - Image shows a car instead of a pet"
                 """;
     }
 
