@@ -56,7 +56,7 @@ export function Header() {
       case 'ADOPTER': return '/adopter/dashboard';
       case 'VET': return '/vet/dashboard';
       case 'RESCUE_ORG': return '/rescue/dashboard';
-      case 'ADMIN': return '/admin/dashboard';
+      case 'ADMIN': return 'http://localhost:8081/admin'; // Admin features on moderation-service
       default: return '/';
     }
   };
@@ -99,9 +99,15 @@ export function Header() {
             </Link>
             {isAuthenticated ? (
               <>
-                <Link to={getDashboardLink()} className="text-gray-600 hover:text-primary-500 transition-colors">
-                  {getDashboardLabel()}
-                </Link>
+                {user?.role === 'ADMIN' ? (
+                  <a href={getDashboardLink()} className="text-gray-600 hover:text-primary-500 transition-colors">
+                    {getDashboardLabel()}
+                  </a>
+                ) : (
+                  <Link to={getDashboardLink()} className="text-gray-600 hover:text-primary-500 transition-colors">
+                    {getDashboardLabel()}
+                  </Link>
+                )}
                 <NotificationBell />
                 <div className="relative" ref={dropdownRef}>
                   <button
@@ -221,13 +227,23 @@ export function Header() {
               </Link>
               {isAuthenticated ? (
                 <>
-                  <Link
-                    to={getDashboardLink()}
-                    className="px-4 py-2 text-gray-600 hover:bg-secondary-100 rounded"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    {getDashboardLabel()}
-                  </Link>
+                  {user?.role === 'ADMIN' ? (
+                    <a
+                      href={getDashboardLink()}
+                      className="px-4 py-2 text-gray-600 hover:bg-secondary-100 rounded"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      {getDashboardLabel()}
+                    </a>
+                  ) : (
+                    <Link
+                      to={getDashboardLink()}
+                      className="px-4 py-2 text-gray-600 hover:bg-secondary-100 rounded"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      {getDashboardLabel()}
+                    </Link>
+                  )}
                   <Link
                     to="/profile"
                     className="px-4 py-2 text-gray-600 hover:bg-secondary-100 rounded"

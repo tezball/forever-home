@@ -9,10 +9,8 @@ import com.example.foreverhome.moderation.service.ModerationResultService;
 import com.example.foreverhome.moderation.service.PetModerationOrchestrator;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.*;
 
@@ -93,6 +91,26 @@ public class JobsController {
         model.addAttribute("apiStatus", orchestrator.isApiAvailable() ? "AVAILABLE" : "UNAVAILABLE");
 
         return "job-details";
+    }
+
+    @PostMapping("/{jobId}/results/{resultId}/review")
+    public String reviewResultFromJob(
+            @PathVariable UUID jobId,
+            @PathVariable UUID resultId,
+            @RequestParam String action,
+            @RequestParam(required = false) String notes,
+            RedirectAttributes redirectAttributes) {
+
+        try {
+            resultService.review(resultId, action, notes);
+            redirectAttributes.addFlashAttribute("success",
+                    "Content " + action + "d successfully");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error",
+                    "Failed to " + action + " content: " + e.getMessage());
+        }
+
+        return "redirect:/jobs/" + jobId;
     }
 
     /**

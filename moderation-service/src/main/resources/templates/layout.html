@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" th:fragment="layout(title, main)">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title th:text="${pageTitle} + ' - Moderation Service'">Moderation Service</title>
+    <title th:replace="${title}">Moderation Service</title>
     <link rel="icon" href="data:,">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
@@ -60,6 +60,12 @@
                         <a href="/logs" th:classappend="${currentPage == 'logs'} ? 'bg-primary/80 text-white' : 'text-gray-200 hover:text-white hover:bg-primary/50'"
                            class="px-3 py-2 rounded-md text-sm font-medium transition-colors">
                             AI Logs
+                        </a>
+                        <!-- Admin Section -->
+                        <span class="border-l border-primary/50 mx-2"></span>
+                        <a href="/admin" th:classappend="${currentPage != null and currentPage.startsWith('admin')} ? 'bg-accent text-white' : 'text-gray-200 hover:text-white hover:bg-accent/50'"
+                           class="px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                            Admin
                         </a>
                     </div>
                 </div>
@@ -119,6 +125,13 @@
                    class="block px-3 py-2 rounded-md text-sm font-medium transition-colors">
                     AI Logs
                 </a>
+                <!-- Admin Section in Mobile -->
+                <div class="pt-2 border-t border-primary/30 mt-2">
+                    <a href="/admin" th:classappend="${currentPage != null and currentPage.startsWith('admin')} ? 'bg-accent' : 'hover:bg-accent/50'"
+                       class="block px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                        Admin Dashboard
+                    </a>
+                </div>
                 <!-- API Status in Mobile Menu -->
                 <div th:if="${apiStatus}" class="pt-2 border-t border-primary/30 mt-2">
                     <span th:if="${apiStatus == 'AVAILABLE'}" class="flex items-center text-sm text-green-300 px-3 py-2">
@@ -146,7 +159,7 @@
 
     <!-- Main Content -->
     <main class="max-w-7xl mx-auto px-4 py-8">
-        <div th:replace="${content}">
+        <div th:replace="${main}">
             <!-- Page content will be inserted here -->
         </div>
     </main>

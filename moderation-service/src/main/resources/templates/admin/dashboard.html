@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout(~{::title}, ~{::main})}">
+<head>
+    <title th:text="${pageTitle}">Admin Dashboard</title>
+</head>
+<body>
+<main th:fragment="content">
+    <div class="space-y-6">
+        <!-- Page Header -->
+        <div class="flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
+            <form th:action="@{/admin/audit/moderation-reset}" method="post" class="inline">
+                <button type="submit" onclick="return confirm('Are you sure you want to reset all pet moderation statuses to PENDING?')"
+                        class="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent/90 transition-colors text-sm">
+                    Reset All Moderation
+                </button>
+            </form>
+        </div>
+
+        <!-- Flash Messages -->
+        <div th:if="${success}" class="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg">
+            <span th:text="${success}"></span>
+        </div>
+        <div th:if="${error}" class="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg">
+            <span th:text="${error}"></span>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="text-sm font-medium text-gray-500">Total Users</div>
+                <div class="mt-2 text-3xl font-bold text-primary" th:text="${analytics.totalUsers}">0</div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="text-sm font-medium text-gray-500">Total Pets</div>
+                <div class="mt-2 text-3xl font-bold text-primary" th:text="${analytics.totalPets}">0</div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="text-sm font-medium text-gray-500">Total Adoptions</div>
+                <div class="mt-2 text-3xl font-bold text-primary" th:text="${analytics.totalAdoptions}">0</div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="text-sm font-medium text-gray-500">Pending Approvals</div>
+                <div class="mt-2 text-3xl font-bold" th:classappend="${analytics.pendingApprovals > 0} ? 'text-accent' : 'text-primary'"
+                     th:text="${analytics.pendingApprovals}">0</div>
+            </div>
+        </div>
+
+        <!-- Two Column Layout -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- User Distribution -->
+            <div class="bg-white rounded-lg shadow">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h2 class="text-lg font-semibold text-gray-900">User Distribution</h2>
+                </div>
+                <div class="p-6">
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Adopters</span>
+                            <span class="font-semibold" th:text="${analytics.userDistribution.adopters}">0</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Fosters</span>
+                            <span class="font-semibold" th:text="${analytics.userDistribution.fosters}">0</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Rescue Organizations</span>
+                            <span class="font-semibold" th:text="${analytics.userDistribution.rescueOrgs}">0</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Vets</span>
+                            <span class="font-semibold" th:text="${analytics.userDistribution.vets}">0</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Admins</span>
+                            <span class="font-semibold" th:text="${analytics.userDistribution.admins}">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pet Statistics -->
+            <div class="bg-white rounded-lg shadow">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h2 class="text-lg font-semibold text-gray-900">Pet Statistics</h2>
+                </div>
+                <div class="p-6">
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Available</span>
+                            <span class="font-semibold text-green-600" th:text="${analytics.petStatistics.available}">0</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Pending Rescue</span>
+                            <span class="font-semibold" th:text="${analytics.petStatistics.pendingRescue}">0</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Pending Vet</span>
+                            <span class="font-semibold" th:text="${analytics.petStatistics.pendingVet}">0</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">In Progress</span>
+                            <span class="font-semibold text-blue-600" th:text="${analytics.petStatistics.inProgress}">0</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Adopted</span>
+                            <span class="font-semibold text-primary" th:text="${analytics.petStatistics.adopted}">0</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Draft</span>
+                            <span class="font-semibold text-gray-400" th:text="${analytics.petStatistics.draft}">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pending Approvals -->
+        <div th:if="${not #lists.isEmpty(pendingApprovals)}" class="bg-white rounded-lg shadow">
+            <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                <h2 class="text-lg font-semibold text-gray-900">Pending Approvals</h2>
+                <a th:href="@{/admin/approvals}" class="text-sm text-primary hover:underline">View All</a>
+            </div>
+            <div class="divide-y divide-gray-200">
+                <div th:each="approval : ${pendingApprovals}" class="px-6 py-4 flex justify-between items-center">
+                    <div>
+                        <div class="font-medium text-gray-900" th:text="${approval.displayName}">Name</div>
+                        <div class="text-sm text-gray-500" th:text="${approval.email}">email@example.com</div>
+                    </div>
+                    <div class="flex space-x-2">
+                        <form th:action="@{/admin/approvals/{id}/approve(id=${approval.id})}" method="post" class="inline">
+                            <button type="submit" class="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition-colors">
+                                Approve
+                            </button>
+                        </form>
+                        <form th:action="@{/admin/approvals/{id}/reject(id=${approval.id})}" method="post" class="inline">
+                            <button type="submit" class="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition-colors">
+                                Reject
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Moderation Queue Alert -->
+        <div th:if="${moderationStats != null and moderationStats.flaggedCount > 0}" class="bg-amber-50 border border-amber-200 rounded-lg p-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="p-2 bg-amber-100 rounded-full">
+                        <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="font-semibold text-amber-800">AI Moderation Queue</div>
+                        <div class="text-sm text-amber-600">
+                            <span th:text="${moderationStats.flaggedCount}">0</span> items require admin review
+                        </div>
+                    </div>
+                </div>
+                <a th:href="@{/admin/moderation-queue}" class="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors">
+                    Review Now
+                </a>
+            </div>
+        </div>
+
+        <!-- Quick Links -->
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <a th:href="@{/admin/moderation-queue}" class="bg-amber-50 border-2 border-amber-200 rounded-lg shadow p-6 hover:shadow-md transition-shadow">
+                <div class="text-lg font-semibold text-amber-800">Moderation Queue</div>
+                <div class="text-sm text-amber-600">Review AI-flagged content</div>
+                <div th:if="${moderationStats != null}" class="mt-2 text-2xl font-bold text-amber-600" th:text="${moderationStats.flaggedCount}">0</div>
+            </a>
+            <a th:href="@{/admin/users}" class="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow">
+                <div class="text-lg font-semibold text-gray-900">Users</div>
+                <div class="text-sm text-gray-500">Manage all users</div>
+            </a>
+            <a th:href="@{/admin/approvals}" class="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow">
+                <div class="text-lg font-semibold text-gray-900">Approvals</div>
+                <div class="text-sm text-gray-500">Review pending</div>
+            </a>
+            <a th:href="@{/admin/flags}" class="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow">
+                <div class="text-lg font-semibold text-gray-900">Flags</div>
+                <div class="text-sm text-gray-500">Content moderation</div>
+            </a>
+            <a th:href="@{/admin/audit}" class="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow">
+                <div class="text-lg font-semibold text-gray-900">Audit Log</div>
+                <div class="text-sm text-gray-500">View activity</div>
+            </a>
+        </div>
+    </div>
+</main>
+</body>
+</html>

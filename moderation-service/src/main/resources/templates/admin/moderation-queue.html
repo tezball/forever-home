@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout(~{::title}, ~{::main})}">
+<head>
+    <title th:text="${pageTitle}">Moderation Queue</title>
+</head>
+<body>
+<main th:fragment="content">
+    <div class="space-y-6">
+        <!-- Page Header -->
+        <div class="flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">AI Moderation Queue</h1>
+                <p class="text-sm text-gray-500 mt-1">Review and approve/reject AI-flagged content</p>
+            </div>
+            <div class="flex items-center gap-4">
+                <a href="/admin" class="text-sm text-primary hover:underline">&larr; Back to Admin</a>
+            </div>
+        </div>
+
+        <!-- Flash Messages -->
+        <div th:if="${success}" class="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg flex items-center">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <span th:text="${success}"></span>
+        </div>
+        <div th:if="${error}" class="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg flex items-center">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <span th:text="${error}"></span>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="bg-white rounded-lg shadow p-4">
+                <div class="text-sm font-medium text-gray-500">Total Flagged</div>
+                <div class="text-2xl font-bold text-amber-600" th:text="${totalFlagged}">0</div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4">
+                <div class="text-sm font-medium text-gray-500">Text Content</div>
+                <div class="text-2xl font-bold text-blue-600" th:text="${textFlagged}">0</div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4">
+                <div class="text-sm font-medium text-gray-500">Image Content</div>
+                <div class="text-2xl font-bold text-purple-600" th:text="${imageFlagged}">0</div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4">
+                <div class="text-sm font-medium text-gray-500">Showing</div>
+                <div class="text-2xl font-bold text-gray-900" th:text="${#lists.size(queueItems)} + ' items'">0 items</div>
+            </div>
+        </div>
+
+        <!-- Filters and Bulk Actions -->
+        <div class="bg-white rounded-lg shadow p-4">
+            <div class="flex flex-wrap items-center justify-between gap-4">
+                <!-- Filters -->
+                <form th:action="@{/admin/moderation-queue}" method="get" class="flex flex-wrap gap-4">
+                    <div>
+                        <select name="category" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
+                            <option value="">All Categories</option>
+                            <option th:each="cat : ${categories}" th:value="${cat.name()}" th:text="${cat.name()}" th:selected="${selectedCategory == cat.name()}"></option>
+                        </select>
+                    </div>
+                    <div>
+                        <select name="contentType" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
+                            <option value="">All Types</option>
+                            <option th:each="type : ${contentTypes}" th:value="${type.name()}" th:text="${type.name()}" th:selected="${selectedContentType == type.name()}"></option>
+                        </select>
+                    </div>
+                    <div>
+                        <select name="limit" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
+                            <option value="25" th:selected="${limit == 25}">25 items</option>
+                            <option value="50" th:selected="${limit == 50}">50 items</option>
+                            <option value="100" th:selected="${limit == 100}">100 items</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
+                        Filter
+                    </button>
+                    <a th:href="@{/admin/moderation-queue}" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">
+                        Clear
+                    </a>
+                </form>
+
+                <!-- Bulk Actions -->
+                <div id="bulkActions" class="hidden">
+                    <form th:action="@{/admin/moderation-queue/bulk-review}" method="post" class="flex gap-2">
+                        <input type="hidden" name="resultIds" id="selectedIds" value="">
+                        <span class="text-sm text-gray-600 self-center" id="selectedCount">0 selected</span>
+                        <button type="submit" name="action" value="approve"
+                                class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                            Approve Selected
+                        </button>
+                        <button type="submit" name="action" value="reject"
+                                class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+                            Reject Selected
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Empty State -->
+        <div th:if="${#lists.isEmpty(queueItems)}" class="bg-white rounded-lg shadow p-12 text-center">
+            <svg class="w-16 h-16 mx-auto text-green-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <div class="text-xl font-medium text-gray-900 mb-2">Queue is empty!</div>
+            <div class="text-gray-500">No flagged content requires review at this time.</div>
+        </div>
+
+        <!-- Queue Items -->
+        <div th:unless="${#lists.isEmpty(queueItems)}" class="space-y-4">
+            <!-- Select All -->
+            <div class="flex items-center gap-2 px-2">
+                <input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)" class="rounded border-gray-300 text-primary focus:ring-primary">
+                <label for="selectAll" class="text-sm text-gray-600">Select all visible items</label>
+            </div>
+
+            <div th:each="item : ${queueItems}" class="bg-white rounded-lg shadow overflow-hidden">
+                <div class="p-6">
+                    <div class="flex items-start gap-4">
+                        <!-- Checkbox -->
+                        <input type="checkbox" th:value="${item.result.id}" class="item-checkbox mt-1 rounded border-gray-300 text-primary focus:ring-primary" onchange="updateBulkActions()">
+
+                        <!-- Content -->
+                        <div class="flex-1">
+                            <!-- Header -->
+                            <div class="flex items-center gap-3 mb-3">
+                                <a th:href="@{/pet(id=${item.result.petId})}" class="font-semibold text-lg text-gray-900 hover:text-primary">
+                                    <span th:text="${item.petName}">Pet Name</span>
+                                </a>
+                                <span th:if="${item.text}" class="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">TEXT</span>
+                                <span th:if="${item.image}" class="px-2 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-800">IMAGE</span>
+                                <span th:if="${item.text}" class="text-xs text-gray-500" th:text="'Field: ' + ${item.result.contentIdentifier}">Field: name</span>
+                                <span class="px-2 py-1 text-xs font-medium rounded-full bg-amber-100 text-amber-800">Flagged</span>
+                            </div>
+
+                            <!-- Pet Info -->
+                            <div class="text-sm text-gray-500 mb-3">
+                                <span th:text="${item.petSpecies}">Species</span>
+                                <span class="mx-1">&bull;</span>
+                                <span th:text="${item.petBreed}">Breed</span>
+                                <span class="mx-1">&bull;</span>
+                                <span class="font-mono text-xs" th:text="${#strings.substring(item.result.petId.toString(), 0, 8)} + '...'">pet-id</span>
+                            </div>
+
+                            <!-- Content Preview -->
+                            <div class="mb-4">
+                                <!-- Text Content -->
+                                <div th:if="${item.text}" class="bg-gray-50 rounded-lg p-4">
+                                    <div th:if="${item.textContent != null and item.textContent.length() > 0}"
+                                         class="text-sm text-gray-700 whitespace-pre-wrap" th:text="${item.textContent}">Text content</div>
+                                    <div th:unless="${item.textContent != null and item.textContent.length() > 0}"
+                                         class="text-sm text-gray-400 italic">No content available</div>
+                                </div>
+
+                                <!-- Image Content -->
+                                <div th:if="${item.image}" class="flex gap-4">
+                                    <img th:src="${item.imageUrl}" alt="Flagged image"
+                                         class="max-w-sm max-h-64 rounded-lg border border-gray-200 shadow-sm cursor-pointer hover:opacity-90"
+                                         onclick="window.open(this.src, '_blank')">
+                                    <div class="text-xs text-gray-400 break-all max-w-xs" th:text="${item.imageUrl}">image-url</div>
+                                </div>
+                            </div>
+
+                            <!-- Flags -->
+                            <div th:if="${item.result.flags != null and !item.result.flags.isEmpty()}" class="mb-4">
+                                <div class="text-xs font-semibold text-gray-500 uppercase mb-2">AI-Detected Issues</div>
+                                <div class="flex flex-wrap gap-2">
+                                    <div th:each="flag : ${item.result.flags}" class="flex items-center gap-2 px-3 py-2 rounded-lg"
+                                         th:classappend="${flag.severity.name() == 'HIGH'} ? 'bg-red-50 border border-red-200' :
+                                                         (${flag.severity.name() == 'MEDIUM'} ? 'bg-amber-50 border border-amber-200' : 'bg-gray-50 border border-gray-200')">
+                                        <span th:switch="${flag.severity.name()}">
+                                            <span th:case="'HIGH'" class="w-2 h-2 rounded-full bg-red-500"></span>
+                                            <span th:case="'MEDIUM'" class="w-2 h-2 rounded-full bg-amber-500"></span>
+                                            <span th:case="'LOW'" class="w-2 h-2 rounded-full bg-yellow-400"></span>
+                                            <span th:case="*" class="w-2 h-2 rounded-full bg-gray-400"></span>
+                                        </span>
+                                        <span class="text-sm font-medium" th:text="${flag.category}">Category</span>
+                                        <span class="text-sm text-gray-600" th:text="${flag.description}">Description</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Metadata -->
+                            <div class="flex items-center gap-4 text-xs text-gray-400">
+                                <span th:if="${item.result.confidenceScore != null}" th:text="'Confidence: ' + ${#numbers.formatDecimal(item.result.confidenceScore * 100, 1, 0)} + '%'">Confidence: 95%</span>
+                                <span th:text="'Flagged: ' + ${#temporals.format(item.result.createdAt, 'MMM d, yyyy HH:mm')}">Flagged: Jan 1, 2024</span>
+                            </div>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="flex flex-col gap-2">
+                            <form th:action="@{/admin/moderation-queue/review/{id}(id=${item.result.id})}" method="post">
+                                <input type="hidden" name="action" value="approve">
+                                <input type="hidden" name="category" th:value="${selectedCategory}">
+                                <input type="hidden" name="contentType" th:value="${selectedContentType}">
+                                <button type="submit"
+                                        class="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                    </svg>
+                                    Approve
+                                </button>
+                            </form>
+                            <button type="button"
+                                    class="reject-btn w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center justify-center gap-2"
+                                    th:data-result-id="${item.result.id}"
+                                    th:data-pet-name="${item.petName}">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                </svg>
+                                Reject
+                            </button>
+                            <a th:href="@{/pet(id=${item.result.petId})}"
+                               class="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors flex items-center justify-center gap-2 text-sm">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                </svg>
+                                View Pet
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reject Modal -->
+    <div id="rejectModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div class="p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">Reject Content</h3>
+                <p class="text-sm text-gray-500 mb-4">
+                    Rejecting content for: <span id="rejectPetName" class="font-medium text-gray-700"></span>
+                </p>
+                <form id="rejectForm" action="/admin/moderation-queue/review/placeholder" method="post">
+                    <input type="hidden" name="action" value="reject">
+                    <input type="hidden" name="category" th:value="${selectedCategory}">
+                    <input type="hidden" name="contentType" th:value="${selectedContentType}">
+                    <div class="mb-4">
+                        <label for="rejectNotes" class="block text-sm font-medium text-gray-700 mb-1">Rejection Notes (optional)</label>
+                        <textarea id="rejectNotes" name="notes" rows="3"
+                                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary text-sm"
+                                  placeholder="Provide a reason for rejection..."></textarea>
+                    </div>
+                    <div class="flex justify-end gap-3">
+                        <button type="button" onclick="closeRejectModal()"
+                                class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                            Cancel
+                        </button>
+                        <button type="submit"
+                                class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors">
+                            Reject Content
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Reject Modal
+        function openRejectModal(resultId, petName) {
+            const modal = document.getElementById('rejectModal');
+            const petNameSpan = document.getElementById('rejectPetName');
+            const form = document.getElementById('rejectForm');
+
+            petNameSpan.textContent = petName;
+            form.action = '/admin/moderation-queue/review/' + resultId;
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeRejectModal() {
+            const modal = document.getElementById('rejectModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.getElementById('rejectNotes').value = '';
+        }
+
+        // Event delegation for reject buttons
+        document.addEventListener('click', function(e) {
+            const rejectBtn = e.target.closest('.reject-btn');
+            if (rejectBtn) {
+                const resultId = rejectBtn.dataset.resultId;
+                const petName = rejectBtn.dataset.petName;
+                openRejectModal(resultId, petName);
+            }
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeRejectModal();
+            }
+        });
+
+        document.getElementById('rejectModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeRejectModal();
+            }
+        });
+
+        // Bulk Selection
+        function toggleSelectAll(checkbox) {
+            const checkboxes = document.querySelectorAll('.item-checkbox');
+            checkboxes.forEach(cb => cb.checked = checkbox.checked);
+            updateBulkActions();
+        }
+
+        function updateBulkActions() {
+            const checkboxes = document.querySelectorAll('.item-checkbox:checked');
+            const bulkActions = document.getElementById('bulkActions');
+            const selectedCount = document.getElementById('selectedCount');
+            const selectedIds = document.getElementById('selectedIds');
+
+            if (checkboxes.length > 0) {
+                bulkActions.classList.remove('hidden');
+                selectedCount.textContent = checkboxes.length + ' selected';
+                selectedIds.value = Array.from(checkboxes).map(cb => cb.value).join(',');
+            } else {
+                bulkActions.classList.add('hidden');
+            }
+        }
+    </script>
+</main>
+</body>
+</html>

@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout(~{::title}, ~{::main})}">
+<head>
+    <title th:text="${pageTitle}">Content Flags</title>
+</head>
+<body>
+<main th:fragment="content">
+    <div class="space-y-6">
+        <!-- Page Header -->
+        <div class="flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-gray-900">Content Flags</h1>
+            <span class="text-sm text-gray-500" th:text="'Total: ' + ${totalCount} + ' flags'">Total: 0 flags</span>
+        </div>
+
+        <!-- Flash Messages -->
+        <div th:if="${success}" class="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg">
+            <span th:text="${success}"></span>
+        </div>
+        <div th:if="${error}" class="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg">
+            <span th:text="${error}"></span>
+        </div>
+
+        <!-- Filters -->
+        <div class="bg-white rounded-lg shadow p-4">
+            <form th:action="@{/admin/flags}" method="get" class="flex flex-wrap gap-4">
+                <div>
+                    <select name="status" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
+                        <option value="">All Statuses</option>
+                        <option th:each="s : ${statuses}" th:value="${s}" th:text="${s}" th:selected="${s.name() == status}"></option>
+                    </select>
+                </div>
+                <button type="submit" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
+                    Filter
+                </button>
+                <a th:href="@{/admin/flags}" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">
+                    Clear
+                </a>
+            </form>
+        </div>
+
+        <!-- Empty State -->
+        <div th:if="${#lists.isEmpty(flags)}" class="bg-white rounded-lg shadow p-12 text-center">
+            <div class="text-gray-400 text-lg">No content flags found</div>
+        </div>
+
+        <!-- Flags List -->
+        <div th:unless="${#lists.isEmpty(flags)}" class="space-y-4">
+            <div th:each="flag : ${flags}" class="bg-white rounded-lg shadow p-6">
+                <div class="flex justify-between items-start">
+                    <div class="flex-1">
+                        <div class="flex items-center space-x-3">
+                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800"
+                                  th:text="${flag.contentType}">PET</span>
+                            <span class="px-2 py-1 text-xs font-medium rounded-full"
+                                  th:classappend="${flag.status.name() == 'PENDING'} ? 'bg-yellow-100 text-yellow-800' :
+                                                  (${flag.status.name() == 'APPROVED'} ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800')"
+                                  th:text="${flag.status}">PENDING</span>
+                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800"
+                                  th:text="${flag.reason}">REASON</span>
+                        </div>
+                        <div class="mt-2 text-gray-600" th:if="${flag.description}" th:text="${flag.description}">Description</div>
+                        <div class="mt-2 text-sm text-gray-500">
+                            Content ID: <span class="font-mono" th:text="${flag.contentId}">uuid</span>
+                        </div>
+                        <div class="mt-1 text-sm text-gray-500">
+                            Created: <span th:text="${#temporals.format(flag.createdAt, 'yyyy-MM-dd HH:mm')}">2024-01-01</span>
+                        </div>
+                        <div th:if="${flag.resolutionNotes}" class="mt-2 text-sm text-gray-600">
+                            Notes: <span th:text="${flag.resolutionNotes}">Resolution notes</span>
+                        </div>
+                    </div>
+                    <div th:if="${flag.status.name() == 'PENDING'}" class="flex space-x-3">
+                        <button type="button" onclick="toggleActionForm(this, 'approve')"
+                                class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                            Approve
+                        </button>
+                        <button type="button" onclick="toggleActionForm(this, 'dismiss')"
+                                class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors">
+                            Dismiss
+                        </button>
+                    </div>
+                </div>
+                <!-- Action Forms (hidden by default) -->
+                <div class="action-form hidden mt-4 pt-4 border-t border-gray-200">
+                    <form th:action="@{/admin/flags/{id}/approve(id=${flag.id})}" method="post" class="approve-form hidden flex gap-4">
+                        <input type="text" name="notes" placeholder="Notes (optional)"
+                               class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                        <button type="submit"
+                                class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                            Confirm Approve
+                        </button>
+                        <button type="button" onclick="hideActionForm(this)"
+                                class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">
+                            Cancel
+                        </button>
+                    </form>
+                    <form th:action="@{/admin/flags/{id}/dismiss(id=${flag.id})}" method="post" class="dismiss-form hidden flex gap-4">
+                        <input type="text" name="notes" placeholder="Notes (optional)"
+                               class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-gray-500">
+                        <button type="submit"
+                                class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors">
+                            Confirm Dismiss
+                        </button>
+                        <button type="button" onclick="hideActionForm(this)"
+                                class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">
+                            Cancel
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pagination -->
+        <div th:if="${totalPages > 1}" class="flex justify-center space-x-2">
+            <a th:if="${page > 1}" th:href="@{/admin/flags(page=${page - 1}, size=${size}, status=${status})}"
+               class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">
+                Previous
+            </a>
+            <span class="px-4 py-2 text-gray-600" th:text="'Page ' + ${page} + ' of ' + ${totalPages}">Page 1 of 1</span>
+            <a th:if="${page < totalPages}" th:href="@{/admin/flags(page=${page + 1}, size=${size}, status=${status})}"
+               class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">
+                Next
+            </a>
+        </div>
+    </div>
+
+    <script>
+        function toggleActionForm(button, action) {
+            const card = button.closest('.bg-white');
+            const actionForm = card.querySelector('.action-form');
+            const approveForm = card.querySelector('.approve-form');
+            const dismissForm = card.querySelector('.dismiss-form');
+
+            actionForm.classList.remove('hidden');
+            if (action === 'approve') {
+                approveForm.classList.remove('hidden');
+                dismissForm.classList.add('hidden');
+            } else {
+                approveForm.classList.add('hidden');
+                dismissForm.classList.remove('hidden');
+            }
+        }
+
+        function hideActionForm(button) {
+            const card = button.closest('.bg-white');
+            const actionForm = card.querySelector('.action-form');
+            actionForm.classList.add('hidden');
+        }
+    </script>
+</main>
+</body>
+</html>

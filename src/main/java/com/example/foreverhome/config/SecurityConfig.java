@@ -64,6 +64,7 @@ public class SecurityConfig {
 
                 // SPA frontend routes - allow all non-API routes for client-side routing
                 // These are served by SpaWebConfig which returns index.html
+                // Note: Admin features have been moved to moderation-service (port 8081)
                 .requestMatchers(
                     "/login", "/register", "/forgot-password", "/reset-password", "/verify-email/**",
                     "/pets", "/pets/**",
@@ -71,11 +72,8 @@ public class SecurityConfig {
                     "/vets", "/vets/**",
                     "/faq", "/contact", "/privacy", "/help", "/about",
                     "/profile", "/settings", "/notifications",
-                    "/adopter/**", "/foster/**", "/rescue/**", "/vet/**", "/admin/**"
+                    "/adopter/**", "/foster/**", "/rescue/**", "/vet/**"
                 ).permitAll()
-
-                // Admin only API endpoints
-                .requestMatchers("/api/admin/**").hasRole("ADMIN")
 
                 // Authenticated endpoints
                 .anyRequest().authenticated()

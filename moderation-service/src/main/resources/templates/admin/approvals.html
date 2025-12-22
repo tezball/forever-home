@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout(~{::title}, ~{::main})}">
+<head>
+    <title th:text="${pageTitle}">Pending Approvals</title>
+</head>
+<body>
+<main th:fragment="content">
+    <div class="space-y-6">
+        <!-- Page Header -->
+        <div class="flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-gray-900">Pending Approvals</h1>
+            <span class="text-sm text-gray-500" th:text="${#lists.size(approvals)} + ' pending'">0 pending</span>
+        </div>
+
+        <!-- Flash Messages -->
+        <div th:if="${success}" class="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg">
+            <span th:text="${success}"></span>
+        </div>
+        <div th:if="${error}" class="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg">
+            <span th:text="${error}"></span>
+        </div>
+
+        <!-- Empty State -->
+        <div th:if="${#lists.isEmpty(approvals)}" class="bg-white rounded-lg shadow p-12 text-center">
+            <div class="text-gray-400 text-lg">No pending approvals</div>
+            <p class="text-gray-500 mt-2">All rescue organization registrations have been reviewed.</p>
+        </div>
+
+        <!-- Approvals List -->
+        <div th:unless="${#lists.isEmpty(approvals)}" class="space-y-4">
+            <div th:each="approval : ${approvals}" class="bg-white rounded-lg shadow p-6">
+                <div class="flex justify-between items-start">
+                    <div class="flex-1">
+                        <div class="flex items-center space-x-3">
+                            <h3 class="text-lg font-semibold text-gray-900" th:text="${approval.displayName}">Organization Name</h3>
+                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">RESCUE_ORG</span>
+                        </div>
+                        <div class="mt-2 text-gray-600" th:text="${approval.email}">email@example.com</div>
+                        <div class="mt-2 text-sm text-gray-500">
+                            Registered: <span th:text="${#temporals.format(approval.createdAt, 'yyyy-MM-dd HH:mm')}">2024-01-01</span>
+                        </div>
+                    </div>
+                    <div class="flex space-x-3">
+                        <form th:action="@{/admin/approvals/{id}/approve(id=${approval.id})}" method="post">
+                            <button type="submit"
+                                    class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                                Approve
+                            </button>
+                        </form>
+                        <button type="button" onclick="toggleRejectForm(this)"
+                                class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+                            Reject
+                        </button>
+                    </div>
+                </div>
+                <!-- Reject Form (hidden by default) -->
+                <div class="reject-form hidden mt-4 pt-4 border-t border-gray-200">
+                    <form th:action="@{/admin/approvals/{id}/reject(id=${approval.id})}" method="post" class="flex gap-4">
+                        <input type="text" name="reason" placeholder="Reason for rejection (optional)"
+                               class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                        <button type="submit"
+                                class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+                            Confirm Rejection
+                        </button>
+                        <button type="button" onclick="toggleRejectForm(this)"
+                                class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">
+                            Cancel
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleRejectForm(button) {
+            const card = button.closest('.bg-white');
+            const form = card.querySelector('.reject-form');
+            form.classList.toggle('hidden');
+        }
+    </script>
+</main>
+</body>
+</html>

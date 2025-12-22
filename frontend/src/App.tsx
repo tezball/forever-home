@@ -2,14 +2,14 @@ import { useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Header, ErrorBoundary } from './components';
-import { HomePage, LoginPage, RegisterPage, PetListPage, PetDetailPage, PetFormPage, PetSubmitPage, RescuesPage, RescueVetManagement, ForgotPasswordPage, ResetPasswordPage, HelpCenterPage, ContactPage, PrivacyPolicyPage, VetSignOffHistoryPage, SettingsPage, NotificationsPage, RescueOrgProfilePage, VetsPage, VetProfilePage, RescueOrgSettingsPage, VetSettingsPage, AdminAnalyticsPage, AdminModerationPage, VerifyEmailPage, VetRequestApprovalPage, ProfilePage, FaqPage, AboutPage, SwipeModePage } from './pages';
+import { HomePage, LoginPage, RegisterPage, PetListPage, PetDetailPage, PetFormPage, PetSubmitPage, RescuesPage, RescueVetManagement, ForgotPasswordPage, ResetPasswordPage, HelpCenterPage, ContactPage, PrivacyPolicyPage, VetSignOffHistoryPage, SettingsPage, NotificationsPage, RescueOrgProfilePage, VetsPage, VetProfilePage, RescueOrgSettingsPage, VetSettingsPage, VerifyEmailPage, VetRequestApprovalPage, ProfilePage, FaqPage, AboutPage, SwipeModePage } from './pages';
 import {
   FosterDashboard,
   AdopterDashboard,
   RescueDashboard,
   VetDashboard,
-  AdminDashboard,
 } from './pages/dashboards';
+// Note: Admin features have been moved to moderation-service (port 8081)
 import type { ReactNode } from 'react';
 
 interface ProtectedRouteProps {
@@ -218,31 +218,7 @@ function AppRoutes() {
             }
           />
 
-          {/* Admin Routes */}
-          <Route
-            path="/admin/dashboard"
-            element={
-              <ProtectedRoute allowedRoles={['ADMIN']}>
-                <AdminDashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/analytics"
-            element={
-              <ProtectedRoute allowedRoles={['ADMIN']}>
-                <AdminAnalyticsPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/moderation"
-            element={
-              <ProtectedRoute allowedRoles={['ADMIN']}>
-                <AdminModerationPage />
-              </ProtectedRoute>
-            }
-          />
+          {/* Admin Routes - Moved to moderation-service (port 8081) */}
 
           {/* Settings Route - Available to all authenticated users */}
           <Route

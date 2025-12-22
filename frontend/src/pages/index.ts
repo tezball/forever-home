@@ -20,8 +20,7 @@ export { VetsPage } from './VetsPage';
 export { VetProfilePage } from './VetProfilePage';
 export { RescueOrgSettingsPage } from './RescueOrgSettingsPage';
 export { VetSettingsPage } from './VetSettingsPage';
-export { AdminAnalyticsPage } from './AdminAnalyticsPage';
-export { AdminModerationPage } from './AdminModerationPage';
+// Admin pages have been moved to moderation-service (port 8081)
 export { VerifyEmailPage } from './VerifyEmailPage';
 export { VetRequestApprovalPage } from './VetRequestApprovalPage';
 export { ProfilePage } from './ProfilePage';
