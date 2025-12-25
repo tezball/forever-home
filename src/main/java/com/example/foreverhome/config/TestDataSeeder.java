@@ -730,15 +730,21 @@ public class TestDataSeeder implements CommandLineRunner {
                 String slug = rescueName.toLowerCase().replaceAll("[^a-z0-9]+", "-");
                 String website = "https://" + slug + ".org";
                 String description = rescueName + " is a dedicated animal rescue organization committed to finding forever homes for pets in need.";
+                // Use different Irish locations for each rescue
+                String[] streets = {"12 Grafton Street", "45 Shop Street", "78 Patrick Street", "23 Main Street"};
+                String[] cities = {"Dublin", "Galway", "Cork", "Limerick"};
+                String[] counties = {"Dublin", "Galway", "Cork", "Limerick"};
+                String[] eircodes = {"D02 VK60", "H91 E2K3", "T12 W8HK", "V94 T9PX"};
+                int rescueIndex = account.email().charAt(6) - '1'; // Extract 1-4 from rescue1@, rescue2@, etc.
                 jdbcTemplate.update("""
                     INSERT INTO rescue_organizations (id, user_id, name, phone, website, description,
                         contact_name, contact_email, verified, address_street, address_city, address_state, address_postal_code, address_country)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
-                    id, user.getId(), rescueName, "555-010" + account.email().charAt(6),
+                    id, user.getId(), rescueName, "+353 1 " + (555_0100 + rescueIndex),
                     website, description,
                     "Contact Person", account.email(), true,
-                    "123 Rescue Street", "Pet City", "PC", "12345", "USA");
+                    streets[rescueIndex], cities[rescueIndex], counties[rescueIndex], eircodes[rescueIndex], "Ireland");
             }
             case ADMIN -> {
                 // Admin doesn't need a profile entity
@@ -798,15 +804,21 @@ public class TestDataSeeder implements CommandLineRunner {
                     String slug = rescueName.toLowerCase().replaceAll("[^a-z0-9]+", "-");
                     String website = "https://" + slug + ".org";
                     String description = rescueName + " is a dedicated animal rescue organization committed to finding forever homes for pets in need.";
+                    // Use different Irish locations for each rescue
+                    String[] streets = {"12 Grafton Street", "45 Shop Street", "78 Patrick Street", "23 Main Street"};
+                    String[] cities = {"Dublin", "Galway", "Cork", "Limerick"};
+                    String[] counties = {"Dublin", "Galway", "Cork", "Limerick"};
+                    String[] eircodes = {"D02 VK60", "H91 E2K3", "T12 W8HK", "V94 T9PX"};
+                    int rescueIndex = account.email().charAt(6) - '1';
                     jdbcTemplate.update("""
                         INSERT INTO rescue_organizations (id, user_id, name, phone, website, description,
                             contact_name, contact_email, verified, address_street, address_city, address_state, address_postal_code, address_country)
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                         """,
-                        id, user.getId(), rescueName, "555-010" + account.email().charAt(6),
+                        id, user.getId(), rescueName, "+353 1 " + (555_0100 + rescueIndex),
                         website, description,
                         "Contact Person", account.email(), true,
-                        "123 Rescue Street", "Pet City", "PC", "12345", "USA");
+                        streets[rescueIndex], cities[rescueIndex], counties[rescueIndex], eircodes[rescueIndex], "Ireland");
                     logger.info("Created missing RescueOrganization profile for: {}", account.email());
                 }
             }

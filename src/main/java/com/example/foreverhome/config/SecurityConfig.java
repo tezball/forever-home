@@ -48,6 +48,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/dev/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/pets").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/pets/{id}").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/pets/{id}/history").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/rescues").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/rescues/{id}").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/rescues/{id}/pets").permitAll()
@@ -68,9 +69,10 @@ public class SecurityConfig {
                 .requestMatchers(
                     "/login", "/register", "/forgot-password", "/reset-password", "/verify-email/**",
                     "/pets", "/pets/**",
+                    "/swipe",  // Redirect to /pets/swipe
                     "/rescues", "/rescues/**",
                     "/vets", "/vets/**",
-                    "/faq", "/contact", "/privacy", "/help", "/about",
+                    "/faq", "/contact", "/privacy", "/help", "/about", "/terms",
                     "/profile", "/settings", "/notifications",
                     "/adopter/**", "/foster/**", "/rescue/**", "/vet/**"
                 ).permitAll()

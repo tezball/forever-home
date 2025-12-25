@@ -83,6 +83,7 @@ function AppRoutes() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/pets" element={<PetListPage />} />
+          <Route path="/swipe" element={<Navigate to="/pets/swipe" replace />} />
           <Route path="/pets/swipe" element={<SwipeModePage />} />
           <Route path="/pets/:id" element={<PetDetailPage />} />
           <Route path="/rescues" element={<RescuesPage />} />
