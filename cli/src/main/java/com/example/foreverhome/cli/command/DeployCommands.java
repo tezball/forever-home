@@ -77,13 +77,19 @@ public class DeployCommands {
 
         // Build Docker image
         if (!skipBuild) {
-            build(tag);
+            if (!build(tag)) {
+                output.error("Deployment aborted due to build failure");
+                return;
+            }
         } else {
             output.info("Skipping Docker build");
         }
 
         // Push to ECR (skip auto-deploy since we trigger manually below)
-        push(ecrUrl, tag, true);
+        if (!push(ecrUrl, tag, true)) {
+            output.error("Deployment aborted due to push failure");
+            return;
+        }
 
         // Trigger ECS deployment
         triggerDeployment(ecsCluster, ecsService);
@@ -99,7 +105,7 @@ public class DeployCommands {
     }
 
     @Command(command = "build", description = "Build Docker image")
-    public void build(
+    public boolean build(
             @Option(longNames = "tag", shortNames = 't',
                     defaultValue = "latest",
                     description = "Docker image tag")
@@ -112,15 +118,16 @@ public class DeployCommands {
 
         if (result != 0) {
             progress.fail("Docker build failed");
-            return;
+            return false;
         }
 
         progress.complete();
         output.success("Image built: forever-home:%s", tag);
+        return true;
     }
 
     @Command(command = "push", description = "Push image to ECR and trigger ECS deployment")
-    public void push(
+    public boolean push(
             @Option(longNames = "ecr-url",
                     description = "ECR repository URL (auto-detected from Terraform)")
             String ecrUrl,
@@ -137,7 +144,7 @@ public class DeployCommands {
             ecrUrl = getTerraformOutput("ecr_repository_url");
             if (ecrUrl.isBlank()) {
                 output.error("ECR URL not found. Deploy infrastructure first or provide --ecr-url");
-                return;
+                return false;
             }
         }
 
@@ -152,7 +159,7 @@ public class DeployCommands {
 
         if (password.isBlank()) {
             progress.fail("Failed to get ECR login");
-            return;
+            return false;
         }
 
         int loginResult = executor.runWithInput(password.trim(),
@@ -160,7 +167,7 @@ public class DeployCommands {
 
         if (loginResult != 0) {
             progress.fail("ECR login failed");
-            return;
+            return false;
         }
         progress.complete();
 
@@ -169,8 +176,8 @@ public class DeployCommands {
         progress.start("Tagging image");
         int tagResult = executor.runQuiet("docker", "tag", "forever-home:" + tag, fullTag);
         if (tagResult != 0) {
-            progress.fail("Failed to tag image");
-            return;
+            progress.fail("Failed to tag image. Run 'fh deploy build' first.");
+            return false;
         }
         progress.complete();
 
@@ -179,7 +186,7 @@ public class DeployCommands {
         int pushResult = executor.run("docker", "push", fullTag);
         if (pushResult != 0) {
             progress.fail("Failed to push image");
-            return;
+            return false;
         }
         progress.complete();
 
@@ -196,6 +203,7 @@ public class DeployCommands {
                 output.warning("Could not find ECS cluster/service. Skipping deployment trigger.");
             }
         }
+        return true;
     }
 
     @Command(command = "status", description = "Check deployment status")

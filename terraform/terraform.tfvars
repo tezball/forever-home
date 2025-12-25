@@ -23,8 +23,11 @@ cors_allowed_origins = "https://forever-home.ie,https://www.forever-home.ie"
 email_from = "noreply@forever-home.ie"
 ses_domain = "forever-home.ie"
 
-# Admin email for notifications
-admin_email = "admin@forever-home.ie"
+# Admin email for bootstrap (empty = no admin created on startup)
+admin_email = ""
 
 # Database - match existing RDS configuration (can't change subnet group of existing DB)
 db_publicly_accessible = true
+
+# S3 Configuration - use existing bucket
+s3_bucket_name = "forever-home-prod-images-9c83111f"
