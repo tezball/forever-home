@@ -274,6 +274,23 @@ public class Pet implements Persistable<UUID> {
         this.rescueOrgId = rescueOrgId;
     }
 
+    /**
+     * Change the rescue organization for a pet in PENDING_RESCUE status.
+     * Only allowed when the pet is awaiting rescue acceptance.
+     *
+     * @param newRescueOrgId The new rescue organization ID
+     * @throws IllegalStateException if pet is not in PENDING_RESCUE status
+     */
+    public void changeRescueOrg(UUID newRescueOrgId) {
+        validateRequired(newRescueOrgId, "newRescueOrgId");
+        if (status != PetStatus.PENDING_RESCUE) {
+            throw new IllegalStateException(
+                    "Can only change rescue organization when status is PENDING_RESCUE, current status: " + status);
+        }
+        this.rescueOrgId = newRescueOrgId;
+        this.updatedAt = Instant.now();
+    }
+
     public void acceptByRescue() {
         transitionTo(PetStatus.PENDING_VET);
     }

@@ -353,6 +353,54 @@ public class PetService {
         return PetDto.from(savedPet);
     }
 
+    /**
+     * Change the rescue organization for a pet that is pending rescue acceptance.
+     * Only allowed when the pet is in PENDING_RESCUE status.
+     *
+     * @param petId The pet ID
+     * @param userId The user ID of the foster
+     * @param newRescueOrgId The new rescue organization ID
+     * @return The updated pet DTO
+     */
+    public PetDto changeRescueOrg(UUID petId, UUID userId, UUID newRescueOrgId) {
+        Pet pet = findPetOrThrow(petId);
+
+        // Verify foster ownership
+        Foster foster = fosterRepository.findByUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Foster profile not found for user"));
+        verifyOwnership(pet, foster.getId());
+
+        // Only allow changing rescue org when pending rescue acceptance
+        if (pet.getStatus() != PetStatus.PENDING_RESCUE) {
+            throw new InvalidStatusTransitionException(
+                    "Can only change rescue organization while pet is pending rescue acceptance");
+        }
+
+        UUID oldRescueOrgId = pet.getRescueOrgId();
+
+        // Prevent changing to the same rescue org
+        if (oldRescueOrgId != null && oldRescueOrgId.equals(newRescueOrgId)) {
+            throw new IllegalArgumentException("Pet is already assigned to this rescue organization");
+        }
+
+        pet.changeRescueOrg(newRescueOrgId);
+        Pet savedPet = petRepository.save(pet);
+
+        // Record the change in status history
+        recordStatusChange(petId, PetStatus.PENDING_RESCUE, PetStatus.PENDING_RESCUE, userId,
+                "Changed rescue organization");
+
+        // Notify old rescue org that pet was reassigned
+        if (oldRescueOrgId != null) {
+            notificationService.notifyRescueOrgPetReassigned(oldRescueOrgId, pet);
+        }
+
+        // Notify new rescue org about the submission
+        notificationService.notifyRescueOrgPetSubmitted(newRescueOrgId, pet);
+
+        return PetDto.from(savedPet);
+    }
+
     public PetDto acceptByRescue(UUID petId, UUID rescueOrgId, UUID rescueUserId) {
         Pet pet = findPetOrThrow(petId);
         verifyRescueOrgOwnership(pet, rescueOrgId);
@@ -516,6 +564,51 @@ public class PetService {
                 notificationService.notifyRescueOrgPetWithdrawn(rescueOrgUserId, pet);
             }
         }
+
+        return PetDto.from(savedPet);
+    }
+
+    /**
+     * Put a pet on hold. Only available pets can be put on hold.
+     * This temporarily removes the pet from new applications.
+     */
+    public PetDto putOnHold(UUID petId, UUID rescueOrgId, UUID rescueUserId, String reason) {
+        Pet pet = findPetOrThrow(petId);
+        verifyRescueOrgOwnership(pet, rescueOrgId);
+
+        if (!pet.canTransitionTo(PetStatus.ON_HOLD)) {
+            throw new InvalidStatusTransitionException(
+                    pet.getStatus().name(), PetStatus.ON_HOLD.name()
+            );
+        }
+
+        PetStatus fromStatus = pet.getStatus();
+        pet.putOnHold();
+        Pet savedPet = petRepository.save(pet);
+
+        recordStatusChange(petId, fromStatus, PetStatus.ON_HOLD, rescueUserId, "Put on hold: " + reason);
+
+        return PetDto.from(savedPet);
+    }
+
+    /**
+     * Remove hold from a pet, returning it to available status.
+     */
+    public PetDto removeHold(UUID petId, UUID rescueOrgId, UUID rescueUserId) {
+        Pet pet = findPetOrThrow(petId);
+        verifyRescueOrgOwnership(pet, rescueOrgId);
+
+        if (!pet.canTransitionTo(PetStatus.AVAILABLE)) {
+            throw new InvalidStatusTransitionException(
+                    pet.getStatus().name(), PetStatus.AVAILABLE.name()
+            );
+        }
+
+        PetStatus fromStatus = pet.getStatus();
+        pet.removeHold();
+        Pet savedPet = petRepository.save(pet);
+
+        recordStatusChange(petId, fromStatus, PetStatus.AVAILABLE, rescueUserId, "Hold removed");
 
         return PetDto.from(savedPet);
     }

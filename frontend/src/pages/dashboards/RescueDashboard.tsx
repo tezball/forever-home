@@ -6,13 +6,14 @@ import type { Pet, AdoptionApplication } from '../../types';
 import apiClient from '../../api/client';
 import { formatRelativeTime, formatBreed } from '../../utils';
 
-type StatusFilter = 'ALL' | 'PENDING_VET' | 'AVAILABLE' | 'IN_PROGRESS' | 'ADOPTED';
+type StatusFilter = 'ALL' | 'PENDING_VET' | 'AVAILABLE' | 'IN_PROGRESS' | 'ON_HOLD' | 'ADOPTED';
 
 const statusFilterOptions: { value: StatusFilter; label: string }[] = [
   { value: 'ALL', label: 'All' },
   { value: 'PENDING_VET', label: 'Pending Vet' },
   { value: 'AVAILABLE', label: 'Available' },
   { value: 'IN_PROGRESS', label: 'In Progress' },
+  { value: 'ON_HOLD', label: 'On Hold' },
   { value: 'ADOPTED', label: 'Adopted' },
 ];
 
@@ -44,6 +45,11 @@ export function RescueDashboard() {
   const [rejectApplicationModalOpen, setRejectApplicationModalOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
   const [finalizeModalOpen, setFinalizeModalOpen] = useState(false);
+
+  // Hold modal state
+  const [holdModalOpen, setHoldModalOpen] = useState(false);
+  const [selectedPetForHold, setSelectedPetForHold] = useState<Pet | null>(null);
+  const [holdReason, setHoldReason] = useState('');
 
   useEffect(() => {
     fetchData();
@@ -220,6 +226,57 @@ export function RescueDashboard() {
     }
   };
 
+  const openHoldModal = (pet: Pet) => {
+    setSelectedPetForHold(pet);
+    setHoldReason('');
+    setHoldModalOpen(true);
+  };
+
+  const handlePutOnHold = async () => {
+    if (!selectedPetForHold || !holdReason.trim()) return;
+
+    setActionLoading(true);
+    setError('');
+    try {
+      await apiClient.post(`/pets/${selectedPetForHold.id}/hold`, {
+        reason: holdReason,
+      });
+      setSuccessMessage(`${selectedPetForHold.name} has been put on hold`);
+      // Update pet status in activePets
+      setActivePets((prev) =>
+        prev.map((p) => (p.id === selectedPetForHold.id ? { ...p, status: 'ON_HOLD' } : p))
+      );
+      setHoldModalOpen(false);
+      setSelectedPetForHold(null);
+      setHoldReason('');
+      setTimeout(() => setSuccessMessage(''), 5000);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to put pet on hold';
+      setError(errorMessage);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleRemoveHold = async (pet: Pet) => {
+    setActionLoading(true);
+    setError('');
+    try {
+      await apiClient.delete(`/pets/${pet.id}/hold`);
+      setSuccessMessage(`${pet.name} is now available again`);
+      // Update pet status in activePets
+      setActivePets((prev) =>
+        prev.map((p) => (p.id === pet.id ? { ...p, status: 'AVAILABLE' } : p))
+      );
+      setTimeout(() => setSuccessMessage(''), 5000);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to remove hold';
+      setError(errorMessage);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   // Filter active pets by status
   const filteredActivePets = activeStatusFilter === 'ALL'
     ? activePets
@@ -315,6 +372,10 @@ export function RescueDashboard() {
         <div className="card px-5 py-3 flex items-center gap-3">
           <span className="text-2xl font-bold text-purple-500">{activePets.filter((p) => p.status === 'IN_PROGRESS').length}</span>
           <span className="text-sm text-gray-600">In Progress</span>
+        </div>
+        <div className="card px-5 py-3 flex items-center gap-3">
+          <span className="text-2xl font-bold text-orange-500">{activePets.filter((p) => p.status === 'ON_HOLD').length}</span>
+          <span className="text-sm text-gray-600">On Hold</span>
         </div>
         <div className="card px-5 py-3 flex items-center gap-3">
           <span className="text-2xl font-bold text-primary-500">{activePets.filter((p) => p.status === 'ADOPTED').length}</span>
@@ -586,7 +647,36 @@ export function RescueDashboard() {
             {filteredActivePets.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredActivePets.map((pet) => (
-                  <PetCard key={pet.id} pet={pet} />
+                  <div key={pet.id} className="relative">
+                    <PetCard pet={pet} />
+                    {/* Hold/Remove Hold Actions */}
+                    {pet.status === 'AVAILABLE' && (
+                      <div className="mt-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openHoldModal(pet)}
+                          disabled={actionLoading}
+                          className="w-full"
+                        >
+                          Put on Hold
+                        </Button>
+                      </div>
+                    )}
+                    {pet.status === 'ON_HOLD' && (
+                      <div className="mt-2">
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          onClick={() => handleRemoveHold(pet)}
+                          loading={actionLoading}
+                          className="w-full"
+                        >
+                          Remove Hold
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                 ))}
               </div>
             ) : (
@@ -782,6 +872,49 @@ export function RescueDashboard() {
               className="flex-1"
             >
               Finalize Adoption
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Put on Hold Modal */}
+      <Modal
+        isOpen={holdModalOpen}
+        onClose={() => setHoldModalOpen(false)}
+        title="Put Pet on Hold"
+      >
+        <div className="space-y-4">
+          <p className="text-gray-600">
+            Please provide a reason for placing {selectedPetForHold?.name} on hold.
+            The pet will remain visible but won't accept new applications.
+          </p>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Reason for Hold *
+            </label>
+            <Textarea
+              value={holdReason}
+              onChange={(e) => setHoldReason(e.target.value)}
+              placeholder="e.g., Medical treatment, behavioral assessment, administrative review..."
+              rows={4}
+            />
+          </div>
+          <div className="flex gap-4 pt-4">
+            <Button
+              variant="outline"
+              onClick={() => setHoldModalOpen(false)}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handlePutOnHold}
+              loading={actionLoading}
+              disabled={!holdReason.trim()}
+              className="flex-1"
+            >
+              Put on Hold
             </Button>
           </div>
         </div>

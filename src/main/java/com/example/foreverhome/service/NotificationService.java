@@ -333,6 +333,31 @@ public class NotificationService {
     }
 
     /**
+     * Notify rescue org that a pet has been reassigned to a different rescue organization.
+     */
+    public void notifyRescueOrgPetReassigned(UUID rescueOrgId, Pet pet) {
+        // Look up the user ID from the rescue organization profile
+        UUID rescueOrgUserId = rescueOrganizationRepository.findById(rescueOrgId)
+                .map(RescueOrganization::getUserId)
+                .orElse(null);
+        if (rescueOrgUserId == null) {
+            logger.warn("Cannot send notification: rescue org {} not found", rescueOrgId);
+            return;
+        }
+
+        String title = "Pet Reassigned";
+        String message = "Pet '" + pet.getName() + "' has been reassigned to a different rescue organization by the foster.";
+        createNotificationWithEmail(
+                rescueOrgUserId,
+                NotificationType.PET_STATUS_CHANGE,
+                title,
+                message,
+                true, // status change
+                "/pets/" + pet.getId()
+        );
+    }
+
+    /**
      * Notify rescue org that a foster has withdrawn their pet.
      */
     public void notifyRescueOrgPetWithdrawn(UUID rescueOrgUserId, Pet pet) {

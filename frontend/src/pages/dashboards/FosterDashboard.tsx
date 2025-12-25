@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { Button, PetCard, Modal } from '../../components';
-import type { Pet } from '../../types';
+import type { Pet, RescueOrganization } from '../../types';
 import apiClient from '../../api/client';
 import { formatBreed } from '../../utils';
 
@@ -15,6 +15,14 @@ export function FosterDashboard() {
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+
+  // Change rescue modal state
+  const [changeRescueModalOpen, setChangeRescueModalOpen] = useState(false);
+  const [selectedPetForChange, setSelectedPetForChange] = useState<Pet | null>(null);
+  const [rescueOrgs, setRescueOrgs] = useState<RescueOrganization[]>([]);
+  const [selectedNewRescueId, setSelectedNewRescueId] = useState<string>('');
+  const [rescueSearchTerm, setRescueSearchTerm] = useState('');
+  const [loadingRescueOrgs, setLoadingRescueOrgs] = useState(false);
 
   useEffect(() => {
     fetchMyPets();
@@ -49,6 +57,68 @@ export function FosterDashboard() {
       setActionLoading(false);
     }
   };
+
+  const openChangeRescueModal = async (pet: Pet) => {
+    setSelectedPetForChange(pet);
+    setChangeRescueModalOpen(true);
+    setError('');
+    setSelectedNewRescueId('');
+    setRescueSearchTerm('');
+
+    // Fetch rescue orgs if not already loaded
+    if (rescueOrgs.length === 0) {
+      setLoadingRescueOrgs(true);
+      try {
+        const response = await apiClient.get<RescueOrganization[]>('/rescues');
+        setRescueOrgs(response.data);
+      } catch {
+        setError('Failed to load rescue organizations');
+      } finally {
+        setLoadingRescueOrgs(false);
+      }
+    }
+  };
+
+  const handleChangeRescue = async () => {
+    if (!selectedPetForChange || !selectedNewRescueId) return;
+
+    setActionLoading(true);
+    setError('');
+
+    try {
+      await apiClient.put(`/pets/${selectedPetForChange.id}/rescue-org`, {
+        rescueOrgId: selectedNewRescueId,
+      });
+      const newRescueOrg = rescueOrgs.find((org) => org.id === selectedNewRescueId);
+      setSuccessMessage(
+        `${selectedPetForChange.name} has been reassigned to ${newRescueOrg?.name || 'the new rescue organization'}.`
+      );
+      setChangeRescueModalOpen(false);
+      setSelectedPetForChange(null);
+      setSelectedNewRescueId('');
+      fetchMyPets(); // Refresh the list
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'response' in err) {
+        const response = (err as { response?: { data?: { message?: string } } }).response;
+        setError(response?.data?.message || 'Failed to change rescue organization');
+      } else {
+        setError('Failed to change rescue organization');
+      }
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Filter rescue orgs based on search term
+  const filteredRescueOrgs = rescueOrgs.filter((org) => {
+    if (!rescueSearchTerm.trim()) return true;
+    const search = rescueSearchTerm.toLowerCase();
+    return (
+      org.name.toLowerCase().includes(search) ||
+      (org.location && org.location.toLowerCase().includes(search)) ||
+      (org.description && org.description.toLowerCase().includes(search))
+    );
+  });
 
   const fetchMyPets = async () => {
     try {
@@ -215,7 +285,51 @@ export function FosterDashboard() {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {pendingRescuePets.map((pet) => (
-                  <PetCard key={pet.id} pet={pet} showEditButton onWithdraw={openWithdrawModal} />
+                  <div key={pet.id} className="card hover:shadow-lg transition-shadow">
+                    <Link to={`/pets/${pet.id}`} className="block">
+                      <div className="relative">
+                        <img
+                          src={pet.imageUrls[0] || `https://placedog.net/400/300?id=${pet.id.slice(0, 8)}`}
+                          alt={pet.name}
+                          className="w-full h-48 object-cover"
+                        />
+                      </div>
+                      <div className="p-4">
+                        <div className="flex justify-between items-start mb-2">
+                          <h3 className="text-lg font-semibold text-gray-900">{pet.name}</h3>
+                          <span className="status-badge bg-yellow-100 text-yellow-800">Pending Rescue</span>
+                        </div>
+                        <p className="text-sm text-gray-500 mb-2">
+                          {formatBreed(pet.breed) || pet.species} • {pet.age} {pet.ageUnit.toLowerCase()} • {pet.sex.toLowerCase()}
+                        </p>
+                      </div>
+                    </Link>
+                    <div className="px-4 pb-4 space-y-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => openChangeRescueModal(pet)}
+                        className="w-full"
+                      >
+                        Change Rescue Center
+                      </Button>
+                      <div className="flex gap-2">
+                        <Link to={`/foster/pets/${pet.id}/edit`} className="flex-1">
+                          <Button variant="outline" size="sm" className="w-full">
+                            Edit
+                          </Button>
+                        </Link>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => openWithdrawModal(pet)}
+                          className="text-error-600"
+                        >
+                          Withdraw
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
                 ))}
               </div>
             </section>
@@ -363,6 +477,155 @@ export function FosterDashboard() {
                   className="flex-1"
                 >
                   Withdraw Pet
+                </Button>
+              </div>
+            </>
+          )}
+        </div>
+      </Modal>
+
+      {/* Change Rescue Center Modal */}
+      <Modal
+        isOpen={changeRescueModalOpen}
+        onClose={() => {
+          setChangeRescueModalOpen(false);
+          setSelectedPetForChange(null);
+          setSelectedNewRescueId('');
+          setRescueSearchTerm('');
+          setError('');
+        }}
+        title="Change Rescue Center"
+      >
+        <div className="space-y-4">
+          {selectedPetForChange && (
+            <>
+              {/* Pet info */}
+              <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
+                <img
+                  src={selectedPetForChange.imageUrls[0] || `https://placedog.net/100/100?id=${selectedPetForChange.id.slice(0, 8)}`}
+                  alt={selectedPetForChange.name}
+                  className="w-16 h-16 rounded-lg object-cover"
+                />
+                <div>
+                  <h4 className="font-semibold text-gray-900">{selectedPetForChange.name}</h4>
+                  <p className="text-sm text-gray-600">{selectedPetForChange.breed || selectedPetForChange.species}</p>
+                </div>
+              </div>
+
+              <p className="text-sm text-gray-600">
+                Select a new rescue organization to review {selectedPetForChange.name}. The current rescue organization will be notified of this change.
+              </p>
+
+              {error && (
+                <div className="bg-error-50 border border-error-200 text-error-700 px-4 py-3 rounded">
+                  {error}
+                </div>
+              )}
+
+              {loadingRescueOrgs ? (
+                <div className="flex justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-4 border-primary-500 border-t-transparent" />
+                </div>
+              ) : (
+                <>
+                  {/* Search input */}
+                  {rescueOrgs.length > 0 && (
+                    <div className="relative">
+                      <svg
+                        className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                        />
+                      </svg>
+                      <input
+                        type="text"
+                        placeholder="Search rescue organizations..."
+                        value={rescueSearchTerm}
+                        onChange={(e) => setRescueSearchTerm(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      />
+                    </div>
+                  )}
+
+                  {/* Rescue org list */}
+                  <div className="max-h-64 overflow-y-auto space-y-2">
+                    {filteredRescueOrgs.length === 0 ? (
+                      <div className="text-center py-4 text-gray-500">
+                        {rescueSearchTerm ? 'No rescue organizations match your search' : 'No rescue organizations available'}
+                      </div>
+                    ) : (
+                      filteredRescueOrgs.map((org) => {
+                        const isCurrentOrg = selectedPetForChange.rescueOrgId === org.id;
+                        return (
+                          <label
+                            key={org.id}
+                            className={`flex items-start gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
+                              isCurrentOrg
+                                ? 'border-gray-300 bg-gray-100 cursor-not-allowed opacity-60'
+                                : selectedNewRescueId === org.id
+                                  ? 'border-primary-500 bg-primary-50'
+                                  : 'border-gray-200 hover:border-gray-300'
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name="newRescueOrg"
+                              value={org.id}
+                              checked={selectedNewRescueId === org.id}
+                              onChange={(e) => setSelectedNewRescueId(e.target.value)}
+                              disabled={isCurrentOrg}
+                              className="mt-1"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <h4 className="font-medium text-gray-900 truncate">{org.name}</h4>
+                                {isCurrentOrg && (
+                                  <span className="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded flex-shrink-0">
+                                    Current
+                                  </span>
+                                )}
+                              </div>
+                              {org.location && (
+                                <p className="text-sm text-gray-500 truncate">{org.location}</p>
+                              )}
+                            </div>
+                          </label>
+                        );
+                      })
+                    )}
+                  </div>
+                </>
+              )}
+
+              <div className="flex gap-3 pt-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setChangeRescueModalOpen(false);
+                    setSelectedPetForChange(null);
+                    setSelectedNewRescueId('');
+                    setRescueSearchTerm('');
+                    setError('');
+                  }}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="primary"
+                  onClick={handleChangeRescue}
+                  loading={actionLoading}
+                  disabled={!selectedNewRescueId}
+                  className="flex-1"
+                >
+                  Change Rescue Center
                 </Button>
               </div>
             </>

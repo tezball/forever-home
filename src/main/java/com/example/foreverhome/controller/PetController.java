@@ -5,6 +5,8 @@ import com.example.foreverhome.domain.profile.RescueOrganization;
 import com.example.foreverhome.dto.PagedResponse;
 import com.example.foreverhome.dto.pet.CreatePetRequest;
 import com.example.foreverhome.dto.pet.DeclinePetRequest;
+import com.example.foreverhome.dto.pet.ChangeRescueOrgRequest;
+import com.example.foreverhome.dto.pet.HoldPetRequest;
 import com.example.foreverhome.dto.pet.PetDto;
 import com.example.foreverhome.dto.pet.PetStatusHistoryDto;
 import com.example.foreverhome.dto.pet.SubmitForReviewRequest;
@@ -102,6 +104,16 @@ public class PetController {
         return ResponseEntity.ok(pet);
     }
 
+    @PutMapping("/{id}/rescue-org")
+    @PreAuthorize("hasRole('FOSTER')")
+    public ResponseEntity<PetDto> changeRescueOrg(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal UserPrincipal principal,
+            @Valid @RequestBody ChangeRescueOrgRequest request) {
+        PetDto pet = petService.changeRescueOrg(id, principal.userId(), request.rescueOrgId());
+        return ResponseEntity.ok(pet);
+    }
+
     @PostMapping("/{id}/accept")
     @PreAuthorize("hasRole('RESCUE_ORG')")
     public ResponseEntity<PetDto> acceptByRescue(
@@ -129,6 +141,27 @@ public class PetController {
             @PathVariable UUID id,
             @AuthenticationPrincipal UserPrincipal principal) {
         PetDto pet = petService.withdrawPet(id, principal.userId());
+        return ResponseEntity.ok(pet);
+    }
+
+    @PostMapping("/{id}/hold")
+    @PreAuthorize("hasRole('RESCUE_ORG')")
+    public ResponseEntity<PetDto> putOnHold(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal UserPrincipal principal,
+            @Valid @RequestBody HoldPetRequest request) {
+        RescueOrganization rescueOrg = getRescueOrgForUser(principal.userId());
+        PetDto pet = petService.putOnHold(id, rescueOrg.getId(), principal.userId(), request.reason());
+        return ResponseEntity.ok(pet);
+    }
+
+    @DeleteMapping("/{id}/hold")
+    @PreAuthorize("hasRole('RESCUE_ORG')")
+    public ResponseEntity<PetDto> removeHold(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal UserPrincipal principal) {
+        RescueOrganization rescueOrg = getRescueOrgForUser(principal.userId());
+        PetDto pet = petService.removeHold(id, rescueOrg.getId(), principal.userId());
         return ResponseEntity.ok(pet);
     }
 
