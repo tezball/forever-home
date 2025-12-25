@@ -19,12 +19,18 @@ RUN npm run build -- --outDir dist
 # Stage 2: Build backend
 FROM eclipse-temurin:25-jdk-alpine AS builder
 
+# Install git for git-commit-id-maven-plugin
+RUN apk add --no-cache git
+
 WORKDIR /app
 
 # Copy Maven wrapper and pom.xml first for dependency caching
 COPY mvnw .
 COPY .mvn .mvn
 COPY pom.xml .
+
+# Copy .git directory for git-commit-id-maven-plugin to generate git info
+COPY .git .git
 
 # Download dependencies (cached if pom.xml doesn't change)
 RUN chmod +x ./mvnw && ./mvnw dependency:go-offline -B
