@@ -29,7 +29,8 @@ export function HomePage() {
       case 'RESCUE_ORG':
         return { text: 'Rescue Dashboard', link: '/rescue/dashboard' };
       case 'ADMIN':
-        return { text: 'Admin Dashboard', link: '/admin/dashboard' };
+        // Admin dashboard is on the moderation service
+        return { text: 'Admin Dashboard', link: `${window.location.protocol}//${window.location.hostname}:8081/admin`, external: true };
       default:
         return null;
     }
@@ -81,11 +82,19 @@ export function HomePage() {
               </Link>
               {isAuthenticated ? (
                 getRoleSpecificCTA() && (
-                  <Link to={getRoleSpecificCTA()!.link}>
-                    <Button variant="outline" size="lg">
-                      {getRoleSpecificCTA()!.text}
-                    </Button>
-                  </Link>
+                  getRoleSpecificCTA()!.external ? (
+                    <a href={getRoleSpecificCTA()!.link}>
+                      <Button variant="outline" size="lg">
+                        {getRoleSpecificCTA()!.text}
+                      </Button>
+                    </a>
+                  ) : (
+                    <Link to={getRoleSpecificCTA()!.link}>
+                      <Button variant="outline" size="lg">
+                        {getRoleSpecificCTA()!.text}
+                      </Button>
+                    </Link>
+                  )
                 )
               ) : (
                 <Link to="/register">
@@ -103,24 +112,33 @@ export function HomePage() {
       {stats && (
         <section className="py-12 bg-white border-b">
           <div className="container-app">
-            <div className="grid grid-cols-3 gap-8 max-w-3xl mx-auto">
+            <div className="grid grid-cols-3 gap-4 md:gap-8 max-w-3xl mx-auto">
               <div className="text-center">
-                <div className="text-4xl md:text-5xl font-bold text-primary-600 mb-2">
+                <div className="w-10 h-10 md:w-12 md:h-12 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                  <span className="text-xl md:text-2xl">🐾</span>
+                </div>
+                <div className="text-3xl md:text-5xl font-bold text-primary-600 mb-1">
                   {stats.petsAvailable}
                 </div>
-                <div className="text-gray-600 text-sm md:text-base">Pets Available</div>
+                <div className="text-gray-600 text-xs md:text-base">Pets Available</div>
               </div>
               <div className="text-center">
-                <div className="text-4xl md:text-5xl font-bold text-success-600 mb-2">
+                <div className="w-10 h-10 md:w-12 md:h-12 bg-success-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                  <span className="text-xl md:text-2xl">❤️</span>
+                </div>
+                <div className="text-3xl md:text-5xl font-bold text-success-600 mb-1">
                   {stats.totalAdoptions}
                 </div>
-                <div className="text-gray-600 text-sm md:text-base">Happy Adoptions</div>
+                <div className="text-gray-600 text-xs md:text-base">Happy Adoptions</div>
               </div>
               <div className="text-center">
-                <div className="text-4xl md:text-5xl font-bold text-secondary-600 mb-2">
+                <div className="w-10 h-10 md:w-12 md:h-12 bg-secondary-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                  <span className="text-xl md:text-2xl">🏥</span>
+                </div>
+                <div className="text-3xl md:text-5xl font-bold text-secondary-600 mb-1">
                   {stats.totalRescues}
                 </div>
-                <div className="text-gray-600 text-sm md:text-base">Rescue Partners</div>
+                <div className="text-gray-600 text-xs md:text-base">Rescue Partners</div>
               </div>
             </div>
           </div>

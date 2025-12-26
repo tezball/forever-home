@@ -216,11 +216,29 @@ export function PetFormPage() {
         <h1 className="text-3xl font-bold text-gray-900 mb-2">
           {isEditing ? 'Edit Pet' : 'Register a New Pet'}
         </h1>
-        <p className="text-gray-600 mb-8">
+        <p className="text-gray-600 mb-6">
           {isEditing
             ? 'Update the pet\'s information below.'
             : 'Fill in the details below to register a pet for adoption. Fields marked with * are required.'}
         </p>
+
+        {/* Progress Steps - Mobile Friendly */}
+        <div className="flex items-center justify-between mb-8 px-2">
+          <div className="flex flex-col items-center flex-1">
+            <div className="w-8 h-8 rounded-full bg-primary-500 text-white flex items-center justify-center text-sm font-semibold">1</div>
+            <span className="text-xs mt-1 text-gray-600 text-center">Basic Info</span>
+          </div>
+          <div className="flex-1 h-0.5 bg-gray-200 mx-1" />
+          <div className="flex flex-col items-center flex-1">
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${formData.name ? 'bg-primary-500 text-white' : 'bg-gray-200 text-gray-500'}`}>2</div>
+            <span className="text-xs mt-1 text-gray-600 text-center">Description</span>
+          </div>
+          <div className="flex-1 h-0.5 bg-gray-200 mx-1" />
+          <div className="flex flex-col items-center flex-1">
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${petId ? 'bg-primary-500 text-white' : 'bg-gray-200 text-gray-500'}`}>3</div>
+            <span className="text-xs mt-1 text-gray-600 text-center">Photos</span>
+          </div>
+        </div>
 
         {generalError && (
           <div className="bg-error-50 border border-error-200 text-error-700 px-4 py-3 rounded-lg mb-6">

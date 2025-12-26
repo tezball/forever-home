@@ -62,6 +62,19 @@ export function RescueOrgSettingsPage() {
   const [deletingLogo, setDeletingLogo] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Collapsible sections state (for mobile)
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+    logo: true,
+    basic: true,
+    contact: false,
+    address: false,
+    social: false,
+  });
+
+  const toggleSection = (section: string) => {
+    setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
+  };
+
   useEffect(() => {
     fetchProfile();
   }, []);
@@ -239,8 +252,23 @@ export function RescueOrgSettingsPage() {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Organization Logo */}
-          <div className="card p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Organization Logo</h2>
+          <div className="card overflow-hidden">
+            <button
+              type="button"
+              onClick={() => toggleSection('logo')}
+              className="w-full p-4 md:p-6 flex items-center justify-between text-left md:cursor-default"
+            >
+              <h2 className="text-lg font-semibold text-gray-900">Organization Logo</h2>
+              <svg
+                className={`w-5 h-5 text-gray-400 transition-transform md:hidden ${expandedSections.logo ? 'rotate-180' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            <div className={`px-4 pb-4 md:px-6 md:pb-6 ${expandedSections.logo ? 'block' : 'hidden md:block'}`}>
             <p className="text-sm text-gray-500 mb-4">
               Upload a logo to represent your organization on the public rescues page.
             </p>
@@ -312,12 +340,27 @@ export function RescueOrgSettingsPage() {
                 </p>
               </div>
             </div>
+            </div>
           </div>
 
           {/* Basic Info */}
-          <div className="card p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h2>
-            <div className="space-y-4">
+          <div className="card overflow-hidden">
+            <button
+              type="button"
+              onClick={() => toggleSection('basic')}
+              className="w-full p-4 md:p-6 flex items-center justify-between text-left md:cursor-default"
+            >
+              <h2 className="text-lg font-semibold text-gray-900">Basic Information</h2>
+              <svg
+                className={`w-5 h-5 text-gray-400 transition-transform md:hidden ${expandedSections.basic ? 'rotate-180' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            <div className={`px-4 pb-4 md:px-6 md:pb-6 space-y-4 ${expandedSections.basic ? 'block' : 'hidden md:block'}`}>
               <Input
                 label="Organization Name"
                 value={name}
@@ -352,9 +395,23 @@ export function RescueOrgSettingsPage() {
           </div>
 
           {/* Contact Info */}
-          <div className="card p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Contact Person</h2>
-            <div className="grid grid-cols-2 gap-4">
+          <div className="card overflow-hidden">
+            <button
+              type="button"
+              onClick={() => toggleSection('contact')}
+              className="w-full p-4 md:p-6 flex items-center justify-between text-left md:cursor-default"
+            >
+              <h2 className="text-lg font-semibold text-gray-900">Contact Person</h2>
+              <svg
+                className={`w-5 h-5 text-gray-400 transition-transform md:hidden ${expandedSections.contact ? 'rotate-180' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            <div className={`px-4 pb-4 md:px-6 md:pb-6 grid grid-cols-1 md:grid-cols-2 gap-4 ${expandedSections.contact ? 'block' : 'hidden md:grid'}`}>
               <Input
                 label="Contact Name"
                 value={contactName}
@@ -370,15 +427,29 @@ export function RescueOrgSettingsPage() {
           </div>
 
           {/* Address */}
-          <div className="card p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Address</h2>
-            <div className="space-y-4">
+          <div className="card overflow-hidden">
+            <button
+              type="button"
+              onClick={() => toggleSection('address')}
+              className="w-full p-4 md:p-6 flex items-center justify-between text-left md:cursor-default"
+            >
+              <h2 className="text-lg font-semibold text-gray-900">Address</h2>
+              <svg
+                className={`w-5 h-5 text-gray-400 transition-transform md:hidden ${expandedSections.address ? 'rotate-180' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            <div className={`px-4 pb-4 md:px-6 md:pb-6 space-y-4 ${expandedSections.address ? 'block' : 'hidden md:block'}`}>
               <Input
                 label="Street Address"
                 value={street}
                 onChange={(e) => setStreet(e.target.value)}
               />
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Input
                   label="City"
                   value={city}
@@ -399,9 +470,23 @@ export function RescueOrgSettingsPage() {
           </div>
 
           {/* Social Links */}
-          <div className="card p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Social Media</h2>
-            <div className="grid grid-cols-2 gap-4">
+          <div className="card overflow-hidden">
+            <button
+              type="button"
+              onClick={() => toggleSection('social')}
+              className="w-full p-4 md:p-6 flex items-center justify-between text-left md:cursor-default"
+            >
+              <h2 className="text-lg font-semibold text-gray-900">Social Media</h2>
+              <svg
+                className={`w-5 h-5 text-gray-400 transition-transform md:hidden ${expandedSections.social ? 'rotate-180' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            <div className={`px-4 pb-4 md:px-6 md:pb-6 grid grid-cols-1 md:grid-cols-2 gap-4 ${expandedSections.social ? 'block' : 'hidden md:grid'}`}>
               <Input
                 label="Facebook"
                 value={facebook}

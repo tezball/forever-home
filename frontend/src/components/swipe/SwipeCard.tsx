@@ -99,13 +99,13 @@ export function SwipeCard({ pet, onSwipe, onTap, isTop }: SwipeCardProps) {
 
       {/* Pet info at bottom */}
       <div className="absolute inset-x-0 bottom-0 p-6">
-        <div className="flex items-end justify-between">
-          <div>
+        <div className="flex items-end justify-between gap-4">
+          <div className="flex-1 min-w-0">
             <h2 className="text-3xl font-bold text-white mb-1 drop-shadow-lg">{pet.name}</h2>
             <p className="text-white/90 text-lg drop-shadow">
               {formatBreed(pet.breed)}
             </p>
-            <div className="flex items-center gap-3 mt-2">
+            <div className="flex flex-wrap items-center gap-2 mt-2">
               <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-sm text-white">
                 {ageDisplay}
               </span>
@@ -113,9 +113,14 @@ export function SwipeCard({ pet, onSwipe, onTap, isTop }: SwipeCardProps) {
                 {formatSize(pet.size)}
               </span>
               <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-sm text-white">
-                {pet.sex === 'MALE' ? '♂' : '♀'}
+                {pet.sex === 'MALE' ? '♂ Male' : '♀ Female'}
               </span>
             </div>
+            {pet.description && (
+              <p className="mt-3 text-sm text-white/80 line-clamp-2 drop-shadow">
+                {pet.description}
+              </p>
+            )}
           </div>
           <button
             type="button"
@@ -123,7 +128,7 @@ export function SwipeCard({ pet, onSwipe, onTap, isTop }: SwipeCardProps) {
               e.stopPropagation();
               onTap();
             }}
-            className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-white hover:bg-white/30 transition-colors"
+            className="flex-shrink-0 w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-white hover:bg-white/30 transition-colors"
             aria-label="View details"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

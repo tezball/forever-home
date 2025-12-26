@@ -94,17 +94,17 @@ export function PetTimeline({ petId }: PetTimelineProps) {
             <div className="relative pb-8">
               {idx !== history.length - 1 && (
                 <span
-                  className="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200"
+                  className="absolute top-5 left-5 -ml-px h-full w-0.5 bg-gray-200 md:top-4 md:left-4"
                   aria-hidden="true"
                 />
               )}
-              <div className="relative flex space-x-3">
-                <div>
+              <div className="relative flex space-x-3 md:space-x-3">
+                <div className="flex-shrink-0">
                   <span
-                    className={`h-8 w-8 rounded-full flex items-center justify-center ring-4 ring-white ${statusColors[entry.toStatus] || 'bg-gray-400'}`}
+                    className={`h-10 w-10 md:h-8 md:w-8 rounded-full flex items-center justify-center ring-4 ring-white ${statusColors[entry.toStatus] || 'bg-gray-400'}`}
                   >
                     <svg
-                      className="h-4 w-4 text-white"
+                      className="h-5 w-5 md:h-4 md:w-4 text-white"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -118,22 +118,25 @@ export function PetTimeline({ petId }: PetTimelineProps) {
                     </svg>
                   </span>
                 </div>
-                <div className="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
-                  <div>
-                    <p className="text-sm text-gray-900">
+                <div className="flex min-w-0 flex-1 flex-col md:flex-row md:justify-between md:space-x-4 pt-1">
+                  <div className="flex-1">
+                    <p className="text-sm md:text-sm text-gray-900">
                       {entry.fromStatus ? (
                         <>
                           <span className="font-medium">{statusLabels[entry.fromStatus] || entry.fromStatus}</span>
-                          {' → '}
+                          <span className="mx-1">→</span>
                         </>
                       ) : null}
-                      <span className="font-medium">{statusLabels[entry.toStatus] || entry.toStatus}</span>
+                      <span className="font-semibold">{statusLabels[entry.toStatus] || entry.toStatus}</span>
                     </p>
                     {entry.notes && (
                       <p className="mt-1 text-sm text-gray-500">{entry.notes}</p>
                     )}
+                    <p className="mt-1 text-xs text-gray-400 md:hidden">
+                      {formatDate(entry.changedAt)}
+                    </p>
                   </div>
-                  <div className="whitespace-nowrap text-right text-sm text-gray-500">
+                  <div className="hidden md:block whitespace-nowrap text-right text-sm text-gray-500">
                     {formatDate(entry.changedAt)}
                   </div>
                 </div>

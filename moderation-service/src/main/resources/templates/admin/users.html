@@ -48,53 +48,89 @@
             </form>
         </div>
 
-        <!-- Users Table -->
-        <div class="bg-white rounded-lg shadow overflow-hidden">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Profile</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                    </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                    <tr th:each="user : ${users}" class="hover:bg-gray-50">
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="font-medium text-gray-900" th:text="${user.displayName}">Name</div>
-                            <div class="text-sm text-gray-500" th:text="${user.email}">email@example.com</div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="px-2 py-1 text-xs font-medium rounded-full"
-                                  th:classappend="${user.role.name() == 'ADMIN'} ? 'bg-purple-100 text-purple-800' :
-                                                  (${user.role.name() == 'RESCUE_ORG'} ? 'bg-blue-100 text-blue-800' :
-                                                  (${user.role.name() == 'VET'} ? 'bg-green-100 text-green-800' :
-                                                  (${user.role.name() == 'FOSTER'} ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800')))"
-                                  th:text="${user.role}">ROLE</span>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="px-2 py-1 text-xs font-medium rounded-full"
-                                  th:classappend="${user.status.name() == 'ACTIVE'} ? 'bg-green-100 text-green-800' :
-                                                  (${user.status.name() == 'PENDING'} ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800')"
-                                  th:text="${user.status}">STATUS</span>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span th:if="${user.profileComplete}" class="text-green-600">Complete</span>
-                            <span th:unless="${user.profileComplete}" class="text-gray-400">Incomplete</span>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <a th:href="@{/admin/users/{id}(id=${user.id})}" class="text-primary hover:underline">
-                                View Details
-                            </a>
-                        </td>
-                    </tr>
-                    <tr th:if="${#lists.isEmpty(users)}">
-                        <td colspan="5" class="px-6 py-8 text-center text-gray-500">No users found</td>
-                    </tr>
-                </tbody>
-            </table>
+        <!-- Users Table (Desktop) -->
+        <div class="hidden md:block bg-white rounded-lg shadow overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Profile</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <tr th:each="user : ${users}" class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="font-medium text-gray-900" th:text="${user.displayName}">Name</div>
+                                <div class="text-sm text-gray-500" th:text="${user.email}">email@example.com</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 py-1 text-xs font-medium rounded-full"
+                                      th:classappend="${user.role.name() == 'ADMIN'} ? 'bg-purple-100 text-purple-800' :
+                                                      (${user.role.name() == 'RESCUE_ORG'} ? 'bg-blue-100 text-blue-800' :
+                                                      (${user.role.name() == 'VET'} ? 'bg-green-100 text-green-800' :
+                                                      (${user.role.name() == 'FOSTER'} ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800')))"
+                                      th:text="${user.role}">ROLE</span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 py-1 text-xs font-medium rounded-full"
+                                      th:classappend="${user.status.name() == 'ACTIVE'} ? 'bg-green-100 text-green-800' :
+                                                      (${user.status.name() == 'PENDING'} ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800')"
+                                      th:text="${user.status}">STATUS</span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span th:if="${user.profileComplete}" class="text-green-600">Complete</span>
+                                <span th:unless="${user.profileComplete}" class="text-gray-400">Incomplete</span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <a th:href="@{/admin/users/{id}(id=${user.id})}" class="text-primary hover:underline">
+                                    View Details
+                                </a>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(users)}">
+                            <td colspan="5" class="px-6 py-8 text-center text-gray-500">No users found</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Users Cards (Mobile) -->
+        <div class="md:hidden space-y-4">
+            <div th:each="user : ${users}" class="bg-white rounded-lg shadow p-4">
+                <div class="flex justify-between items-start mb-3">
+                    <div>
+                        <div class="font-medium text-gray-900" th:text="${user.displayName}">Name</div>
+                        <div class="text-sm text-gray-500" th:text="${user.email}">email@example.com</div>
+                    </div>
+                    <span class="px-2 py-1 text-xs font-medium rounded-full"
+                          th:classappend="${user.role.name() == 'ADMIN'} ? 'bg-purple-100 text-purple-800' :
+                                          (${user.role.name() == 'RESCUE_ORG'} ? 'bg-blue-100 text-blue-800' :
+                                          (${user.role.name() == 'VET'} ? 'bg-green-100 text-green-800' :
+                                          (${user.role.name() == 'FOSTER'} ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800')))"
+                          th:text="${user.role}">ROLE</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <span class="px-2 py-1 text-xs font-medium rounded-full"
+                              th:classappend="${user.status.name() == 'ACTIVE'} ? 'bg-green-100 text-green-800' :
+                                              (${user.status.name() == 'PENDING'} ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800')"
+                              th:text="${user.status}">STATUS</span>
+                        <span th:if="${user.profileComplete}" class="text-xs text-green-600">✓ Profile</span>
+                        <span th:unless="${user.profileComplete}" class="text-xs text-gray-400">○ Incomplete</span>
+                    </div>
+                    <a th:href="@{/admin/users/{id}(id=${user.id})}" class="text-primary text-sm font-medium hover:underline">
+                        View →
+                    </a>
+                </div>
+            </div>
+            <div th:if="${#lists.isEmpty(users)}" class="bg-white rounded-lg shadow p-8 text-center text-gray-500">
+                No users found
+            </div>
         </div>
 
         <!-- Pagination -->
