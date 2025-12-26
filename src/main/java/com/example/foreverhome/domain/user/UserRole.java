@@ -5,6 +5,7 @@ package com.example.foreverhome.domain.user;
  * Each role has specific capabilities and permissions.
  */
 public enum UserRole {
+    SUPER_ADMIN,
     ADMIN,
     FOSTER,
     ADOPTER,
@@ -13,10 +14,19 @@ public enum UserRole {
 
     /**
      * Checks if this role has administrative privileges.
-     * @return true if the role is ADMIN
+     * @return true if the role is ADMIN or SUPER_ADMIN
      */
     public boolean isAdministrative() {
-        return this == ADMIN;
+        return this == ADMIN || this == SUPER_ADMIN;
+    }
+
+    /**
+     * Checks if this role is the super admin role.
+     * Super admins can approve rescue organizations and view platform stats.
+     * @return true if the role is SUPER_ADMIN
+     */
+    public boolean isSuperAdmin() {
+        return this == SUPER_ADMIN;
     }
 
     /**

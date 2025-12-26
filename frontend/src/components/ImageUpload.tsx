@@ -53,9 +53,8 @@ export function ImageUpload({
         newImages.push(response.data);
       }
       onImagesChange([...images, ...newImages]);
-    } catch (err) {
+    } catch {
       setError('Failed to upload image. Please try again.');
-      console.error('Upload error:', err);
     } finally {
       setUploading(false);
       if (fileInputRef.current) {
@@ -69,9 +68,8 @@ export function ImageUpload({
       await apiClient.delete(`/pets/${petId}/images/${imageId}`);
       const updatedImages = images.filter((img) => img.id !== imageId);
       onImagesChange(updatedImages);
-    } catch (err) {
+    } catch {
       setError('Failed to delete image. Please try again.');
-      console.error('Delete error:', err);
     }
   }, [petId, images, onImagesChange]);
 
@@ -83,9 +81,8 @@ export function ImageUpload({
         isPrimary: img.id === imageId,
       }));
       onImagesChange(updatedImages);
-    } catch (err) {
+    } catch {
       setError('Failed to set primary image. Please try again.');
-      console.error('Set primary error:', err);
     }
   }, [petId, images, onImagesChange]);
 

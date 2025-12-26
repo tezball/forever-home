@@ -44,6 +44,7 @@ export function PetCard({ pet, showEditButton = false, onWithdraw }: PetCardProp
             src={pet.imageUrls[0] || placeholderImage}
             alt={pet.name}
             className="w-full h-48 object-cover"
+            loading="lazy"
           />
           {pet.imageUrls.length === 0 && (
             <div className="absolute bottom-2 right-2 bg-warning-100 text-warning-700 text-xs px-2 py-1 rounded">

@@ -11,8 +11,8 @@ import {
   AdopterDashboard,
   RescueDashboard,
   VetDashboard,
+  AdminDashboard,
 } from './pages/dashboards';
-// Note: Admin features have been moved to moderation-service (port 8081)
 import type { ReactNode } from 'react';
 
 interface ProtectedRouteProps {
@@ -42,6 +42,8 @@ function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
   return <>{children}</>;
 }
 
+const SHOW_CONSTRUCTION_BANNER = import.meta.env.VITE_SHOW_CONSTRUCTION_BANNER === 'true';
+
 function ConstructionBanner() {
   const [dismissed, setDismissed] = useState(() => {
     return localStorage.getItem('construction-banner-dismissed') === 'true';
@@ -52,7 +54,8 @@ function ConstructionBanner() {
     setDismissed(true);
   };
 
-  if (dismissed) return null;
+  // Hide banner in production unless explicitly enabled
+  if (!SHOW_CONSTRUCTION_BANNER || dismissed) return null;
 
   return (
     <div className="bg-amber-500 text-white py-2 px-4 text-center font-medium relative">
@@ -223,7 +226,23 @@ function AppRoutes() {
             }
           />
 
-          {/* Admin Routes - Moved to moderation-service (port 8081) */}
+          {/* Super Admin Routes */}
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute allowedRoles={['SUPER_ADMIN']}>
+                <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/dashboard"
+            element={
+              <ProtectedRoute allowedRoles={['SUPER_ADMIN']}>
+                <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Settings Route - Available to all authenticated users */}
           <Route

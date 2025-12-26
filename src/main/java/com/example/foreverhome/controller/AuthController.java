@@ -4,7 +4,10 @@ import com.example.foreverhome.dto.auth.*;
 import com.example.foreverhome.dto.user.UserDto;
 import com.example.foreverhome.security.UserPrincipal;
 import com.example.foreverhome.service.AuthService;
+import com.example.foreverhome.service.CookieService;
 import com.example.foreverhome.service.GoogleAuthService;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,10 +23,12 @@ public class AuthController {
 
     private final AuthService authService;
     private final GoogleAuthService googleAuthService;
+    private final CookieService cookieService;
 
-    public AuthController(AuthService authService, GoogleAuthService googleAuthService) {
+    public AuthController(AuthService authService, GoogleAuthService googleAuthService, CookieService cookieService) {
         this.authService = authService;
         this.googleAuthService = googleAuthService;
+        this.cookieService = cookieService;
     }
 
     @GetMapping("/me")
@@ -40,14 +45,29 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
+    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request,
+                                                HttpServletResponse httpResponse) {
         LoginResponse response = authService.login(request);
+        // Set tokens as httpOnly cookies for security
+        cookieService.setTokenCookies(httpResponse, response.accessToken(), response.refreshToken());
         return ResponseEntity.ok(response);
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<Map<String, String>> refresh(@Valid @RequestBody RefreshTokenRequest request) {
-        var result = authService.refreshAccessToken(request.refreshToken());
+    public ResponseEntity<Map<String, String>> refresh(@Valid @RequestBody(required = false) RefreshTokenRequest request,
+                                                        HttpServletRequest httpRequest,
+                                                        HttpServletResponse httpResponse) {
+        // Get refresh token from cookie if not in body (prefer cookie)
+        String refreshToken = cookieService.getRefreshToken(httpRequest)
+                .orElseGet(() -> request != null ? request.refreshToken() : null);
+
+        if (refreshToken == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Refresh token required"));
+        }
+
+        var result = authService.refreshAccessToken(refreshToken);
+        // Set new tokens as httpOnly cookies
+        cookieService.setTokenCookies(httpResponse, result.accessToken(), result.refreshToken());
         return ResponseEntity.ok(Map.of(
             "accessToken", result.accessToken(),
             "refreshToken", result.refreshToken()
@@ -55,8 +75,19 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout(@Valid @RequestBody LogoutRequest request) {
-        authService.logout(request.refreshToken());
+    public ResponseEntity<Void> logout(@Valid @RequestBody(required = false) LogoutRequest request,
+                                        HttpServletRequest httpRequest,
+                                        HttpServletResponse httpResponse) {
+        // Get refresh token from cookie if not in body (prefer cookie)
+        String refreshToken = cookieService.getRefreshToken(httpRequest)
+                .orElseGet(() -> request != null ? request.refreshToken() : null);
+
+        if (refreshToken != null) {
+            authService.logout(refreshToken);
+        }
+
+        // Always clear cookies on logout
+        cookieService.clearTokenCookies(httpResponse);
         return ResponseEntity.noContent().build();
     }
 
@@ -91,11 +122,16 @@ public class AuthController {
     /**
      * Authenticate with Google ID token.
      * For new users, returns newUser=true with email/name/googleId for role selection.
-     * For existing users, returns tokens directly.
+     * For existing users, returns tokens directly and sets httpOnly cookies.
      */
     @PostMapping("/google")
-    public ResponseEntity<GoogleAuthResponse> googleAuth(@Valid @RequestBody GoogleAuthRequest request) {
+    public ResponseEntity<GoogleAuthResponse> googleAuth(@Valid @RequestBody GoogleAuthRequest request,
+                                                          HttpServletResponse httpResponse) {
         GoogleAuthResponse response = googleAuthService.authenticateWithGoogle(request.idToken());
+        // Set cookies for existing users who are authenticated
+        if (!response.newUser() && response.accessToken() != null && response.refreshToken() != null) {
+            cookieService.setTokenCookies(httpResponse, response.accessToken(), response.refreshToken());
+        }
         return ResponseEntity.ok(response);
     }
 
@@ -104,8 +140,11 @@ public class AuthController {
      */
     @PostMapping("/google/complete-registration")
     public ResponseEntity<LoginResponse> completeGoogleRegistration(
-            @Valid @RequestBody GoogleCompleteRegistrationRequest request) {
+            @Valid @RequestBody GoogleCompleteRegistrationRequest request,
+            HttpServletResponse httpResponse) {
         LoginResponse response = googleAuthService.completeGoogleRegistration(request);
+        // Set tokens as httpOnly cookies for security
+        cookieService.setTokenCookies(httpResponse, response.accessToken(), response.refreshToken());
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 

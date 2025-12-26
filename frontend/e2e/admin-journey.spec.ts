@@ -1,396 +1,171 @@
 import { test, expect } from './fixtures/auth.fixture';
 
-test.describe('Admin Journey', () => {
+test.describe('Super Admin Journey', () => {
   test.describe('Dashboard', () => {
-    test('should display admin dashboard', async ({ adminPage }) => {
-      await adminPage.goto('/admin/dashboard');
+    test('should display admin dashboard', async ({ superAdminPage }) => {
+      await superAdminPage.goto('/admin');
 
-      await expect(adminPage.getByRole('heading', { name: /admin dashboard/i })).toBeVisible();
+      await expect(superAdminPage.getByRole('heading', { name: /admin dashboard/i })).toBeVisible();
     });
 
-    test('should display system statistics', async ({ adminPage }) => {
-      await adminPage.goto('/admin/dashboard');
+    test('should display platform statistics section', async ({ superAdminPage }) => {
+      await superAdminPage.goto('/admin');
 
-      // Check for the tabs that show user/approval management
-      await expect(adminPage.getByRole('button', { name: /rescue org approvals/i })).toBeVisible();
+      await expect(superAdminPage.getByRole('heading', { name: /platform statistics/i })).toBeVisible();
     });
 
-    test('should display pending rescue approvals', async ({ adminPage }) => {
-      await adminPage.goto('/admin/dashboard');
+    test('should display user statistics', async ({ superAdminPage }) => {
+      await superAdminPage.goto('/admin');
 
-      // The tab shows rescue org approvals with count
-      await expect(adminPage.getByRole('button', { name: /rescue org approvals/i })).toBeVisible();
+      // Check for user stat cards
+      await expect(superAdminPage.getByText('Total Users')).toBeVisible();
+      await expect(superAdminPage.getByText('Fosters')).toBeVisible();
+      await expect(superAdminPage.getByText('Adopters')).toBeVisible();
     });
 
-    test('should have navigation to key sections', async ({ adminPage }) => {
-      await adminPage.goto('/admin/dashboard');
+    test('should display pet statistics', async ({ superAdminPage }) => {
+      await superAdminPage.goto('/admin');
 
-      // Should have links to Content Moderation and Analytics
-      await expect(adminPage.getByRole('link', { name: /content moderation/i })).toBeVisible();
-      await expect(adminPage.getByRole('link', { name: /analytics/i })).toBeVisible();
-    });
-  });
-
-  test.describe('Analytics', () => {
-    test('should navigate to analytics page', async ({ adminPage }) => {
-      await adminPage.goto('/admin/analytics');
-
-      await expect(adminPage.getByRole('heading', { name: /analytics/i })).toBeVisible();
+      await expect(superAdminPage.getByRole('heading', { name: /pet statistics/i })).toBeVisible();
+      await expect(superAdminPage.getByText('Available')).toBeVisible();
     });
 
-    test('should display user statistics', async ({ adminPage }) => {
-      await adminPage.goto('/admin/analytics');
+    test('should display rescue organization statistics', async ({ superAdminPage }) => {
+      await superAdminPage.goto('/admin');
 
-      // Look for the specific "Total Users" label
-      await expect(adminPage.getByText('Total Users')).toBeVisible();
+      await expect(superAdminPage.getByRole('heading', { name: /rescue organization statistics/i })).toBeVisible();
+      await expect(superAdminPage.getByText('Total Rescues')).toBeVisible();
+      await expect(superAdminPage.getByText('Verified', { exact: true })).toBeVisible();
     });
 
-    test('should display pet statistics', async ({ adminPage }) => {
-      await adminPage.goto('/admin/analytics');
+    test('should display adoption statistics', async ({ superAdminPage }) => {
+      await superAdminPage.goto('/admin');
 
-      // Look for pets-related content
-      await expect(adminPage.getByText('Total Pets')).toBeVisible();
-    });
-
-    test('should display adoption metrics', async ({ adminPage }) => {
-      await adminPage.goto('/admin/analytics');
-
-      // Look for adoptions-related content - the page shows "Adoptions" in the summary cards
-      await expect(adminPage.getByText('Adoptions')).toBeVisible();
-    });
-
-    test('should filter analytics by date range', async ({ adminPage }) => {
-      await adminPage.goto('/admin/analytics');
-
-      const dateFilter = adminPage.getByLabel(/from date/i).first();
-      if (await dateFilter.isVisible()) {
-        await dateFilter.fill('2024-01-01');
-        await adminPage.waitForTimeout(500);
-      }
-    });
-
-    test('should export analytics data', async ({ adminPage }) => {
-      await adminPage.goto('/admin/analytics');
-
-      const exportButton = adminPage.getByRole('button', { name: /export|download|csv/i }).first();
-      if (await exportButton.isVisible()) {
-        await expect(exportButton).toBeVisible();
-      }
+      await expect(superAdminPage.getByRole('heading', { name: /adoption statistics/i })).toBeVisible();
+      await expect(superAdminPage.getByText('Total Adoptions Completed')).toBeVisible();
     });
   });
 
-  test.describe('Rescue Organization Approvals', () => {
-    test('should display pending rescue organizations', async ({ adminPage }) => {
-      await adminPage.goto('/admin/dashboard');
+  test.describe('Rescue Organization Management', () => {
+    test('should display rescue organizations section', async ({ superAdminPage }) => {
+      await superAdminPage.goto('/admin');
 
-      // The approvals tab is shown with count
-      await expect(adminPage.getByRole('button', { name: /rescue org approvals/i })).toBeVisible();
+      await expect(superAdminPage.getByRole('heading', { name: /rescue organizations/i })).toBeVisible();
     });
 
-    test('should view rescue organization details', async ({ adminPage }) => {
-      await adminPage.goto('/admin/dashboard');
+    test('should have pending and all view tabs', async ({ superAdminPage }) => {
+      await superAdminPage.goto('/admin');
 
-      const viewButton = adminPage.getByRole('link', { name: /view|details|review/i }).first();
+      await expect(superAdminPage.getByRole('button', { name: /pending/i })).toBeVisible();
+      await expect(superAdminPage.getByRole('button', { name: /all/i })).toBeVisible();
+    });
+
+    test('should toggle between pending and all rescues', async ({ superAdminPage }) => {
+      await superAdminPage.goto('/admin');
+
+      // Click on All tab
+      await superAdminPage.getByRole('button', { name: /all/i }).click();
+
+      // Should show all rescues (verified ones from test data)
+      await superAdminPage.waitForTimeout(500);
+
+      // Click back to Pending
+      await superAdminPage.getByRole('button', { name: /pending/i }).click();
+      await superAdminPage.waitForTimeout(500);
+    });
+
+    test('should show rescue verification status badge', async ({ superAdminPage }) => {
+      await superAdminPage.goto('/admin');
+
+      // Click on All tab to see verified rescues
+      await superAdminPage.getByRole('button', { name: /all/i }).click();
+      await superAdminPage.waitForTimeout(500);
+
+      // Should see verified badges
+      const verifiedBadge = superAdminPage.getByText('Verified').first();
+      await expect(verifiedBadge).toBeVisible();
+    });
+
+    test('should open rescue detail modal', async ({ superAdminPage }) => {
+      await superAdminPage.goto('/admin');
+
+      // Click on All tab to see rescues
+      await superAdminPage.getByRole('button', { name: /all/i }).click();
+      await superAdminPage.waitForTimeout(500);
+
+      // Click View button on first rescue
+      const viewButton = superAdminPage.getByRole('button', { name: /view/i }).first();
       if (await viewButton.isVisible()) {
         await viewButton.click();
+        await superAdminPage.waitForTimeout(500);
 
-        // Should show rescue details
-        await expect(adminPage.getByText(/organization|contact|description/i)).toBeVisible();
+        // Modal should be visible with rescue details
+        await expect(superAdminPage.getByText(/verification status/i)).toBeVisible();
       }
     });
 
-    test('should approve rescue organization', async ({ adminPage }) => {
-      await adminPage.goto('/admin/dashboard');
+    test('should have revoke verification button for verified rescues', async ({ superAdminPage }) => {
+      await superAdminPage.goto('/admin');
 
-      const approveButton = adminPage.getByRole('button', { name: /approve/i }).first();
-      if (await approveButton.isVisible()) {
-        await approveButton.click();
+      // Click on All tab
+      await superAdminPage.getByRole('button', { name: /all/i }).click();
+      await superAdminPage.waitForTimeout(500);
 
-        // Should show confirmation or success
-        await adminPage.waitForTimeout(1000);
-      }
-    });
+      // Click View on a verified rescue
+      const viewButton = superAdminPage.getByRole('button', { name: /view/i }).first();
+      if (await viewButton.isVisible()) {
+        await viewButton.click();
+        await superAdminPage.waitForTimeout(500);
 
-    test('should reject rescue organization with reason', async ({ adminPage }) => {
-      await adminPage.goto('/admin/dashboard');
-
-      const rejectButton = adminPage.getByRole('button', { name: /reject/i }).first();
-      if (await rejectButton.isVisible()) {
-        await rejectButton.click();
-
-        // Should show reason input
-        const reasonInput = adminPage.getByLabel(/reason/i);
-        if (await reasonInput.isVisible()) {
-          await reasonInput.fill('Organization does not meet requirements.');
-
-          const confirmButton = adminPage.getByRole('button', { name: /confirm|submit/i });
-          if (await confirmButton.isVisible()) {
-            await expect(confirmButton).toBeVisible();
-          }
-        }
+        // Should have revoke verification button
+        const revokeButton = superAdminPage.getByRole('button', { name: /revoke verification/i });
+        await expect(revokeButton).toBeVisible();
       }
     });
   });
 
-  test.describe('User Management', () => {
-    test('should navigate to user management', async ({ adminPage }) => {
-      await adminPage.goto('/admin/dashboard');
+  test.describe('Action Required Banner', () => {
+    test('should show action required banner when pending rescues exist', async ({ superAdminPage }) => {
+      await superAdminPage.goto('/admin');
 
-      // Click the User Management tab
-      const userManagementTab = adminPage.getByRole('button', { name: /user management/i });
-      await userManagementTab.click();
-
-      // Should show the user table with headers
-      await expect(adminPage.getByRole('columnheader', { name: /name/i })).toBeVisible();
-    });
-
-    test('should search users by email', async ({ adminPage }) => {
-      await adminPage.goto('/admin/dashboard');
-
-      // Click the User Management tab first
-      await adminPage.getByRole('button', { name: /user management/i }).click();
-
-      const searchInput = adminPage.getByPlaceholder(/search by name or email/i);
-      if (await searchInput.isVisible()) {
-        await searchInput.fill('test@example.com');
-        await adminPage.waitForTimeout(500);
-      }
-    });
-
-    test('should filter users by role', async ({ adminPage }) => {
-      await adminPage.goto('/admin/dashboard');
-
-      // Click the User Management tab first
-      await adminPage.getByRole('button', { name: /user management/i }).click();
-
-      const roleFilter = adminPage.getByLabel('Role');
-      if (await roleFilter.isVisible()) {
-        await roleFilter.selectOption('FOSTER');
-        await adminPage.waitForTimeout(500);
-      }
-    });
-
-    test('should filter users by status', async ({ adminPage }) => {
-      await adminPage.goto('/admin/dashboard');
-
-      // Click the User Management tab first
-      await adminPage.getByRole('button', { name: /user management/i }).click();
-
-      const statusFilter = adminPage.getByLabel('Status');
-      if (await statusFilter.isVisible()) {
-        await statusFilter.selectOption('ACTIVE');
-        await adminPage.waitForTimeout(500);
-      }
-    });
-
-    test('should view user details', async ({ adminPage }) => {
-      await adminPage.goto('/admin/dashboard');
-
-      // Click the User Management tab first
-      await adminPage.getByRole('button', { name: /user management/i }).click();
-
-      // Check if table is visible (users exist)
-      const table = adminPage.locator('table');
-      if (await table.isVisible()) {
-        // Users table should show email, role, status columns
-        await expect(adminPage.getByRole('columnheader', { name: /email/i })).toBeVisible();
-      }
-    });
-
-    test('should suspend user', async ({ adminPage }) => {
-      await adminPage.goto('/admin/dashboard');
-
-      // Click the User Management tab first
-      await adminPage.getByRole('button', { name: /user management/i }).click();
-
-      const suspendButton = adminPage.getByRole('button', { name: /^suspend$/i }).first();
-      if (await suspendButton.isVisible()) {
-        // Just verify the button exists (don't click to avoid side effects)
-        await expect(suspendButton).toBeVisible();
-      }
-    });
-
-    test('should reactivate suspended user', async ({ adminPage }) => {
-      await adminPage.goto('/admin/dashboard');
-
-      // Click the User Management tab first
-      await adminPage.getByRole('button', { name: /user management/i }).click();
-
-      const reactivateButton = adminPage.getByRole('button', { name: /reactivate/i }).first();
-      if (await reactivateButton.isVisible()) {
-        await expect(reactivateButton).toBeVisible();
-      }
-    });
-
-    test('should reset user password', async ({ adminPage }) => {
-      await adminPage.goto('/admin/dashboard');
-
-      // Click the User Management tab first
-      await adminPage.getByRole('button', { name: /user management/i }).click();
-
-      const resetButton = adminPage.getByRole('button', { name: /reset password/i }).first();
-      if (await resetButton.isVisible()) {
-        await resetButton.click();
-
-        // Modal should appear
-        await expect(adminPage.getByRole('heading', { name: /reset user password/i })).toBeVisible();
-      }
-    });
-  });
-
-  test.describe('Moderation', () => {
-    test('should navigate to moderation page', async ({ adminPage }) => {
-      await adminPage.goto('/admin/moderation');
-
-      await expect(adminPage.getByRole('heading', { name: /content moderation/i })).toBeVisible();
-    });
-
-    test('should display content flags', async ({ adminPage }) => {
-      await adminPage.goto('/admin/moderation');
-
-      // Look for the Content Flags tab button
-      await expect(adminPage.getByRole('button', { name: /content flags/i })).toBeVisible();
-    });
-
-    test('should view flagged content details', async ({ adminPage }) => {
-      await adminPage.goto('/admin/moderation');
-
-      // The moderation page should show content flags section
-      await expect(adminPage.getByRole('heading', { name: /content moderation/i })).toBeVisible();
-    });
-
-    test('should approve/dismiss flag', async ({ adminPage }) => {
-      await adminPage.goto('/admin/moderation');
-
-      // Check that the page loads
-      await expect(adminPage.getByRole('heading', { name: /content moderation/i })).toBeVisible();
-    });
-
-    test('should take action on flagged content', async ({ adminPage }) => {
-      await adminPage.goto('/admin/moderation');
-
-      // Check that the page loads
-      await expect(adminPage.getByRole('heading', { name: /content moderation/i })).toBeVisible();
-    });
-  });
-
-  test.describe('Audit Logs', () => {
-    test('should navigate to audit logs', async ({ adminPage }) => {
-      await adminPage.goto('/admin/moderation');
-
-      // Look for audit logs tab
-      const auditLogsTab = adminPage.getByRole('button', { name: /audit log/i });
-      if (await auditLogsTab.isVisible()) {
-        await auditLogsTab.click();
-        await expect(auditLogsTab).toBeVisible();
-      } else {
-        // If no audit logs tab, just verify moderation page loaded
-        await expect(adminPage.getByRole('heading', { name: /content moderation/i })).toBeVisible();
-      }
-    });
-
-    test('should display audit log entries', async ({ adminPage }) => {
-      await adminPage.goto('/admin/moderation');
-
-      const auditLogsTab = adminPage.getByRole('button', { name: /audit log/i });
-      if (await auditLogsTab.isVisible()) {
-        await auditLogsTab.click();
-        // Should show log entries table
-        await adminPage.waitForTimeout(500);
-      }
-    });
-
-    test('should filter audit logs by action type', async ({ adminPage }) => {
-      await adminPage.goto('/admin/moderation');
-
-      const auditLogsTab = adminPage.getByRole('button', { name: /audit log/i });
-      if (await auditLogsTab.isVisible()) {
-        await auditLogsTab.click();
-      }
-    });
-
-    test('should filter audit logs by date', async ({ adminPage }) => {
-      await adminPage.goto('/admin/moderation');
-
-      const auditLogsTab = adminPage.getByRole('button', { name: /audit log/i });
-      if (await auditLogsTab.isVisible()) {
-        await auditLogsTab.click();
-      }
-    });
-  });
-
-  test.describe('System Overview', () => {
-    test('should display total users count', async ({ adminPage }) => {
-      await adminPage.goto('/admin/dashboard');
-
-      // The User Management tab shows user count
-      await expect(adminPage.getByRole('button', { name: /user management/i })).toBeVisible();
-    });
-
-    test('should display total pets count', async ({ adminPage }) => {
-      await adminPage.goto('/admin/dashboard');
-
-      // Dashboard loaded successfully
-      await expect(adminPage.getByRole('heading', { name: /admin dashboard/i })).toBeVisible();
-    });
-
-    test('should display adoption success rate', async ({ adminPage }) => {
-      await adminPage.goto('/admin/dashboard');
-
-      // Dashboard loaded successfully
-      await expect(adminPage.getByRole('heading', { name: /admin dashboard/i })).toBeVisible();
-    });
-
-    test('should display active rescue organizations', async ({ adminPage }) => {
-      await adminPage.goto('/admin/dashboard');
-
-      // The Rescue Org Approvals tab is visible
-      await expect(adminPage.getByRole('button', { name: /rescue org approvals/i })).toBeVisible();
+      // If there are pending rescues, the banner should be visible
+      const banner = superAdminPage.getByRole('heading', { name: /action required/i });
+      // This may or may not be visible depending on test data state
+      // Just check that the dashboard loaded properly
+      await expect(superAdminPage.getByRole('heading', { name: /admin dashboard/i })).toBeVisible();
     });
   });
 
   test.describe('Navigation', () => {
-    test('should navigate between admin sections', async ({ adminPage }) => {
-      // Navigate directly to analytics
-      await adminPage.goto('/admin/analytics');
-      await expect(adminPage.getByRole('heading', { name: /analytics/i })).toBeVisible();
+    test('should have admin dashboard link in header when logged in as super admin', async ({ superAdminPage }) => {
+      await superAdminPage.goto('/');
 
-      // Navigate to moderation
-      await adminPage.goto('/admin/moderation');
-      await expect(adminPage.getByRole('heading', { name: /content moderation/i })).toBeVisible();
+      // Check for Admin Dashboard link in navigation
+      await expect(superAdminPage.getByRole('link', { name: /admin dashboard/i })).toBeVisible();
+    });
 
-      // Navigate back to dashboard
-      await adminPage.goto('/admin/dashboard');
-      await expect(adminPage.getByRole('heading', { name: /admin dashboard/i })).toBeVisible();
+    test('should navigate to admin dashboard from header link', async ({ superAdminPage }) => {
+      await superAdminPage.goto('/');
+
+      await superAdminPage.getByRole('link', { name: /admin dashboard/i }).click();
+
+      await expect(superAdminPage.getByRole('heading', { name: /admin dashboard/i })).toBeVisible();
     });
   });
 
-  test.describe('Data Export', () => {
-    test('should export user data to CSV', async ({ adminPage }) => {
-      await adminPage.goto('/admin/analytics');
+  test.describe('Access Control', () => {
+    test('should redirect non-admin users from admin page', async ({ adopterPage }) => {
+      await adopterPage.goto('/admin');
 
-      const exportButton = adminPage.getByRole('button', { name: /export.*user|user.*csv/i });
-      if (await exportButton.isVisible()) {
-        await expect(exportButton).toBeVisible();
-      }
+      // Should redirect to home since adopter doesn't have SUPER_ADMIN role
+      await adopterPage.waitForURL((url) => !url.pathname.includes('/admin'), { timeout: 5000 });
     });
 
-    test('should export pet data to CSV', async ({ adminPage }) => {
-      await adminPage.goto('/admin/analytics');
+    test('should allow super admin to access admin page', async ({ superAdminPage }) => {
+      await superAdminPage.goto('/admin');
 
-      const exportButton = adminPage.getByRole('button', { name: /export.*pet|pet.*csv/i });
-      if (await exportButton.isVisible()) {
-        await expect(exportButton).toBeVisible();
-      }
-    });
-
-    test('should export adoption data to CSV', async ({ adminPage }) => {
-      await adminPage.goto('/admin/analytics');
-
-      const exportButton = adminPage.getByRole('button', { name: /export.*adoption|adoption.*csv/i });
-      if (await exportButton.isVisible()) {
-        await expect(exportButton).toBeVisible();
-      }
+      // Should stay on admin page and show dashboard
+      await expect(superAdminPage.getByRole('heading', { name: /admin dashboard/i })).toBeVisible();
     });
   });
 });

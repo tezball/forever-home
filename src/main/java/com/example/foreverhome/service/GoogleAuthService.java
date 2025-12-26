@@ -84,11 +84,13 @@ public class GoogleAuthService {
         this.vetRepository = vetRepository;
         this.rescueOrganizationRepository = rescueOrganizationRepository;
 
-        // Initialize Google ID token verifier
+        // Initialize Google ID token verifier with issuer and audience validation
         this.verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), GsonFactory.getDefaultInstance())
                 .setAudience(googleProperties.getClientId() != null
                     ? Collections.singletonList(googleProperties.getClientId())
                     : Collections.emptyList())
+                // Validate issuer to prevent token forgery
+                .setIssuer("https://accounts.google.com")
                 .build();
     }
 

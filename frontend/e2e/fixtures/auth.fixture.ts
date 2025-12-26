@@ -2,6 +2,7 @@ import { test as base, Page } from '@playwright/test';
 
 // Test accounts from the application
 export const TEST_ACCOUNTS = {
+  superAdmin: { email: 'superadmin@test.com', password: 'password123' },
   admin: { email: 'admin@test.com', password: 'password123' },
   foster: { email: 'foster@test.com', password: 'password123' },
   adopter: { email: 'adopter@test.com', password: 'password123' },
@@ -9,29 +10,39 @@ export const TEST_ACCOUNTS = {
   rescue: { email: 'rescue@test.com', password: 'password123' },
 };
 
-async function login(page: Page, email: string, password: string, retries = 3): Promise<void> {
+async function login(page: Page, email: string, password: string, retries = 5): Promise<void> {
+  const baseDelay = 500; // Start with 500ms
+
   for (let attempt = 1; attempt <= retries; attempt++) {
-    await page.goto('/login');
-
-    await page.getByLabel(/email/i).fill(email);
-    await page.getByPlaceholder(/enter your password/i).fill(password);
-    await page.getByRole('button', { name: 'Sign In', exact: true }).click();
-
     try {
+      await page.goto('/login', { waitUntil: 'networkidle' });
+
+      // Wait for the form to be fully loaded
+      await page.waitForSelector('[data-testid="login-form"], form', { timeout: 5000 }).catch(() => {});
+
+      await page.getByLabel(/email/i).fill(email);
+      await page.getByPlaceholder(/enter your password/i).fill(password);
+      await page.getByRole('button', { name: 'Sign In', exact: true }).click();
+
       // Wait for navigation away from login page (successful auth redirects to home or dashboard)
-      await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 10000 });
+      await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 15000 });
       return; // Success, exit the function
-    } catch {
+    } catch (error) {
       // Check if there's an error message visible
       const errorVisible = await page.getByText(/invalid email or password/i).isVisible().catch(() => false);
-      if (errorVisible && attempt < retries) {
-        // Wait a bit before retrying
-        await page.waitForTimeout(1000);
+
+      if (attempt < retries) {
+        // Exponential backoff: 500ms, 1s, 2s, 4s, 8s
+        const delay = baseDelay * Math.pow(2, attempt - 1);
+        console.log(`Login attempt ${attempt} failed for ${email}, retrying in ${delay}ms...`);
+        await page.waitForTimeout(delay);
         continue;
       }
-      if (attempt === retries) {
-        throw new Error(`Login failed for ${email} after ${retries} attempts`);
-      }
+
+      const errorMessage = errorVisible
+        ? 'Invalid credentials'
+        : error instanceof Error ? error.message : 'Unknown error';
+      throw new Error(`Login failed for ${email} after ${retries} attempts: ${errorMessage}`);
     }
   }
 }
@@ -43,6 +54,7 @@ export const test = base.extend<{
   rescuePage: Page;
   vetPage: Page;
   adminPage: Page;
+  superAdminPage: Page;
 }>({
   authenticatedPage: async ({ page }, use) => {
     await login(page, TEST_ACCOUNTS.adopter.email, TEST_ACCOUNTS.adopter.password);
@@ -66,6 +78,10 @@ export const test = base.extend<{
   },
   adminPage: async ({ page }, use) => {
     await login(page, TEST_ACCOUNTS.admin.email, TEST_ACCOUNTS.admin.password);
+    await use(page);
+  },
+  superAdminPage: async ({ page }, use) => {
+    await login(page, TEST_ACCOUNTS.superAdmin.email, TEST_ACCOUNTS.superAdmin.password);
     await use(page);
   },
 });

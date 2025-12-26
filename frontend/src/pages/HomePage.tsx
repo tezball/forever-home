@@ -51,8 +51,8 @@ export function HomePage() {
         if (statsRes.status === 'fulfilled') {
           setStats(statsRes.value.data);
         }
-      } catch (error) {
-        console.error('Failed to fetch home data:', error);
+      } catch {
+        // Errors are handled silently - homepage will show empty state
       } finally {
         setLoading(false);
       }

@@ -247,6 +247,18 @@ public class PetService {
     }
 
     @Transactional(readOnly = true)
+    public PagedResponse<PetDto> getFeaturedPetsPaged(int page, int size) {
+        int offset = page * size;
+        List<PetDto> pets = petRepository.findFeaturedPetsPageable(size, offset).stream()
+                .map(this::toPetDtoWithImages)
+                .toList();
+
+        long total = petRepository.countByStatus(PetStatus.AVAILABLE);
+
+        return PagedResponse.of(pets, page, size, total);
+    }
+
+    @Transactional(readOnly = true)
     public List<PetDto> getPetsByFoster(UUID userId) {
         // Look up foster profile by user ID to get foster's actual ID
         Foster foster = fosterRepository.findByUserId(userId)

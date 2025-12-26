@@ -39,9 +39,33 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            // CSRF protection is disabled for stateless JWT authentication
+            // JWT tokens are stored in localStorage and sent via Authorization header
+            // Cross-origin requests cannot read/set custom headers, providing CSRF protection
+            // TODO: Enable CSRF when migrating tokens to httpOnly cookies
             .csrf(AbstractHttpConfigurer::disable)
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            // Security headers
+            .headers(headers -> headers
+                .contentSecurityPolicy(csp -> csp
+                    .policyDirectives("default-src 'self'; " +
+                        "script-src 'self' 'unsafe-inline' https://accounts.google.com; " +
+                        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+                        "font-src 'self' https://fonts.gstatic.com; " +
+                        "img-src 'self' data: https: blob:; " +
+                        "connect-src 'self' https://accounts.google.com; " +
+                        "frame-src https://accounts.google.com; " +
+                        "frame-ancestors 'none'; " +
+                        "form-action 'self'; " +
+                        "base-uri 'self'"))
+                .frameOptions(frame -> frame.deny())
+                .contentTypeOptions(content -> {})
+                .referrerPolicy(referrer -> referrer
+                    .policy(org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
+                .permissionsPolicy(permissions -> permissions
+                    .policy("geolocation=(), microphone=(), camera=()"))
+            )
             .authorizeHttpRequests(auth -> auth
                 // Public endpoints
                 .requestMatchers("/api/auth/**").permitAll()
@@ -74,7 +98,8 @@ public class SecurityConfig {
                     "/vets", "/vets/**",
                     "/faq", "/contact", "/privacy", "/help", "/about", "/terms",
                     "/profile", "/settings", "/notifications",
-                    "/adopter/**", "/foster/**", "/rescue/**", "/vet/**"
+                    "/adopter/**", "/foster/**", "/rescue/**", "/vet/**",
+                    "/admin", "/admin/**"  // Super admin dashboard routes
                 ).permitAll()
 
                 // Authenticated endpoints
@@ -90,7 +115,16 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(corsProperties.getAllowedOriginsList());
         configuration.setAllowedMethods(corsProperties.getAllowedMethodsList());
-        configuration.setAllowedHeaders(List.of("*"));
+        // Explicitly list allowed headers instead of wildcard for security
+        configuration.setAllowedHeaders(List.of(
+            "Authorization",
+            "Content-Type",
+            "Accept",
+            "Origin",
+            "X-Requested-With",
+            "Cache-Control"
+        ));
+        configuration.setExposedHeaders(List.of("Authorization"));
         configuration.setAllowCredentials(corsProperties.isAllowCredentials());
         configuration.setMaxAge(corsProperties.getMaxAge());
 

@@ -49,6 +49,9 @@ public class User implements Persistable<UUID> {
     @Column("email_verification_token")
     private String emailVerificationToken;
 
+    @Column("email_verification_token_expiry")
+    private Instant emailVerificationTokenExpiry;
+
     @Column("password_reset_token")
     private String passwordResetToken;
 
@@ -353,11 +356,31 @@ public class User implements Persistable<UUID> {
     }
 
     /**
-     * Sets the email verification token.
+     * Sets the email verification token and expiry (24 hours from now).
      * @param token the verification token
      */
     public void setEmailVerificationToken(String token) {
         this.emailVerificationToken = token;
+        this.emailVerificationTokenExpiry = Instant.now().plus(java.time.Duration.ofHours(24));
+    }
+
+    /**
+     * Gets the email verification token expiry.
+     * @return the expiry instant, or null if not set
+     */
+    public Instant getEmailVerificationTokenExpiry() {
+        return emailVerificationTokenExpiry;
+    }
+
+    /**
+     * Checks if the email verification token has expired.
+     * @return true if expired or no expiry set, false if still valid
+     */
+    public boolean isEmailVerificationTokenExpired() {
+        if (emailVerificationTokenExpiry == null) {
+            return true; // No expiry set means effectively expired for safety
+        }
+        return Instant.now().isAfter(emailVerificationTokenExpiry);
     }
 
     /**
@@ -365,6 +388,7 @@ public class User implements Persistable<UUID> {
      */
     public void clearEmailVerificationToken() {
         this.emailVerificationToken = null;
+        this.emailVerificationTokenExpiry = null;
     }
 
     /**

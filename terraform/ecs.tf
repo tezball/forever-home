@@ -202,6 +202,10 @@ resource "aws_ecs_task_definition" "app" {
       name  = "app"
       image = "${aws_ecr_repository.app.repository_url}:latest"
 
+      # Container-level resource limits (must not exceed task-level limits)
+      cpu    = var.ecs_task_cpu
+      memory = var.ecs_task_memory
+
       portMappings = [
         {
           containerPort = var.container_port
@@ -244,6 +248,14 @@ resource "aws_ecs_task_definition" "app" {
           value = var.admin_email
         },
         {
+          name  = "SUPER_ADMIN_EMAIL"
+          value = var.super_admin_email
+        },
+        {
+          name  = "GOOGLE_CLIENT_ID"
+          value = var.google_client_id
+        },
+        {
           name  = "APP_EMAIL_VERIFICATION_USE_CONSOLE"
           value = "true"
         },
@@ -270,6 +282,14 @@ resource "aws_ecs_task_definition" "app" {
         {
           name  = "FLYWAY_CLEAN_ON_START"
           value = tostring(var.reset_database_on_deploy)
+        },
+        {
+          name  = "COOKIE_SECURE"
+          value = "true"
+        },
+        {
+          name  = "COOKIE_SAME_SITE"
+          value = "Strict"
         }
       ]
 

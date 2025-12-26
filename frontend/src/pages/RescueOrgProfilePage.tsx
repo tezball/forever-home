@@ -98,7 +98,7 @@ export function RescueOrgProfilePage() {
       const res = await apiClient.get<Pet[]>(`/rescues/${id}/pets?status=${status}`);
       setPets(res.data);
     } catch {
-      console.error('Failed to fetch pets');
+      // Error silently handled - pets will remain empty
     } finally {
       setPetsLoading(false);
     }

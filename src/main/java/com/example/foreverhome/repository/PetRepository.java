@@ -71,8 +71,26 @@ public interface PetRepository extends CrudRepository<Pet, UUID> {
     @Query("SELECT COUNT(*) FROM pets WHERE rescue_org_id = :rescueOrgId AND status = :status")
     long countByRescueOrgIdAndStatus(@Param("rescueOrgId") UUID rescueOrgId, @Param("status") PetStatus status);
 
+    /**
+     * Count pets by status grouped by rescue organization ID.
+     * Used to avoid N+1 queries when listing rescue organizations with pet counts.
+     */
+    @Query("SELECT rescue_org_id, COUNT(*) as pet_count FROM pets WHERE status = :status AND rescue_org_id IN (:rescueOrgIds) GROUP BY rescue_org_id")
+    List<RescueOrgPetCount> countByStatusGroupedByRescueOrgId(@Param("status") PetStatus status, @Param("rescueOrgIds") List<UUID> rescueOrgIds);
+
+    /**
+     * Projection for rescue org pet count results.
+     */
+    interface RescueOrgPetCount {
+        UUID getRescueOrgId();
+        long getPetCount();
+    }
+
     @Query("SELECT * FROM pets WHERE status = 'AVAILABLE' ORDER BY created_at DESC LIMIT :limit")
     List<Pet> findFeaturedPets(@Param("limit") int limit);
+
+    @Query("SELECT * FROM pets WHERE status = 'AVAILABLE' ORDER BY created_at DESC LIMIT :limit OFFSET :offset")
+    List<Pet> findFeaturedPetsPageable(@Param("limit") int limit, @Param("offset") int offset);
 
     @Query("SELECT * FROM pets WHERE status = :status AND rescue_org_id IN (:rescueOrgIds) ORDER BY created_at DESC")
     List<Pet> findByStatusAndRescueOrgIdIn(@Param("status") PetStatus status, @Param("rescueOrgIds") List<UUID> rescueOrgIds);

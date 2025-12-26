@@ -76,8 +76,7 @@ export function SettingsPage() {
     try {
       const res = await apiClient.get<NotificationPreferences>('/profile/notifications');
       setPreferences(res.data);
-    } catch (err) {
-      console.error('Failed to fetch notification preferences:', err);
+    } catch {
       // Use defaults if fetch fails
     } finally {
       setLoading(false);

@@ -261,6 +261,11 @@ public class AuthService {
         User user = userRepository.findByEmailVerificationToken(token)
                 .orElseThrow(() -> new InvalidTokenException("Invalid verification token"));
 
+        // Check if the token has expired
+        if (user.isEmailVerificationTokenExpired()) {
+            throw new InvalidTokenException("Verification token has expired. Please request a new one.");
+        }
+
         user.activate();
         user.clearEmailVerificationToken();
         userRepository.save(user);

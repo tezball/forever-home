@@ -1,7 +1,20 @@
 import type { ReactNode } from 'react';
 import { createContext, useContext, useState, useEffect } from 'react';
-import type { User, LoginRequest, RegisterRequest, LoginResponse, RegisterResponse, GoogleAuthResponse, GoogleCompleteRegistrationRequest } from '../types';
+import type { User, UserSession, LoginRequest, RegisterRequest, LoginResponse, RegisterResponse, GoogleAuthResponse, GoogleCompleteRegistrationRequest } from '../types';
 import apiClient from '../api/client';
+
+/**
+ * Extracts minimal non-sensitive session data from a User object.
+ * Only this data should be stored in localStorage to avoid PII exposure.
+ */
+function toUserSession(user: User): UserSession {
+  return {
+    id: user.id,
+    role: user.role,
+    profileComplete: user.profileComplete,
+    googleLinked: user.googleLinked,
+  };
+}
 
 interface AuthContextType {
   user: User | null;
@@ -25,25 +38,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const validateSession = async () => {
-      const token = localStorage.getItem('accessToken');
-      const storedUser = localStorage.getItem('user');
+      // Migration: remove old 'user' key (contained PII like email/name)
+      if (localStorage.getItem('user')) {
+        localStorage.removeItem('user');
+      }
 
-      if (!token || !storedUser) {
+      const token = localStorage.getItem('accessToken');
+      const storedSession = localStorage.getItem('userSession');
+
+      if (!token || !storedSession) {
         setLoading(false);
         return;
       }
 
       try {
-        // Validate the token by fetching current user info
+        // Validate the token by fetching current user info (full data in memory only)
         const response = await apiClient.get<User>('/auth/me');
         setUser(response.data);
-        // Update stored user in case it changed
-        localStorage.setItem('user', JSON.stringify(response.data));
+        // Update stored session with minimal non-sensitive data only
+        localStorage.setItem('userSession', JSON.stringify(toUserSession(response.data)));
       } catch {
         // Token is invalid or expired, clear local storage
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
-        localStorage.removeItem('user');
+        localStorage.removeItem('userSession');
         setUser(null);
       } finally {
         setLoading(false);
@@ -58,7 +76,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { accessToken, refreshToken, user } = response.data;
     localStorage.setItem('accessToken', accessToken);
     localStorage.setItem('refreshToken', refreshToken);
-    localStorage.setItem('user', JSON.stringify(user));
+    // Store only minimal non-sensitive session data (no email/name)
+    localStorage.setItem('userSession', JSON.stringify(toUserSession(user)));
     setUser(user);
   };
 
@@ -78,7 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
-    localStorage.removeItem('user');
+    localStorage.removeItem('userSession');
     setUser(null);
   };
 
@@ -90,7 +109,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!data.newUser && data.accessToken && data.refreshToken && data.user) {
       localStorage.setItem('accessToken', data.accessToken);
       localStorage.setItem('refreshToken', data.refreshToken);
-      localStorage.setItem('user', JSON.stringify(data.user));
+      // Store only minimal non-sensitive session data (no email/name)
+      localStorage.setItem('userSession', JSON.stringify(toUserSession(data.user)));
       setUser(data.user);
     }
 
@@ -102,7 +122,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { accessToken, refreshToken, user } = response.data;
     localStorage.setItem('accessToken', accessToken);
     localStorage.setItem('refreshToken', refreshToken);
-    localStorage.setItem('user', JSON.stringify(user));
+    // Store only minimal non-sensitive session data (no email/name)
+    localStorage.setItem('userSession', JSON.stringify(toUserSession(user)));
     setUser(user);
   };
 
@@ -122,7 +143,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const response = await apiClient.get<User>('/auth/me');
       setUser(response.data);
-      localStorage.setItem('user', JSON.stringify(response.data));
+      // Store only minimal non-sensitive session data (no email/name)
+      localStorage.setItem('userSession', JSON.stringify(toUserSession(response.data)));
     } catch {
       // Ignore errors
     }

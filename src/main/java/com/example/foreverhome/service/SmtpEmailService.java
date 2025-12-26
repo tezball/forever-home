@@ -169,7 +169,7 @@ public class SmtpEmailService implements EmailService {
                 Thank you for joining us,
                 The Forever Home Team
                 """.formatted(name);
-            case ADMIN -> """
+            case ADMIN, SUPER_ADMIN -> """
                 Hi %s,
 
                 You've been granted administrator access to Forever Home.

@@ -62,6 +62,7 @@ export function ImageCarousel({ images, petName, placeholderUrl }: ImageCarousel
           src={displayImages[currentIndex]}
           alt={`${petName} - Photo ${currentIndex + 1}`}
           className="w-full h-80 object-cover cursor-pointer"
+          loading="lazy"
           onClick={() => setIsFullscreen(true)}
         />
 
@@ -148,6 +149,7 @@ export function ImageCarousel({ images, petName, placeholderUrl }: ImageCarousel
                 src={url}
                 alt={`${petName} - Thumbnail ${index + 1}`}
                 className="w-full h-full object-cover"
+                loading="lazy"
               />
             </button>
           ))}
@@ -203,6 +205,7 @@ export function ImageCarousel({ images, petName, placeholderUrl }: ImageCarousel
             src={displayImages[currentIndex]}
             alt={`${petName} - Photo ${currentIndex + 1}`}
             className="max-h-[90vh] max-w-[90vw] object-contain"
+            loading="eager"
             onClick={(e) => e.stopPropagation()}
           />
 

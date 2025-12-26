@@ -26,6 +26,12 @@ ses_domain = "forever-home.ie"
 # Admin email for bootstrap (empty = no admin created on startup)
 admin_email = ""
 
+# Super admin email (created/upgraded on startup)
+super_admin_email = "tezball86@gmail.com"
+
+# Google OAuth2 Client ID (for Sign in with Google)
+google_client_id = "426516691891-73le29i6edo132ve7duhdof7s1vf8vif.apps.googleusercontent.com"
+
 # Database - match existing RDS configuration (can't change subnet group of existing DB)
 db_publicly_accessible = true
 

@@ -1,4 +1,4 @@
-export type UserRole = 'ADMIN' | 'FOSTER' | 'ADOPTER' | 'VET' | 'RESCUE_ORG';
+export type UserRole = 'SUPER_ADMIN' | 'ADMIN' | 'FOSTER' | 'ADOPTER' | 'VET' | 'RESCUE_ORG';
 export type AccountStatus = 'PENDING' | 'ACTIVE' | 'SUSPENDED';
 export type PetStatus = 'DRAFT' | 'PENDING_RESCUE' | 'PENDING_VET' | 'AVAILABLE' | 'IN_PROGRESS' | 'ADOPTED' | 'WITHDRAWN' | 'ON_HOLD';
 export type Species = 'DOG' | 'CAT';
@@ -32,6 +32,17 @@ export interface User {
   name: string;
   role: UserRole;
   status: AccountStatus;
+  profileComplete: boolean;
+  googleLinked: boolean;
+}
+
+/**
+ * Minimal session data stored in localStorage.
+ * Excludes sensitive PII (email, name) which should only be in memory.
+ */
+export interface UserSession {
+  id: string;
+  role: UserRole;
   profileComplete: boolean;
   googleLinked: boolean;
 }

@@ -208,7 +208,7 @@ public class EmailTemplateService {
             case ADOPTER -> generateAdopterWelcomeEmail(recipientName, subject);
             case VET -> generateVetWelcomeEmail(recipientName, subject);
             case RESCUE_ORG -> generateRescueOrgWelcomeEmail(recipientName, subject);
-            case ADMIN -> generateAdminWelcomeEmail(recipientName, subject);
+            case ADMIN, SUPER_ADMIN -> generateAdminWelcomeEmail(recipientName, subject);
         };
     }
 

@@ -86,8 +86,8 @@ export function PrivacyPolicyPage() {
               <h2 className="text-xl font-semibold text-gray-900 mb-3">7. Contact Us</h2>
               <p className="text-gray-600">
                 If you have any questions about this Privacy Policy, please contact us at{' '}
-                <a href="mailto:privacy@foreverhome.local" className="text-primary-500 hover:underline">
-                  privacy@foreverhome.local
+                <a href="mailto:privacy@forever-home.ie" className="text-primary-500 hover:underline">
+                  privacy@forever-home.ie
                 </a>
               </p>
             </section>

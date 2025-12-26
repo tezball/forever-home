@@ -101,8 +101,8 @@ export function ContactPage() {
         <div className="mt-8 text-center text-gray-600">
           <p className="mb-2">You can also reach us at:</p>
           <p>
-            <a href="mailto:support@foreverhome.local" className="text-primary-500 hover:underline">
-              support@foreverhome.local
+            <a href="mailto:support@forever-home.ie" className="text-primary-500 hover:underline">
+              support@forever-home.ie
             </a>
           </p>
         </div>

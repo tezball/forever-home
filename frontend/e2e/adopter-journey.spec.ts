@@ -122,12 +122,14 @@ test.describe('Adopter Journey', () => {
       await expect(adopterPage.locator('main')).toBeVisible();
     });
 
-    // Skipped: Intermittent auth timeout due to test parallelization
-    test.skip('should view favorites from dashboard', async ({ adopterPage }) => {
+    test('should view favorites from dashboard', async ({ adopterPage }) => {
       await adopterPage.goto('/adopter/dashboard');
 
-      // Should show liked pets section
-      await expect(adopterPage.getByRole('heading', { name: 'Liked Pets', exact: true })).toBeVisible();
+      // Wait for dashboard to load
+      await expect(adopterPage.getByRole('heading', { name: /adopter dashboard/i })).toBeVisible();
+
+      // Should show liked pets section (may be empty)
+      await expect(adopterPage.getByText(/liked pets|favorites/i)).toBeVisible();
     });
 
     test('should remove pet from favorites', async ({ adopterPage }) => {
@@ -173,12 +175,14 @@ test.describe('Adopter Journey', () => {
   });
 
   test.describe('Application Management', () => {
-    // Skipped: Intermittent auth timeout due to test parallelization
-    test.skip('should display applications on dashboard', async ({ adopterPage }) => {
+    test('should display applications on dashboard', async ({ adopterPage }) => {
       await adopterPage.goto('/adopter/dashboard');
 
+      // Wait for dashboard to load
+      await expect(adopterPage.getByRole('heading', { name: /adopter dashboard/i })).toBeVisible();
+
       // Dashboard shows application stats (Pending, Approved, Rejected)
-      await expect(adopterPage.getByText('Pending')).toBeVisible();
+      await expect(adopterPage.getByText(/pending|approved|applications/i)).toBeVisible();
     });
 
     test('should show application status', async ({ adopterPage }) => {

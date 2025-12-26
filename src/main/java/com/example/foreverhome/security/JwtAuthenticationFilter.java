@@ -1,6 +1,7 @@
 package com.example.foreverhome.security;
 
 import com.example.foreverhome.domain.user.UserRole;
+import com.example.foreverhome.service.CookieService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -27,9 +28,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private static final String BEARER_PREFIX = "Bearer ";
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final CookieService cookieService;
 
-    public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider) {
+    public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider, CookieService cookieService) {
         this.jwtTokenProvider = jwtTokenProvider;
+        this.cookieService = cookieService;
     }
 
     @Override
@@ -63,10 +66,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     private String extractJwtFromRequest(HttpServletRequest request) {
+        // First, try to get token from Authorization header (for backward compatibility)
         String bearerToken = request.getHeader(AUTHORIZATION_HEADER);
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith(BEARER_PREFIX)) {
             return bearerToken.substring(BEARER_PREFIX.length());
         }
-        return null;
+
+        // Fall back to httpOnly cookie (preferred secure method)
+        return cookieService.getAccessToken(request).orElse(null);
     }
 }

@@ -16,6 +16,13 @@ public interface AdoptionApplicationRepository extends CrudRepository<AdoptionAp
 
     List<AdoptionApplication> findByPetId(UUID petId);
 
+    /**
+     * Find all applications for multiple pets in a single query.
+     * Used to avoid N+1 queries when listing applications for a rescue org's pets.
+     */
+    @Query("SELECT * FROM adoption_applications WHERE pet_id IN (:petIds) ORDER BY submitted_at DESC")
+    List<AdoptionApplication> findByPetIdIn(@Param("petIds") List<UUID> petIds);
+
     List<AdoptionApplication> findByAdopterId(UUID adopterId);
 
     Optional<AdoptionApplication> findByPetIdAndAdopterId(UUID petId, UUID adopterId);

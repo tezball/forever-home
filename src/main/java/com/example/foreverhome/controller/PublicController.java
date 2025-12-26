@@ -7,6 +7,7 @@ import com.example.foreverhome.domain.profile.Vet;
 import com.example.foreverhome.repository.AdoptionRepository;
 import com.example.foreverhome.repository.PetImageRepository;
 import com.example.foreverhome.repository.PetRepository;
+import com.example.foreverhome.repository.PetRepository.RescueOrgPetCount;
 import com.example.foreverhome.repository.RescueOrganizationRepository;
 import com.example.foreverhome.repository.VetRepository;
 import com.example.foreverhome.repository.VetSignOffRepository;
@@ -15,7 +16,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Controller for public endpoints accessible without authentication.
@@ -54,10 +57,20 @@ public class PublicController {
     @GetMapping("/rescues")
     public ResponseEntity<List<RescueOrgPublicResponse>> listRescueOrganizations() {
         List<RescueOrganization> orgs = rescueOrganizationRepository.findAllVerified();
+
+        // Batch fetch all pet counts in a single query to avoid N+1
+        List<UUID> orgIds = orgs.stream().map(RescueOrganization::getId).toList();
+        Map<UUID, Long> petCounts = orgIds.isEmpty() ? Map.of() :
+            petRepository.countByStatusGroupedByRescueOrgId(PetStatus.AVAILABLE, orgIds)
+                .stream()
+                .collect(Collectors.toMap(
+                    RescueOrgPetCount::getRescueOrgId,
+                    RescueOrgPetCount::getPetCount
+                ));
+
         List<RescueOrgPublicResponse> response = orgs.stream()
                 .map(org -> {
-                    // Count available pets for this rescue org
-                    long petCount = petRepository.countByRescueOrgIdAndStatus(org.getId(), PetStatus.AVAILABLE);
+                    long petCount = petCounts.getOrDefault(org.getId(), 0L);
                     // Convert S3 key to full public URL
                     String logoUrl = org.getLogoUrl() != null ? storageService.getPublicUrl(org.getLogoUrl()) : null;
                     return RescueOrgPublicResponse.from(org, petCount, logoUrl);

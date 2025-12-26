@@ -61,8 +61,12 @@ public class PetController {
     }
 
     @GetMapping("/featured")
-    public ResponseEntity<List<PetDto>> getFeaturedPets() {
-        return ResponseEntity.ok(petService.getFeaturedPets());
+    public ResponseEntity<PagedResponse<PetDto>> getFeaturedPets(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "6") int pageSize) {
+        // Limit page size to prevent abuse (max 20 featured pets per page)
+        int effectivePageSize = Math.min(pageSize, 20);
+        return ResponseEntity.ok(petService.getFeaturedPetsPaged(page, effectivePageSize));
     }
 
     @GetMapping("/{id}")
@@ -220,6 +224,7 @@ public class PetController {
     }
 
     @GetMapping("/{id}/history")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<PetStatusHistoryDto>> getStatusHistory(@PathVariable UUID id) {
         List<PetStatusHistory> history = petService.getStatusHistory(id);
         List<PetStatusHistoryDto> dtos = history.stream()

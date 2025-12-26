@@ -54,8 +54,8 @@ export function NotificationBell() {
       const res = await apiClient.get<Notification[]>('/notifications');
       // Get the 5 most recent
       setNotifications(res.data.slice(0, 5));
-    } catch (err) {
-      console.error('Failed to fetch notifications:', err);
+    } catch {
+      // Silently handle - notifications will remain empty
     } finally {
       setLoading(false);
     }
@@ -77,8 +77,8 @@ export function NotificationBell() {
         n.id === id ? { ...n, read: true } : n
       ));
       setUnreadCount((prev) => Math.max(0, prev - 1));
-    } catch (err) {
-      console.error('Failed to mark notification as read:', err);
+    } catch {
+      // Silently handle - notification stays unread
     }
   };
 
@@ -87,8 +87,8 @@ export function NotificationBell() {
       await apiClient.put('/notifications/read-all');
       setNotifications(notifications.map((n) => ({ ...n, read: true })));
       setUnreadCount(0);
-    } catch (err) {
-      console.error('Failed to mark all as read:', err);
+    } catch {
+      // Silently handle - notifications stay unread
     }
   };
 

@@ -2,8 +2,10 @@
 
 resource "aws_ecr_repository" "app" {
   name                 = "${local.name_prefix}-app"
-  image_tag_mutability = "MUTABLE"
-  force_delete         = true
+  # IMMUTABLE prevents overwriting existing tags - use unique tags per deploy
+  image_tag_mutability = var.environment == "prod" ? "IMMUTABLE" : "MUTABLE"
+  # Protect production ECR from accidental deletion
+  force_delete         = var.environment != "prod"
 
   image_scanning_configuration {
     scan_on_push = true

@@ -124,7 +124,8 @@ resource "aws_db_instance" "main" {
   multi_az               = var.db_multi_az
 
   # Backup configuration
-  backup_retention_period = var.environment == "prod" ? 7 : 1
+  # Production: 30 days retention for compliance and disaster recovery
+  backup_retention_period = var.environment == "prod" ? 30 : 1
   backup_window           = "03:00-04:00"
   maintenance_window      = "Mon:04:00-Mon:05:00"
 

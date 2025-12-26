@@ -84,6 +84,7 @@ public class TestDataSeeder implements CommandLineRunner {
         logger.info("Database schema ready - seeding test accounts");
 
         List<TestAccount> testAccounts = List.of(
+            new TestAccount("superadmin@test.com", "Super Admin", UserRole.SUPER_ADMIN, null, null),
             new TestAccount("admin@test.com", "Test Admin", UserRole.ADMIN, null, null),
             // 4 Fosters (1 per rescue)
             new TestAccount("foster-r1@test.com", "Alex", UserRole.FOSTER, "Alex", "Johnson"),
@@ -621,13 +622,22 @@ public class TestDataSeeder implements CommandLineRunner {
         seedPetImages(petSeeds);
     }
 
+    // Generic images for additional pet photos
+    private static final String[] EXTRA_DOG_IMAGES = {"dog-1.jpg", "dog-2.jpg", "dog-3.jpg", "dog-4.jpg", "dog-5.jpg", "dog-6.jpg"};
+    private static final String[] EXTRA_CAT_IMAGES = {"cat-1.jpg", "cat-2.jpg", "cat-3.jpg", "cat-4.jpg"};
+
     private void seedPetImages(List<PetSeed> petSeeds) {
         logger.info("Uploading demo images to S3 for {} pets...", petSeeds.size());
 
         PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
+        Random random = new Random(42); // Deterministic for reproducibility
 
-        for (PetSeed seed : petSeeds) {
+        int petsWithMultipleImages = 0;
+
+        for (int i = 0; i < petSeeds.size(); i++) {
+            PetSeed seed = petSeeds.get(i);
             try {
+                // Upload the primary breed-specific image
                 Resource imageResource = resolver.getResource("classpath:demo-images/" + seed.imageFile());
 
                 if (!imageResource.exists()) {
@@ -635,7 +645,6 @@ public class TestDataSeeder implements CommandLineRunner {
                     continue;
                 }
 
-                // Create a MultipartFile from the resource
                 byte[] imageBytes = imageResource.getInputStream().readAllBytes();
                 MultipartFile multipartFile = new ByteArrayMultipartFile(
                     seed.imageFile(),
@@ -649,21 +658,56 @@ public class TestDataSeeder implements CommandLineRunner {
                 String s3Key = "pets/" + seed.microchipId() + "/1.jpg";
                 storageService.uploadFileWithKey(multipartFile, s3Key);
 
-                // Create pet_images record
+                // Create pet_images record for primary image
                 jdbcTemplate.update("""
                     INSERT INTO pet_images (id, pet_id, s3_key, is_primary, display_order, uploaded_at)
                     VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
                     """,
                     UUID.randomUUID(), seed.petId(), s3Key, true, 0);
 
-                logger.debug("Uploaded image for pet {} (microchip {}): {}", seed.petId(), seed.microchipId(), s3Key);
+                logger.debug("Uploaded primary image for pet {} (microchip {}): {}", seed.petId(), seed.microchipId(), s3Key);
+
+                // Add multiple images to some pets (roughly every 3rd pet gets 2-3 images)
+                if (i % 3 == 0) {
+                    int extraImageCount = random.nextInt(2) + 1; // 1 or 2 extra images
+                    String[] extraImages = seed.species().equals("DOG") ? EXTRA_DOG_IMAGES : EXTRA_CAT_IMAGES;
+
+                    for (int j = 0; j < extraImageCount && j < extraImages.length; j++) {
+                        String extraImageFile = extraImages[(i + j) % extraImages.length];
+                        Resource extraResource = resolver.getResource("classpath:demo-images/" + extraImageFile);
+
+                        if (!extraResource.exists()) {
+                            continue;
+                        }
+
+                        byte[] extraBytes = extraResource.getInputStream().readAllBytes();
+                        MultipartFile extraMultipart = new ByteArrayMultipartFile(
+                            extraImageFile,
+                            extraImageFile,
+                            "image/jpeg",
+                            extraBytes
+                        );
+
+                        String extraS3Key = "pets/" + seed.microchipId() + "/" + (j + 2) + ".jpg";
+                        storageService.uploadFileWithKey(extraMultipart, extraS3Key);
+
+                        jdbcTemplate.update("""
+                            INSERT INTO pet_images (id, pet_id, s3_key, is_primary, display_order, uploaded_at)
+                            VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                            """,
+                            UUID.randomUUID(), seed.petId(), extraS3Key, false, j + 1);
+
+                        logger.debug("Uploaded extra image {} for pet {}: {}", j + 2, seed.petId(), extraS3Key);
+                    }
+                    petsWithMultipleImages++;
+                }
 
             } catch (IOException e) {
                 logger.error("Failed to upload image for pet {}: {}", seed.petId(), e.getMessage());
             }
         }
 
-        logger.info("Completed uploading demo images to S3");
+        logger.info("Completed uploading demo images to S3 ({} pets have multiple images)", petsWithMultipleImages);
     }
 
     private UUID getFosterId(String email) {
@@ -746,8 +790,8 @@ public class TestDataSeeder implements CommandLineRunner {
                     "Contact Person", account.email(), true,
                     streets[rescueIndex], cities[rescueIndex], counties[rescueIndex], eircodes[rescueIndex], "Ireland");
             }
-            case ADMIN -> {
-                // Admin doesn't need a profile entity
+            case ADMIN, SUPER_ADMIN -> {
+                // Admin/Super Admin doesn't need a profile entity
             }
         }
     }
@@ -822,8 +866,8 @@ public class TestDataSeeder implements CommandLineRunner {
                     logger.info("Created missing RescueOrganization profile for: {}", account.email());
                 }
             }
-            case ADMIN -> {
-                // Admin doesn't need a profile entity
+            case ADMIN, SUPER_ADMIN -> {
+                // Admin/Super Admin doesn't need a profile entity
             }
         }
     }

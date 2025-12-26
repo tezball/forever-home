@@ -39,9 +39,9 @@ variable "ecs_task_memory" {
 }
 
 variable "ecs_desired_count" {
-  description = "Desired number of ECS tasks"
+  description = "Desired number of ECS tasks (2+ recommended for production HA)"
   type        = number
-  default     = 1
+  default     = 2
 }
 
 variable "container_port" {
@@ -94,6 +94,18 @@ variable "admin_email" {
   default     = ""
 }
 
+variable "super_admin_email" {
+  description = "Email for the super admin user (will be created on startup)"
+  type        = string
+  default     = ""
+}
+
+variable "google_client_id" {
+  description = "Google OAuth2 Client ID for Sign in with Google"
+  type        = string
+  default     = ""
+}
+
 variable "app_base_url" {
   description = "Base URL for the application (frontend URL)"
   type        = string
@@ -141,9 +153,9 @@ variable "domain_name" {
 }
 
 variable "create_certificate" {
-  description = "Create ACM certificate for HTTPS"
+  description = "Create ACM certificate for HTTPS (recommended for production)"
   type        = bool
-  default     = false
+  default     = true
 }
 
 # Route53 Configuration

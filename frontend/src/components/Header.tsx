@@ -56,6 +56,7 @@ export function Header() {
       case 'ADOPTER': return '/adopter/dashboard';
       case 'VET': return '/vet/dashboard';
       case 'RESCUE_ORG': return '/rescue/dashboard';
+      case 'SUPER_ADMIN': return '/admin';
       case 'ADMIN': return 'http://localhost:8081/admin'; // Admin features on moderation-service
       default: return '/';
     }
@@ -68,6 +69,7 @@ export function Header() {
       case 'ADOPTER': return 'My Applications';
       case 'VET': return 'Vet Dashboard';
       case 'RESCUE_ORG': return 'Rescue Dashboard';
+      case 'SUPER_ADMIN': return 'Admin Dashboard';
       case 'ADMIN': return 'Admin';
       default: return 'Dashboard';
     }
@@ -99,7 +101,7 @@ export function Header() {
             </Link>
             {isAuthenticated ? (
               <>
-                {user?.role !== 'ADMIN' && (
+                {user?.role !== 'ADMIN' && user?.role !== undefined && (
                   <Link to={getDashboardLink()} className="text-gray-600 hover:text-primary-500 transition-colors">
                     {getDashboardLabel()}
                   </Link>
@@ -241,7 +243,7 @@ export function Header() {
               </Link>
               {isAuthenticated ? (
                 <>
-                  {user?.role !== 'ADMIN' && (
+                  {user?.role !== 'ADMIN' && user?.role !== undefined && (
                     <Link
                       to={getDashboardLink()}
                       className="px-4 py-2 text-gray-600 hover:bg-secondary-100 rounded"

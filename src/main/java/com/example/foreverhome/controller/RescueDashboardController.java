@@ -112,10 +112,10 @@ public class RescueDashboardController {
         Map<UUID, Pet> petMap = pets.stream().collect(Collectors.toMap(Pet::getId, p -> p));
         List<UUID> petIds = pets.stream().map(Pet::getId).toList();
 
-        // Get all applications for these pets
-        List<AdoptionApplication> allApplications = petIds.stream()
-                .flatMap(petId -> applicationRepository.findByPetId(petId).stream())
-                .toList();
+        // Get all applications for these pets in a single query to avoid N+1
+        List<AdoptionApplication> allApplications = petIds.isEmpty()
+                ? List.of()
+                : applicationRepository.findByPetIdIn(petIds);
 
         // Get all adopters for these applications using batch fetch to avoid N+1 queries
         List<UUID> adopterIds = allApplications.stream().map(AdoptionApplication::getAdopterId).distinct().toList();

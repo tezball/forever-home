@@ -24,6 +24,9 @@ public class PetImageService {
 
     private static final int MAX_IMAGES_PER_PET = 5;
     private static final String PET_IMAGES_FOLDER = "pets";
+    private static final java.util.Set<String> ALLOWED_EXTENSIONS = java.util.Set.of(
+            ".jpg", ".jpeg", ".png", ".gif", ".webp"
+    );
 
     private final PetImageRepository petImageRepository;
     private final PetRepository petRepository;
@@ -68,10 +71,11 @@ public class PetImageService {
             );
         }
 
-        // Use microchip number for folder and sequential number for filename
-        String extension = getFileExtension(file.getOriginalFilename());
+        // Sanitize microchip ID and validate file extension for security
+        String sanitizedMicrochipId = sanitizeMicrochipId(pet.getMicrochipId());
+        String extension = getValidatedFileExtension(file.getOriginalFilename());
         int imageNumber = currentCount + 1;
-        String s3Key = PET_IMAGES_FOLDER + "/" + pet.getMicrochipId() + "/" + imageNumber + extension;
+        String s3Key = PET_IMAGES_FOLDER + "/" + sanitizedMicrochipId + "/" + imageNumber + extension;
         storageService.uploadFileWithKey(file, s3Key);
 
         boolean isPrimary = currentCount == 0;
@@ -83,11 +87,37 @@ public class PetImageService {
         return toDto(savedImage);
     }
 
-    private String getFileExtension(String filename) {
+    /**
+     * Sanitize microchip ID for use in S3 paths.
+     * Removes any characters that could be used for path traversal attacks.
+     */
+    private String sanitizeMicrochipId(String microchipId) {
+        if (microchipId == null || microchipId.isBlank()) {
+            throw new IllegalArgumentException("Microchip ID cannot be null or empty");
+        }
+        // Only allow alphanumeric characters and hyphens
+        String sanitized = microchipId.replaceAll("[^a-zA-Z0-9-]", "");
+        if (sanitized.isBlank()) {
+            throw new IllegalArgumentException("Microchip ID contains no valid characters");
+        }
+        return sanitized;
+    }
+
+    /**
+     * Get and validate file extension against allowed image types.
+     * Returns a safe, lowercase extension from the allowlist.
+     */
+    private String getValidatedFileExtension(String filename) {
         if (filename == null || !filename.contains(".")) {
             return ".jpg"; // Default extension
         }
-        return filename.substring(filename.lastIndexOf("."));
+        String extension = filename.substring(filename.lastIndexOf(".")).toLowerCase();
+        if (!ALLOWED_EXTENSIONS.contains(extension)) {
+            throw new IllegalArgumentException(
+                    "Invalid file type. Allowed types: " + String.join(", ", ALLOWED_EXTENSIONS)
+            );
+        }
+        return extension;
     }
 
     public void deleteImage(UUID imageId, UUID userId) {

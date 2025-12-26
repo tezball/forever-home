@@ -16,8 +16,8 @@ export function NotificationsPage() {
     try {
       const res = await apiClient.get<Notification[]>('/notifications');
       setNotifications(res.data);
-    } catch (err) {
-      console.error('Failed to fetch notifications:', err);
+    } catch {
+      // Silently handle - notifications will remain empty
     } finally {
       setLoading(false);
     }
@@ -29,8 +29,8 @@ export function NotificationsPage() {
       setNotifications(notifications.map((n) =>
         n.id === id ? { ...n, read: true } : n
       ));
-    } catch (err) {
-      console.error('Failed to mark notification as read:', err);
+    } catch {
+      // Silently handle - notification stays unread
     }
   };
 
@@ -38,8 +38,8 @@ export function NotificationsPage() {
     try {
       await apiClient.put('/notifications/read-all');
       setNotifications(notifications.map((n) => ({ ...n, read: true })));
-    } catch (err) {
-      console.error('Failed to mark all as read:', err);
+    } catch {
+      // Silently handle - notifications stay unread
     }
   };
 
