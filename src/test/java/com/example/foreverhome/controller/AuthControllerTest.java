@@ -97,7 +97,7 @@ class AuthControllerTest {
             // Given
             LoginRequest request = new LoginRequest("test@example.com", "password123");
             UUID userId = UUID.randomUUID();
-            UserDto userDto = new UserDto(userId, "test@example.com", "Test User", UserRole.ADOPTER, AccountStatus.ACTIVE, true);
+            UserDto userDto = new UserDto(userId, "test@example.com", "Test User", UserRole.ADOPTER, AccountStatus.ACTIVE, true, false);
             LoginResponse expectedResponse = new LoginResponse(
                     "access-token",
                     "refresh-token",

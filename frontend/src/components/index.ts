@@ -16,3 +16,4 @@ export { ErrorDisplay, getErrorMessage } from './ErrorDisplay';
 export { LoadingSpinner } from './LoadingSpinner';
 export { Breadcrumb, BackToDashboard } from './Breadcrumb';
 export { SkeletonCard } from './SkeletonCard';
+export { GoogleLoginButton } from './GoogleLoginButton';

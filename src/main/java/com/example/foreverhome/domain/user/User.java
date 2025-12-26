@@ -61,6 +61,9 @@ public class User implements Persistable<UUID> {
     @Column("locked_until")
     private Instant lockedUntil;
 
+    @Column("google_id")
+    private String googleId;
+
     @Embedded.Nullable(prefix = "notif_")
     private NotificationPreferences notificationPreferences;
 
@@ -138,6 +141,45 @@ public class User implements Persistable<UUID> {
         );
     }
 
+    /**
+     * Factory method to create a new user from Google OAuth.
+     * These users have no password and authenticate via Google.
+     * New users start with ACTIVE status (since email is verified by Google).
+     *
+     * @param email the user's email address (from Google)
+     * @param googleId the Google OAuth subject ID
+     * @param role the user's role
+     * @param name the user's display name (from Google)
+     * @return a new User instance
+     * @throws IllegalArgumentException if any required field is null or blank
+     */
+    public static User createFromGoogle(String email, String googleId, UserRole role, String name) {
+        if (email == null || email.isBlank()) {
+            throw new IllegalArgumentException("email cannot be null or blank");
+        }
+        if (googleId == null || googleId.isBlank()) {
+            throw new IllegalArgumentException("googleId cannot be null or blank");
+        }
+        if (role == null) {
+            throw new IllegalArgumentException("role cannot be null");
+        }
+
+        User user = new User(
+                UUID.randomUUID(),
+                email.trim().toLowerCase(),
+                name,
+                null, // No password for Google users
+                role,
+                AccountStatus.ACTIVE, // Google verified email
+                false,
+                Instant.now(),
+                null,
+                NotificationPreferences.defaults()
+        );
+        user.googleId = googleId;
+        return user;
+    }
+
     // Getters
     @Override
     public UUID getId() {
@@ -211,6 +253,10 @@ public class User implements Persistable<UUID> {
 
     public Instant getLockedUntil() {
         return lockedUntil;
+    }
+
+    public String getGoogleId() {
+        return googleId;
     }
 
     // Business methods
@@ -378,6 +424,52 @@ public class User implements Persistable<UUID> {
             return false;
         }
         return true;
+    }
+
+    /**
+     * Checks if this user has a Google account linked.
+     * @return true if Google is linked
+     */
+    public boolean isGoogleLinked() {
+        return googleId != null && !googleId.isBlank();
+    }
+
+    /**
+     * Checks if this user has a password set.
+     * @return true if password is set
+     */
+    public boolean hasPassword() {
+        return passwordHash != null && !passwordHash.isBlank();
+    }
+
+    /**
+     * Links a Google account to this user.
+     * @param googleId the Google OAuth subject ID
+     * @throws IllegalArgumentException if googleId is null or blank
+     * @throws IllegalStateException if Google is already linked
+     */
+    public void linkGoogleAccount(String googleId) {
+        if (googleId == null || googleId.isBlank()) {
+            throw new IllegalArgumentException("googleId cannot be null or blank");
+        }
+        if (isGoogleLinked()) {
+            throw new IllegalStateException("Google account is already linked");
+        }
+        this.googleId = googleId;
+    }
+
+    /**
+     * Unlinks the Google account from this user.
+     * @throws IllegalStateException if Google is not linked or user has no password
+     */
+    public void unlinkGoogleAccount() {
+        if (!isGoogleLinked()) {
+            throw new IllegalStateException("No Google account is linked");
+        }
+        if (!hasPassword()) {
+            throw new IllegalStateException("Cannot unlink Google account without a password set");
+        }
+        this.googleId = null;
     }
 
     @Override

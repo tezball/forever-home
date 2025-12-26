@@ -29,8 +29,8 @@ export function HomePage() {
       case 'RESCUE_ORG':
         return { text: 'Rescue Dashboard', link: '/rescue/dashboard' };
       case 'ADMIN':
-        // Admin dashboard is on the moderation service
-        return { text: 'Admin Dashboard', link: `${window.location.protocol}//${window.location.hostname}:8081/admin`, external: true };
+        // Admin uses the moderation service directly, no CTA needed
+        return null;
       default:
         return null;
     }
@@ -82,19 +82,11 @@ export function HomePage() {
               </Link>
               {isAuthenticated ? (
                 getRoleSpecificCTA() && (
-                  getRoleSpecificCTA()!.external ? (
-                    <a href={getRoleSpecificCTA()!.link}>
-                      <Button variant="outline" size="lg">
-                        {getRoleSpecificCTA()!.text}
-                      </Button>
-                    </a>
-                  ) : (
-                    <Link to={getRoleSpecificCTA()!.link}>
-                      <Button variant="outline" size="lg">
-                        {getRoleSpecificCTA()!.text}
-                      </Button>
-                    </Link>
-                  )
+                  <Link to={getRoleSpecificCTA()!.link}>
+                    <Button variant="outline" size="lg">
+                      {getRoleSpecificCTA()!.text}
+                    </Button>
+                  </Link>
                 )
               ) : (
                 <Link to="/register">

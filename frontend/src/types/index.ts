@@ -33,6 +33,24 @@ export interface User {
   role: UserRole;
   status: AccountStatus;
   profileComplete: boolean;
+  googleLinked: boolean;
+}
+
+export interface GoogleAuthResponse {
+  newUser: boolean;
+  email: string | null;
+  name: string | null;
+  googleId: string | null;
+  accessToken: string | null;
+  refreshToken: string | null;
+  user: User | null;
+}
+
+export interface GoogleCompleteRegistrationRequest {
+  googleId: string;
+  email: string;
+  name: string;
+  role: UserRole;
 }
 
 export interface Pet {

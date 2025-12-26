@@ -99,11 +99,7 @@ export function Header() {
             </Link>
             {isAuthenticated ? (
               <>
-                {user?.role === 'ADMIN' ? (
-                  <a href={getDashboardLink()} className="text-gray-600 hover:text-primary-500 transition-colors">
-                    {getDashboardLabel()}
-                  </a>
-                ) : (
+                {user?.role !== 'ADMIN' && (
                   <Link to={getDashboardLink()} className="text-gray-600 hover:text-primary-500 transition-colors">
                     {getDashboardLabel()}
                   </Link>
@@ -245,15 +241,7 @@ export function Header() {
               </Link>
               {isAuthenticated ? (
                 <>
-                  {user?.role === 'ADMIN' ? (
-                    <a
-                      href={getDashboardLink()}
-                      className="px-4 py-2 text-gray-600 hover:bg-secondary-100 rounded"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      {getDashboardLabel()}
-                    </a>
-                  ) : (
+                  {user?.role !== 'ADMIN' && (
                     <Link
                       to={getDashboardLink()}
                       className="px-4 py-2 text-gray-600 hover:bg-secondary-100 rounded"

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Button, Input, PasswordInput } from '../components';
+import { Button, Input, PasswordInput, GoogleLoginButton } from '../components';
 import apiClient from '../api/client';
 
 interface TestAccount {
@@ -23,10 +23,47 @@ export function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [testAccounts, setTestAccounts] = useState<TestAccountsResponse | null>(null);
   const [selectedAccount, setSelectedAccount] = useState('');
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
+
+  const handleGoogleLogin = async (idToken: string) => {
+    setError('');
+    setGoogleLoading(true);
+
+    try {
+      const response = await loginWithGoogle(idToken);
+
+      if (response.newUser) {
+        // New user - redirect to role selection
+        navigate('/register/google', {
+          state: {
+            email: response.email,
+            name: response.name,
+            googleId: response.googleId,
+          },
+        });
+      } else {
+        // Existing user - already logged in via loginWithGoogle
+        navigate('/');
+      }
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'response' in err) {
+        const response = (err as { response?: { data?: { message?: string } } }).response;
+        setError(response?.data?.message || 'Google login failed');
+      } else {
+        setError('Google login failed');
+      }
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
+  const handleGoogleError = (errorMessage: string) => {
+    setError(errorMessage);
+  };
 
   useEffect(() => {
     if (isTestModeEnabled) {
@@ -177,6 +214,23 @@ export function LoginPage() {
             <Button type="submit" variant="primary" loading={loading && !selectedAccount} className="w-full">
               Sign In
             </Button>
+
+            {/* Google Sign In */}
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-200" />
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="bg-white px-2 text-gray-500">Or continue with</span>
+              </div>
+            </div>
+
+            <GoogleLoginButton
+              onSuccess={handleGoogleLogin}
+              onError={handleGoogleError}
+              loading={googleLoading}
+              disabled={loading}
+            />
           </form>
         </div>
 

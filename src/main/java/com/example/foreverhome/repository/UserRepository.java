@@ -19,6 +19,10 @@ public interface UserRepository extends CrudRepository<User, UUID> {
 
     boolean existsByEmail(String email);
 
+    Optional<User> findByGoogleId(String googleId);
+
+    boolean existsByGoogleId(String googleId);
+
     List<User> findByRole(UserRole role);
 
     List<User> findByStatus(AccountStatus status);

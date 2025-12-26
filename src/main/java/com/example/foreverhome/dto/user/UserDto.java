@@ -12,7 +12,8 @@ public record UserDto(
         String name,
         UserRole role,
         AccountStatus status,
-        boolean profileComplete
+        boolean profileComplete,
+        boolean googleLinked
 ) {
     public static UserDto from(User user) {
         return new UserDto(
@@ -21,7 +22,8 @@ public record UserDto(
                 user.getName(),
                 user.getRole(),
                 user.getStatus(),
-                user.isProfileComplete()
+                user.isProfileComplete(),
+                user.isGoogleLinked()
         );
     }
 }

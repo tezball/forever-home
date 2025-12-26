@@ -67,7 +67,7 @@ public class SecurityConfig {
                 // These are served by SpaWebConfig which returns index.html
                 // Note: Admin features have been moved to moderation-service (port 8081)
                 .requestMatchers(
-                    "/login", "/register", "/forgot-password", "/reset-password", "/verify-email/**",
+                    "/login", "/register", "/register/google", "/forgot-password", "/reset-password", "/verify-email/**",
                     "/pets", "/pets/**",
                     "/swipe",  // Redirect to /pets/swipe
                     "/rescues", "/rescues/**",
