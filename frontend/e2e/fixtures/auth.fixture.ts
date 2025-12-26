@@ -15,7 +15,7 @@ async function login(page: Page, email: string, password: string, retries = 3): 
 
     await page.getByLabel(/email/i).fill(email);
     await page.getByPlaceholder(/enter your password/i).fill(password);
-    await page.getByRole('button', { name: /sign in/i }).click();
+    await page.getByRole('button', { name: 'Sign In', exact: true }).click();
 
     try {
       // Wait for navigation away from login page (successful auth redirects to home or dashboard)

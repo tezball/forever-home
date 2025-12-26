@@ -125,14 +125,7 @@ export function Header() {
                         <p className="text-sm font-medium text-gray-900">{user?.name}</p>
                         <p className="text-xs text-gray-500">{user?.email}</p>
                       </div>
-                      <Link
-                        to="/profile"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-secondary-100"
-                        onClick={() => setUserDropdownOpen(false)}
-                      >
-                        Profile
-                      </Link>
-                      {user?.role === 'RESCUE_ORG' && (
+                      {user?.role === 'RESCUE_ORG' ? (
                         <Link
                           to="/rescue/settings"
                           className="block px-4 py-2 text-sm text-gray-700 hover:bg-secondary-100"
@@ -140,14 +133,21 @@ export function Header() {
                         >
                           Organization Settings
                         </Link>
-                      )}
-                      {user?.role === 'VET' && (
+                      ) : user?.role === 'VET' ? (
                         <Link
                           to="/vet/settings"
                           className="block px-4 py-2 text-sm text-gray-700 hover:bg-secondary-100"
                           onClick={() => setUserDropdownOpen(false)}
                         >
                           Clinic Settings
+                        </Link>
+                      ) : (
+                        <Link
+                          to="/profile"
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-secondary-100"
+                          onClick={() => setUserDropdownOpen(false)}
+                        >
+                          Profile
                         </Link>
                       )}
                       <Link
@@ -250,14 +250,7 @@ export function Header() {
                       {getDashboardLabel()}
                     </Link>
                   )}
-                  <Link
-                    to="/profile"
-                    className="px-4 py-2 text-gray-600 hover:bg-secondary-100 rounded"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Profile
-                  </Link>
-                  {user?.role === 'RESCUE_ORG' && (
+                  {user?.role === 'RESCUE_ORG' ? (
                     <Link
                       to="/rescue/settings"
                       className="px-4 py-2 text-gray-600 hover:bg-secondary-100 rounded"
@@ -265,14 +258,21 @@ export function Header() {
                     >
                       Organization Settings
                     </Link>
-                  )}
-                  {user?.role === 'VET' && (
+                  ) : user?.role === 'VET' ? (
                     <Link
                       to="/vet/settings"
                       className="px-4 py-2 text-gray-600 hover:bg-secondary-100 rounded"
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       Clinic Settings
+                    </Link>
+                  ) : (
+                    <Link
+                      to="/profile"
+                      className="px-4 py-2 text-gray-600 hover:bg-secondary-100 rounded"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Profile
                     </Link>
                   )}
                   <Link

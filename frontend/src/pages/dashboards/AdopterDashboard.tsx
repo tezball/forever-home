@@ -1,10 +1,96 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { Button, PetCard, Modal } from '../../components';
-import type { Pet, AdoptionApplication } from '../../types';
+import { Button, Modal } from '../../components';
+import type { Pet, AdoptionApplication, PetStatus } from '../../types';
 import apiClient from '../../api/client';
-import { formatRelativeTime } from '../../utils';
+import { formatRelativeTime, formatBreed } from '../../utils';
+
+const statusColors: Record<PetStatus, string> = {
+  DRAFT: 'bg-gray-200 text-gray-900',
+  PENDING_RESCUE: 'bg-yellow-100 text-yellow-900',
+  PENDING_VET: 'bg-blue-100 text-blue-900',
+  AVAILABLE: 'bg-green-100 text-green-900',
+  IN_PROGRESS: 'bg-purple-100 text-purple-900',
+  ADOPTED: 'bg-primary-100 text-primary-900',
+  WITHDRAWN: 'bg-red-100 text-red-900',
+  ON_HOLD: 'bg-orange-100 text-orange-900',
+};
+
+const statusLabels: Record<PetStatus, string> = {
+  DRAFT: 'Draft',
+  PENDING_RESCUE: 'Pending Review',
+  PENDING_VET: 'Pending Vet',
+  AVAILABLE: 'Available',
+  IN_PROGRESS: 'In Progress',
+  ADOPTED: 'Adopted',
+  WITHDRAWN: 'Withdrawn',
+  ON_HOLD: 'On Hold',
+};
+
+interface FavoritePetCardProps {
+  pet: Pet;
+  onRemove: () => void;
+  isRemoving: boolean;
+}
+
+function FavoritePetCard({ pet, onRemove, isRemoving }: FavoritePetCardProps) {
+  const placeholderImage = `https://placedog.net/400/300?id=${pet.id.slice(0, 8)}`;
+
+  return (
+    <div className="card hover:shadow-lg transition-shadow relative group">
+      {/* Remove button - always visible on mobile, hover on desktop */}
+      <button
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onRemove();
+        }}
+        disabled={isRemoving}
+        className="absolute top-3 right-3 z-10 p-2 bg-white/90 hover:bg-white rounded-full shadow-md opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity disabled:opacity-50"
+        aria-label={`Remove ${pet.name} from liked pets`}
+        title="Remove from liked pets"
+      >
+        {isRemoving ? (
+          <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+        ) : (
+          <svg className="w-5 h-5 text-accent-500 fill-current" viewBox="0 0 24 24">
+            <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+          </svg>
+        )}
+      </button>
+
+      <Link to={`/pets/${pet.id}`} className="block">
+        <div className="aspect-w-4 aspect-h-3 relative">
+          <img
+            src={pet.imageUrls[0] || placeholderImage}
+            alt={pet.name}
+            className="w-full h-48 object-cover"
+          />
+          {pet.imageUrls.length === 0 && (
+            <div className="absolute bottom-2 right-2 bg-warning-100 text-warning-700 text-xs px-2 py-1 rounded">
+              No photos
+            </div>
+          )}
+        </div>
+        <div className="p-4">
+          <div className="flex justify-between items-start mb-2">
+            <h3 className="text-lg font-semibold text-gray-900">{pet.name}</h3>
+            <span className={`status-badge ${statusColors[pet.status]}`}>
+              {statusLabels[pet.status]}
+            </span>
+          </div>
+          <p className="text-sm text-gray-500 mb-2">
+            {formatBreed(pet.breed) || pet.species} • {pet.age} {pet.ageUnit.toLowerCase()} • {pet.sex.toLowerCase()}
+          </p>
+          {pet.description && (
+            <p className="text-sm text-gray-600 line-clamp-2">{pet.description}</p>
+          )}
+        </div>
+      </Link>
+    </div>
+  );
+}
 
 export function AdopterDashboard() {
   const { user } = useAuth();
@@ -16,6 +102,7 @@ export function AdopterDashboard() {
   const [actionLoading, setActionLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [error, setError] = useState('');
+  const [removingFavoriteId, setRemovingFavoriteId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -72,6 +159,19 @@ export function AdopterDashboard() {
 
   const canWithdraw = (status: string) => {
     return ['SUBMITTED', 'UNDER_REVIEW'].includes(status);
+  };
+
+  const handleRemoveFavorite = async (petId: string, petName: string) => {
+    setRemovingFavoriteId(petId);
+    try {
+      await apiClient.delete(`/favorites/${petId}`);
+      setFavorites(prev => prev.filter(p => p.id !== petId));
+      setSuccessMessage(`${petName} has been removed from your saved pets.`);
+    } catch {
+      setError('Failed to remove pet from favorites');
+    } finally {
+      setRemovingFavoriteId(null);
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -318,20 +418,40 @@ export function AdopterDashboard() {
             </section>
           )}
 
-          {/* Favorites - Collapsed empty state */}
+          {/* Liked Pets Section */}
           <section>
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Saved Pets</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-gray-900">Liked Pets</h2>
+              {favorites.length > 0 && (
+                <Link to="/pets" className="text-primary-500 hover:underline text-sm font-medium">
+                  Browse More Pets
+                </Link>
+              )}
+            </div>
             {favorites.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {favorites.map((pet) => (
-                  <PetCard key={pet.id} pet={pet} />
+                  <FavoritePetCard
+                    key={pet.id}
+                    pet={pet}
+                    onRemove={() => handleRemoveFavorite(pet.id, pet.name)}
+                    isRemoving={removingFavoriteId === pet.id}
+                  />
                 ))}
               </div>
             ) : (
-              <div className="card p-4 bg-secondary-50 flex items-center justify-between">
-                <p className="text-gray-600">No saved pets yet.</p>
-                <Link to="/pets" className="text-primary-500 hover:underline text-sm font-medium">
-                  Browse Pets
+              <div className="card p-6 bg-secondary-50 text-center">
+                <div className="text-4xl mb-3">
+                  <svg className="w-12 h-12 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                  </svg>
+                </div>
+                <p className="text-gray-600 mb-3">No liked pets yet.</p>
+                <p className="text-sm text-gray-500 mb-4">
+                  Browse available pets and click the heart icon to save your favorites.
+                </p>
+                <Link to="/pets">
+                  <Button variant="primary" size="sm">Browse Pets</Button>
                 </Link>
               </div>
             )}

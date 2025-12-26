@@ -126,8 +126,8 @@ test.describe('Adopter Journey', () => {
     test.skip('should view favorites from dashboard', async ({ adopterPage }) => {
       await adopterPage.goto('/adopter/dashboard');
 
-      // Should show saved pets section
-      await expect(adopterPage.getByRole('heading', { name: 'Saved Pets', exact: true })).toBeVisible();
+      // Should show liked pets section
+      await expect(adopterPage.getByRole('heading', { name: 'Liked Pets', exact: true })).toBeVisible();
     });
 
     test('should remove pet from favorites', async ({ adopterPage }) => {

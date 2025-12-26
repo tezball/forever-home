@@ -33,6 +33,13 @@ function getGoogleMapsUrl(address: string): string {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
 }
 
+/**
+ * Generate Google Maps embed URL from address.
+ */
+function getGoogleMapsEmbedUrl(address: string): string {
+  return `https://maps.google.com/maps?q=${encodeURIComponent(address)}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+}
+
 export function RescueOrgProfilePage() {
   const { id } = useParams<{ id: string }>();
   const [rescue, setRescue] = useState<RescueOrganization | null>(null);
@@ -47,6 +54,7 @@ export function RescueOrgProfilePage() {
     ON_HOLD: 0,
     ADOPTED: 0,
   });
+  const [mapExpanded, setMapExpanded] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -158,24 +166,64 @@ export function RescueOrgProfilePage() {
               </span>
             </div>
             {rescue.location && (
-              <p className="text-gray-500 mb-4 flex items-center gap-1">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                {rescue.fullAddress ? (
-                  <a
-                    href={getGoogleMapsUrl(rescue.fullAddress)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-primary-500 hover:underline"
-                  >
-                    {rescue.location}
-                  </a>
-                ) : (
-                  rescue.location
+              <div className="mb-4">
+                <div className="flex items-center gap-1 text-gray-500">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  <span>{rescue.fullAddress || rescue.location}</span>
+                  {rescue.fullAddress && (
+                    <>
+                      <span className="mx-1">•</span>
+                      <button
+                        onClick={() => setMapExpanded(!mapExpanded)}
+                        className="text-primary-500 hover:underline inline-flex items-center gap-1"
+                      >
+                        {mapExpanded ? 'Hide Map' : 'View Map'}
+                        <svg
+                          className={`w-4 h-4 transition-transform ${mapExpanded ? 'rotate-180' : ''}`}
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+                    </>
+                  )}
+                </div>
+
+                {/* Expandable Google Maps */}
+                {mapExpanded && rescue.fullAddress && (
+                  <div className="mt-3 rounded-lg overflow-hidden border border-secondary-200">
+                    <iframe
+                      title={`Map of ${rescue.name}`}
+                      src={getGoogleMapsEmbedUrl(rescue.fullAddress)}
+                      width="100%"
+                      height="300"
+                      style={{ border: 0 }}
+                      allowFullScreen
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
+                    />
+                    <div className="bg-secondary-50 px-3 py-2 flex justify-between items-center text-sm">
+                      <span className="text-gray-600">{rescue.fullAddress}</span>
+                      <a
+                        href={getGoogleMapsUrl(rescue.fullAddress)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary-500 hover:underline inline-flex items-center gap-1"
+                      >
+                        Open in Google Maps
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                      </a>
+                    </div>
+                  </div>
                 )}
-              </p>
+              </div>
             )}
             {rescue.description && (
               <p className="text-gray-600 mb-4">{rescue.description}</p>
