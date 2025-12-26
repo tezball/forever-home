@@ -1,7 +1,6 @@
 package com.example.foreverhome.controller;
 
 import com.example.foreverhome.domain.pet.Pet;
-import com.example.foreverhome.domain.pet.PetImage;
 import com.example.foreverhome.domain.pet.PetStatus;
 import com.example.foreverhome.domain.profile.RescueOrganization;
 import com.example.foreverhome.domain.profile.Vet;
@@ -59,7 +58,9 @@ public class PublicController {
                 .map(org -> {
                     // Count available pets for this rescue org
                     long petCount = petRepository.countByRescueOrgIdAndStatus(org.getId(), PetStatus.AVAILABLE);
-                    return RescueOrgPublicResponse.from(org, petCount);
+                    // Convert S3 key to full public URL
+                    String logoUrl = org.getLogoUrl() != null ? storageService.getPublicUrl(org.getLogoUrl()) : null;
+                    return RescueOrgPublicResponse.from(org, petCount, logoUrl);
                 })
                 .toList();
         return ResponseEntity.ok(response);
@@ -74,7 +75,8 @@ public class PublicController {
                 .filter(RescueOrganization::isVerified)
                 .map(org -> {
                     long petCount = petRepository.countByRescueOrgIdAndStatus(org.getId(), PetStatus.AVAILABLE);
-                    return ResponseEntity.ok(RescueOrgPublicResponse.from(org, petCount));
+                    String logoUrl = org.getLogoUrl() != null ? storageService.getPublicUrl(org.getLogoUrl()) : null;
+                    return ResponseEntity.ok(RescueOrgPublicResponse.from(org, petCount, logoUrl));
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -203,7 +205,7 @@ public class PublicController {
             String logoUrl,
             long petCount
     ) {
-        static RescueOrgPublicResponse from(RescueOrganization org, long petCount) {
+        static RescueOrgPublicResponse from(RescueOrganization org, long petCount, String logoUrl) {
             String location = null;
             String fullAddress = null;
             if (org.getAddress() != null) {
@@ -227,7 +229,7 @@ public class PublicController {
                     org.getWebsite(),
                     org.getContactEmail(),
                     org.getPhone(),
-                    org.getLogoUrl(),
+                    logoUrl,
                     petCount
             );
         }

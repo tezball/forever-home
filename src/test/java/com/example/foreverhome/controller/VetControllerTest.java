@@ -381,7 +381,8 @@ class VetControllerTest {
                 UUID.randomUUID(),
                 Instant.now(),
                 List.of(),
-                true
+                true,
+                null
         );
     }
 

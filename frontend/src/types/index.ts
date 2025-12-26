@@ -53,6 +53,7 @@ export interface Pet {
   createdAt: string;
   imageUrls: string[];
   canSignOff?: boolean;
+  holdReason?: string | null;
 }
 
 export interface LoginRequest {

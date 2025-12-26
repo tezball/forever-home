@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Button, Modal, ImageCarousel, PetTimeline, Textarea } from '../components';
-import { formatSize, formatSex } from '../utils';
+import { formatSize, formatSex, formatBreed } from '../utils';
 import type { Pet, PetStatus, RescueOrganization } from '../types';
 import apiClient from '../api/client';
 
@@ -192,7 +192,7 @@ export function PetDetailPage() {
           <div className="flex items-start justify-between mb-4">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">{pet.name}</h1>
-              <p className="text-lg text-gray-600">{pet.breed || pet.species}</p>
+              <p className="text-lg text-gray-600">{formatBreed(pet.breed) || pet.species}</p>
             </div>
             {isAuthenticated && (
               <button

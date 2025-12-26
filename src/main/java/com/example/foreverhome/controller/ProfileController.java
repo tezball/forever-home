@@ -5,13 +5,16 @@ import com.example.foreverhome.domain.user.NotificationPreferences;
 import com.example.foreverhome.exception.ResourceNotFoundException;
 import com.example.foreverhome.repository.*;
 import com.example.foreverhome.security.UserPrincipal;
+import com.example.foreverhome.service.S3StorageService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.UUID;
 
@@ -27,15 +30,17 @@ public class ProfileController {
     private final VetRepository vetRepository;
     private final RescueOrganizationRepository rescueOrganizationRepository;
     private final UserRepository userRepository;
+    private final S3StorageService storageService;
 
     public ProfileController(FosterRepository fosterRepository, AdopterRepository adopterRepository,
                              VetRepository vetRepository, RescueOrganizationRepository rescueOrganizationRepository,
-                             UserRepository userRepository) {
+                             UserRepository userRepository, S3StorageService storageService) {
         this.fosterRepository = fosterRepository;
         this.adopterRepository = adopterRepository;
         this.vetRepository = vetRepository;
         this.rescueOrganizationRepository = rescueOrganizationRepository;
         this.userRepository = userRepository;
+        this.storageService = storageService;
     }
 
     // ==================== PROFILE STATUS ====================
@@ -179,10 +184,12 @@ public class ProfileController {
                 .orElse(null);
 
         if (org == null) {
-            return ResponseEntity.ok(new RescueOrgProfileResponse(null, null, null, null, null, null, null, false, false));
+            return ResponseEntity.ok(new RescueOrgProfileResponse(null, null, null, null, null, null, null, null, false, false));
         }
 
-        return ResponseEntity.ok(RescueOrgProfileResponse.from(org));
+        // Convert S3 key to full URL for frontend
+        String logoUrl = org.getLogoUrl() != null ? storageService.getPublicUrl(org.getLogoUrl()) : null;
+        return ResponseEntity.ok(RescueOrgProfileResponse.fromWithLogoUrl(org, logoUrl));
     }
 
     @PostMapping("/rescue-org")
@@ -209,7 +216,51 @@ public class ProfileController {
         RescueOrganization saved = rescueOrganizationRepository.save(org);
         markProfileComplete(principal.userId());
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(RescueOrgProfileResponse.from(saved));
+        // Convert S3 key to full URL for frontend
+        String logoUrl = saved.getLogoUrl() != null ? storageService.getPublicUrl(saved.getLogoUrl()) : null;
+        return ResponseEntity.status(HttpStatus.CREATED).body(RescueOrgProfileResponse.fromWithLogoUrl(saved, logoUrl));
+    }
+
+    @PostMapping(value = "/rescue-org/logo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasRole('RESCUE_ORG')")
+    public ResponseEntity<RescueOrgProfileResponse> uploadRescueOrgLogo(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @RequestParam("file") MultipartFile file) {
+
+        RescueOrganization org = rescueOrganizationRepository.findByUserId(principal.userId())
+                .orElseThrow(() -> new ResourceNotFoundException("RescueOrganization", principal.userId()));
+
+        // Delete existing logo if present
+        if (org.getLogoUrl() != null) {
+            storageService.deleteFile(org.getLogoUrl());
+        }
+
+        // Upload new logo
+        String s3Key = storageService.uploadFile(file, "rescue-logos/" + org.getId());
+        String logoUrl = storageService.getPublicUrl(s3Key);
+
+        org.updateLogoUrl(s3Key);
+        RescueOrganization saved = rescueOrganizationRepository.save(org);
+
+        // Return response with full URL for frontend
+        return ResponseEntity.ok(RescueOrgProfileResponse.fromWithLogoUrl(saved, logoUrl));
+    }
+
+    @DeleteMapping("/rescue-org/logo")
+    @PreAuthorize("hasRole('RESCUE_ORG')")
+    public ResponseEntity<RescueOrgProfileResponse> deleteRescueOrgLogo(
+            @AuthenticationPrincipal UserPrincipal principal) {
+
+        RescueOrganization org = rescueOrganizationRepository.findByUserId(principal.userId())
+                .orElseThrow(() -> new ResourceNotFoundException("RescueOrganization", principal.userId()));
+
+        if (org.getLogoUrl() != null) {
+            storageService.deleteFile(org.getLogoUrl());
+            org.updateLogoUrl(null);
+            org = rescueOrganizationRepository.save(org);
+        }
+
+        return ResponseEntity.ok(RescueOrgProfileResponse.from(org));
     }
 
     // ==================== NOTIFICATION PREFERENCES ====================
@@ -432,6 +483,7 @@ public class ProfileController {
             String contactName,
             String contactEmail,
             AddressDto address,
+            String logoUrl,
             boolean verified,
             boolean isComplete
     ) {
@@ -448,6 +500,26 @@ public class ProfileController {
                     org.getContactName(),
                     org.getContactEmail(),
                     addressDto,
+                    org.getLogoUrl(),
+                    org.isVerified(),
+                    true
+            );
+        }
+
+        static RescueOrgProfileResponse fromWithLogoUrl(RescueOrganization org, String logoUrl) {
+            AddressDto addressDto = org.getAddress() != null ?
+                    new AddressDto(org.getAddress().street(), org.getAddress().city(),
+                            org.getAddress().state(), org.getAddress().postalCode(),
+                            org.getAddress().country()) : null;
+            return new RescueOrgProfileResponse(
+                    org.getName(),
+                    org.getPhone(),
+                    org.getWebsite(),
+                    org.getDescription(),
+                    org.getContactName(),
+                    org.getContactEmail(),
+                    addressDto,
+                    logoUrl,
                     org.isVerified(),
                     true
             );

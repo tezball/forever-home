@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Button, Input } from '../components';
 import apiClient from '../api/client';
+import axios from 'axios';
 
 interface Address {
   street?: string;
@@ -27,6 +28,7 @@ interface RescueOrgProfile {
   contactEmail?: string;
   address?: Address;
   socialLinks?: SocialLinks;
+  logoUrl?: string;
   verified: boolean;
   isComplete: boolean;
 }
@@ -54,6 +56,12 @@ export function RescueOrgSettingsPage() {
   const [twitter, setTwitter] = useState('');
   const [tiktok, setTiktok] = useState('');
 
+  // Logo upload state
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [deletingLogo, setDeletingLogo] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
     fetchProfile();
   }, []);
@@ -75,6 +83,7 @@ export function RescueOrgSettingsPage() {
       setCity(data.address?.city || '');
       setState(data.address?.state || '');
       setPostalCode(data.address?.postalCode || '');
+      setLogoUrl(data.logoUrl || null);
     } catch {
       setError('Failed to load profile');
     } finally {
@@ -121,6 +130,72 @@ export function RescueOrgSettingsPage() {
     }
   };
 
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      setError('Please upload a valid image file (JPEG, PNG, GIF, or WebP)');
+      return;
+    }
+
+    // Validate file size (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Image must be less than 5MB');
+      return;
+    }
+
+    setUploadingLogo(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await apiClient.post<RescueOrgProfile>('/profile/rescue-org/logo', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      setLogoUrl(response.data.logoUrl || null);
+      setSuccess('Logo uploaded successfully');
+    } catch (err) {
+      if (axios.isAxiosError(err) && err.response?.data?.message) {
+        setError(err.response.data.message);
+      } else {
+        setError('Failed to upload logo');
+      }
+    } finally {
+      setUploadingLogo(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleLogoDelete = async () => {
+    if (!logoUrl) return;
+
+    setDeletingLogo(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      await apiClient.delete('/profile/rescue-org/logo');
+      setLogoUrl(null);
+      setSuccess('Logo removed successfully');
+    } catch {
+      setError('Failed to remove logo');
+    } finally {
+      setDeletingLogo(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="container-app py-8">
@@ -163,6 +238,82 @@ export function RescueOrgSettingsPage() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Organization Logo */}
+          <div className="card p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Organization Logo</h2>
+            <p className="text-sm text-gray-500 mb-4">
+              Upload a logo to represent your organization on the public rescues page.
+            </p>
+            <div className="flex items-start gap-6">
+              {/* Logo Preview */}
+              <div className="flex-shrink-0">
+                {logoUrl ? (
+                  <img
+                    src={logoUrl}
+                    alt="Organization logo"
+                    className="w-24 h-24 rounded-lg object-cover border border-gray-200"
+                  />
+                ) : (
+                  <div className="w-24 h-24 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center">
+                    <span className="text-3xl">🏠</span>
+                  </div>
+                )}
+              </div>
+              {/* Upload Controls */}
+              <div className="flex-1 space-y-3">
+                <div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/gif,image/webp"
+                    onChange={handleLogoUpload}
+                    className="hidden"
+                    id="logo-upload"
+                    disabled={uploadingLogo}
+                  />
+                  <label
+                    htmlFor="logo-upload"
+                    className={`inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 cursor-pointer ${
+                      uploadingLogo ? 'opacity-50 cursor-wait' : ''
+                    }`}
+                  >
+                    {uploadingLogo ? (
+                      <>
+                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        </svg>
+                        Uploading...
+                      </>
+                    ) : (
+                      <>
+                        <svg className="-ml-1 mr-2 h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        {logoUrl ? 'Change Logo' : 'Upload Logo'}
+                      </>
+                    )}
+                  </label>
+                </div>
+                {logoUrl && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleLogoDelete}
+                    disabled={deletingLogo}
+                    className="text-error-600 hover:text-error-700"
+                  >
+                    {deletingLogo ? 'Removing...' : 'Remove Logo'}
+                  </Button>
+                )}
+                <p className="text-xs text-gray-400">
+                  JPEG, PNG, GIF, or WebP. Max 5MB.
+                </p>
+              </div>
+            </div>
+          </div>
+
           {/* Basic Info */}
           <div className="card p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h2>

@@ -136,6 +136,24 @@ export function Header() {
                       >
                         Profile
                       </Link>
+                      {user?.role === 'RESCUE_ORG' && (
+                        <Link
+                          to="/rescue/settings"
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-secondary-100"
+                          onClick={() => setUserDropdownOpen(false)}
+                        >
+                          Organization Settings
+                        </Link>
+                      )}
+                      {user?.role === 'VET' && (
+                        <Link
+                          to="/vet/settings"
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-secondary-100"
+                          onClick={() => setUserDropdownOpen(false)}
+                        >
+                          Clinic Settings
+                        </Link>
+                      )}
                       <Link
                         to="/notifications"
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-secondary-100"
@@ -251,6 +269,24 @@ export function Header() {
                   >
                     Profile
                   </Link>
+                  {user?.role === 'RESCUE_ORG' && (
+                    <Link
+                      to="/rescue/settings"
+                      className="px-4 py-2 text-gray-600 hover:bg-secondary-100 rounded"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Organization Settings
+                    </Link>
+                  )}
+                  {user?.role === 'VET' && (
+                    <Link
+                      to="/vet/settings"
+                      className="px-4 py-2 text-gray-600 hover:bg-secondary-100 rounded"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Clinic Settings
+                    </Link>
+                  )}
                   <Link
                     to="/settings"
                     className="px-4 py-2 text-gray-600 hover:bg-secondary-100 rounded"

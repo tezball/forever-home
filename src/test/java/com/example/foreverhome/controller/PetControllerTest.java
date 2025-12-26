@@ -81,7 +81,8 @@ class PetControllerTest {
                 null, // rescueOrgId
                 Instant.now(),
                 List.of("http://example.com/image1.jpg"),
-                null // canSignOff
+                null, // canSignOff
+                null  // holdReason
         );
     }
 
@@ -239,6 +240,7 @@ class PetControllerTest {
                     null,
                     Instant.now(),
                     List.of(),
+                    null,
                     null
             );
             when(petService.updatePet(petId, userId, request)).thenReturn(updatedPet);
@@ -275,6 +277,7 @@ class PetControllerTest {
                     rescueOrgId,
                     Instant.now(),
                     List.of(),
+                    null,
                     null
             );
             when(petService.submitForReview(petId, userId, rescueOrgId)).thenReturn(submittedPet);
@@ -315,6 +318,7 @@ class PetControllerTest {
                     rescueOrgId,
                     Instant.now(),
                     List.of(),
+                    null,
                     null
             );
             when(petService.acceptByRescue(petId, rescueOrgId, userId)).thenReturn(acceptedPet);
@@ -367,6 +371,7 @@ class PetControllerTest {
                     null,
                     Instant.now(),
                     List.of(),
+                    null,
                     null
             );
             when(petService.declineByRescue(petId, rescueOrgId, userId, "Does not meet our criteria")).thenReturn(declinedPet);
@@ -402,6 +407,7 @@ class PetControllerTest {
                     null,
                     Instant.now(),
                     List.of(),
+                    null,
                     null
             );
             when(petService.withdrawPet(petId, userId)).thenReturn(withdrawnPet);

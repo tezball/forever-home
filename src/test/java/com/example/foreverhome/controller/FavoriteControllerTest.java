@@ -217,6 +217,7 @@ class FavoriteControllerTest {
                 UUID.randomUUID(),
                 Instant.now(),
                 List.of(),
+                null,
                 null
         );
     }

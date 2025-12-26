@@ -88,7 +88,22 @@ public class PetService {
                 .stream()
                 .map(img -> storageService.getPublicUrl(img.getS3Key()))
                 .toList();
-        return PetDto.from(pet, imageUrls);
+        String holdReason = getHoldReason(pet);
+        return PetDto.from(pet, imageUrls, holdReason);
+    }
+
+    /**
+     * Get the hold reason for a pet if it's currently on hold.
+     * Retrieves the notes from the most recent ON_HOLD status transition.
+     */
+    private String getHoldReason(Pet pet) {
+        if (pet.getStatus() != PetStatus.ON_HOLD) {
+            return null;
+        }
+        return statusHistoryRepository
+                .findLatestByPetIdAndNewStatus(pet.getId(), PetStatus.ON_HOLD.name())
+                .map(PetStatusHistory::getNotes)
+                .orElse(null);
     }
 
     public PetDto createPet(UUID userId, CreatePetRequest request) {

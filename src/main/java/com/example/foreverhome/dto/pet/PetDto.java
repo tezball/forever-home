@@ -23,7 +23,8 @@ public record PetDto(
         UUID rescueOrgId,
         Instant createdAt,
         List<String> imageUrls,
-        Boolean canSignOff
+        Boolean canSignOff,
+        String holdReason
 ) {
     public static PetDto from(Pet pet) {
         return new PetDto(
@@ -43,7 +44,8 @@ public record PetDto(
                 pet.getRescueOrgId(),
                 pet.getCreatedAt(),
                 List.of(), // Images loaded separately
-                null // canSignOff only set for vet lookups
+                null, // canSignOff only set for vet lookups
+                null  // holdReason populated separately when needed
         );
     }
 
@@ -65,7 +67,31 @@ public record PetDto(
                 pet.getRescueOrgId(),
                 pet.getCreatedAt(),
                 imageUrls,
-                null // canSignOff only set for vet lookups
+                null, // canSignOff only set for vet lookups
+                null  // holdReason populated separately when needed
+        );
+    }
+
+    public static PetDto from(Pet pet, List<String> imageUrls, String holdReason) {
+        return new PetDto(
+                pet.getId(),
+                pet.getName(),
+                pet.getSpecies(),
+                pet.getBreed(),
+                pet.getAge(),
+                pet.getAgeUnit(),
+                pet.getSex(),
+                pet.getSize(),
+                pet.getMicrochipId(),
+                pet.getDescription(),
+                pet.getHealthNotes(),
+                pet.getStatus(),
+                pet.getFosterId(),
+                pet.getRescueOrgId(),
+                pet.getCreatedAt(),
+                imageUrls,
+                null, // canSignOff only set for vet lookups
+                holdReason
         );
     }
 
@@ -90,7 +116,8 @@ public record PetDto(
                 pet.getRescueOrgId(),
                 pet.getCreatedAt(),
                 imageUrls,
-                canSignOff
+                canSignOff,
+                null  // holdReason not needed for vet lookups
         );
     }
 }

@@ -242,9 +242,9 @@ export function RescueDashboard() {
         reason: holdReason,
       });
       setSuccessMessage(`${selectedPetForHold.name} has been put on hold`);
-      // Update pet status in activePets
+      // Update pet status in activePets (include holdReason for immediate display)
       setActivePets((prev) =>
-        prev.map((p) => (p.id === selectedPetForHold.id ? { ...p, status: 'ON_HOLD' } : p))
+        prev.map((p) => (p.id === selectedPetForHold.id ? { ...p, status: 'ON_HOLD', holdReason } : p))
       );
       setHoldModalOpen(false);
       setSelectedPetForHold(null);
@@ -665,6 +665,11 @@ export function RescueDashboard() {
                     )}
                     {pet.status === 'ON_HOLD' && (
                       <div className="mt-2">
+                        {pet.holdReason && (
+                          <p className="text-sm text-orange-600 mb-2">
+                            Reason: {pet.holdReason}
+                          </p>
+                        )}
                         <Button
                           variant="primary"
                           size="sm"
