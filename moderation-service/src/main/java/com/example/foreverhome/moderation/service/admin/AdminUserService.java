@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -205,11 +206,208 @@ public class AdminUserService {
         return sb.toString();
     }
 
+    // ========== Role Management ==========
+
+    @Transactional
+    public void changeUserRole(UUID userId, UserRole newRole) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
+
+        if (user.getRole() == UserRole.SUPER_ADMIN) {
+            throw new IllegalStateException("Cannot change role of super admin accounts");
+        }
+
+        if (newRole == UserRole.SUPER_ADMIN) {
+            throw new IllegalStateException("Cannot promote to super admin role via this interface");
+        }
+
+        UserRole oldRole = user.getRole();
+        user.changeRole(newRole);
+        userRepository.save(user);
+
+        auditLogRepository.save(AuditLog.create(
+                AuditLog.AuditAction.USER_ROLE_CHANGED,
+                "USER",
+                userId,
+                null,
+                "Role changed from " + oldRole + " to " + newRole + " for user: " + user.getEmail()
+        ));
+    }
+
+    // ========== Bulk Operations ==========
+
+    @Transactional
+    public BulkOperationResult bulkSuspend(List<UUID> userIds) {
+        int success = 0;
+        int failed = 0;
+        List<String> errors = new ArrayList<>();
+
+        for (UUID userId : userIds) {
+            try {
+                User user = userRepository.findById(userId).orElse(null);
+                if (user == null) {
+                    failed++;
+                    errors.add("User not found: " + userId);
+                    continue;
+                }
+                if (user.getRole() == UserRole.ADMIN || user.getRole() == UserRole.SUPER_ADMIN) {
+                    failed++;
+                    errors.add("Cannot suspend admin: " + user.getEmail());
+                    continue;
+                }
+                user.suspend();
+                userRepository.save(user);
+                success++;
+            } catch (Exception e) {
+                failed++;
+                errors.add("Error suspending " + userId + ": " + e.getMessage());
+            }
+        }
+
+        auditLogRepository.save(AuditLog.create(
+                AuditLog.AuditAction.USER_BULK_ACTION,
+                "USER",
+                null,
+                null,
+                "Bulk suspend: " + success + " succeeded, " + failed + " failed"
+        ));
+
+        return new BulkOperationResult(success, failed, errors);
+    }
+
+    @Transactional
+    public BulkOperationResult bulkReactivate(List<UUID> userIds) {
+        int success = 0;
+        int failed = 0;
+        List<String> errors = new ArrayList<>();
+
+        for (UUID userId : userIds) {
+            try {
+                User user = userRepository.findById(userId).orElse(null);
+                if (user == null) {
+                    failed++;
+                    errors.add("User not found: " + userId);
+                    continue;
+                }
+                user.reactivate();
+                userRepository.save(user);
+                success++;
+            } catch (Exception e) {
+                failed++;
+                errors.add("Error reactivating " + userId + ": " + e.getMessage());
+            }
+        }
+
+        auditLogRepository.save(AuditLog.create(
+                AuditLog.AuditAction.USER_BULK_ACTION,
+                "USER",
+                null,
+                null,
+                "Bulk reactivate: " + success + " succeeded, " + failed + " failed"
+        ));
+
+        return new BulkOperationResult(success, failed, errors);
+    }
+
+    @Transactional
+    public BulkOperationResult bulkDelete(List<UUID> userIds) {
+        int success = 0;
+        int failed = 0;
+        List<String> errors = new ArrayList<>();
+
+        for (UUID userId : userIds) {
+            try {
+                User user = userRepository.findById(userId).orElse(null);
+                if (user == null) {
+                    failed++;
+                    errors.add("User not found: " + userId);
+                    continue;
+                }
+                if (user.getRole() == UserRole.ADMIN || user.getRole() == UserRole.SUPER_ADMIN) {
+                    failed++;
+                    errors.add("Cannot delete admin: " + user.getEmail());
+                    continue;
+                }
+
+                // Delete associated rescue org profile if exists
+                if (user.getRole() == UserRole.RESCUE_ORG) {
+                    rescueOrgRepository.findByUserId(userId).ifPresent(rescueOrgRepository::delete);
+                }
+
+                String email = user.getEmail();
+                userRepository.delete(user);
+                success++;
+            } catch (Exception e) {
+                failed++;
+                errors.add("Error deleting " + userId + ": " + e.getMessage());
+            }
+        }
+
+        auditLogRepository.save(AuditLog.create(
+                AuditLog.AuditAction.USER_BULK_ACTION,
+                "USER",
+                null,
+                null,
+                "Bulk delete: " + success + " succeeded, " + failed + " failed"
+        ));
+
+        return new BulkOperationResult(success, failed, errors);
+    }
+
+    @Transactional
+    public BulkOperationResult bulkChangeRole(List<UUID> userIds, UserRole newRole) {
+        if (newRole == UserRole.SUPER_ADMIN) {
+            return new BulkOperationResult(0, userIds.size(), List.of("Cannot promote to super admin role"));
+        }
+
+        int success = 0;
+        int failed = 0;
+        List<String> errors = new ArrayList<>();
+
+        for (UUID userId : userIds) {
+            try {
+                User user = userRepository.findById(userId).orElse(null);
+                if (user == null) {
+                    failed++;
+                    errors.add("User not found: " + userId);
+                    continue;
+                }
+                if (user.getRole() == UserRole.SUPER_ADMIN) {
+                    failed++;
+                    errors.add("Cannot change super admin role: " + user.getEmail());
+                    continue;
+                }
+                user.changeRole(newRole);
+                userRepository.save(user);
+                success++;
+            } catch (Exception e) {
+                failed++;
+                errors.add("Error changing role for " + userId + ": " + e.getMessage());
+            }
+        }
+
+        auditLogRepository.save(AuditLog.create(
+                AuditLog.AuditAction.USER_BULK_ACTION,
+                "USER",
+                null,
+                null,
+                "Bulk role change to " + newRole + ": " + success + " succeeded, " + failed + " failed"
+        ));
+
+        return new BulkOperationResult(success, failed, errors);
+    }
+
     public record UserSearchResult(
             List<User> users,
             int page,
             int size,
             long totalCount,
             int totalPages
+    ) {}
+
+    public record BulkOperationResult(
+            int successCount,
+            int failedCount,
+            List<String> errors
     ) {}
 }

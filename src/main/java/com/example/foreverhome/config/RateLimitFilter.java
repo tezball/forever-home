@@ -11,14 +11,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.time.Duration;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.time.Instant;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -44,14 +44,22 @@ public class RateLimitFilter extends OncePerRequestFilter {
     private final Map<String, Bucket> petCreationBuckets = new ConcurrentHashMap<>();
     private final Map<String, Bucket> imageUploadBuckets = new ConcurrentHashMap<>();
     private final MetricsService metricsService;
+    private final JdbcClient jdbcClient;
     private final List<String> trustedProxies;
     private final boolean trustProxy;
 
+    // Cache for blocked IPs (refreshed periodically)
+    private volatile Set<String> blockedIpsCache = new HashSet<>();
+    private volatile Instant blockedIpsCacheExpiry = Instant.MIN;
+    private static final Duration BLOCKED_IPS_CACHE_TTL = Duration.ofMinutes(1);
+
     public RateLimitFilter(
             MetricsService metricsService,
+            JdbcClient jdbcClient,
             @Value("${app.security.trusted-proxies:}") String trustedProxiesConfig,
             @Value("${app.security.trust-proxy:false}") boolean trustProxy) {
         this.metricsService = metricsService;
+        this.jdbcClient = jdbcClient;
         this.trustProxy = trustProxy;
         this.trustedProxies = trustedProxiesConfig.isBlank()
             ? List.of()
@@ -70,6 +78,15 @@ public class RateLimitFilter extends OncePerRequestFilter {
         String path = request.getRequestURI();
         String method = request.getMethod();
         String clientIp = getClientIp(request);
+
+        // Check if IP is blocked
+        if (isIpBlocked(clientIp)) {
+            logger.warn("Blocked IP {} attempted to access {}", clientIp, path);
+            response.setStatus(HttpStatus.FORBIDDEN.value());
+            response.setContentType("application/json");
+            response.getWriter().write("{\"error\":\"Access denied\"}");
+            return;
+        }
 
         // Rate limit auth endpoints
         if (path.startsWith("/api/auth/")) {
@@ -217,4 +234,84 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
         return true; // Skip filter for all other requests
     }
+
+    /**
+     * Check if an IP address is blocked.
+     * Uses a cache to avoid hitting the database on every request.
+     */
+    private boolean isIpBlocked(String ip) {
+        // Refresh cache if expired
+        if (Instant.now().isAfter(blockedIpsCacheExpiry)) {
+            refreshBlockedIpsCache();
+        }
+        return blockedIpsCache.contains(ip);
+    }
+
+    /**
+     * Refresh the blocked IPs cache from the database.
+     */
+    private synchronized void refreshBlockedIpsCache() {
+        if (Instant.now().isBefore(blockedIpsCacheExpiry)) {
+            return; // Another thread already refreshed
+        }
+
+        try {
+            List<String> blockedIps = jdbcClient.sql("""
+                SELECT ip_address FROM blocked_ips
+                WHERE ip_address IS NOT NULL
+                AND active = true
+                AND (permanent = true OR expires_at > NOW())
+                """)
+                    .query(String.class)
+                    .list();
+
+            blockedIpsCache = new HashSet<>(blockedIps);
+            blockedIpsCacheExpiry = Instant.now().plus(BLOCKED_IPS_CACHE_TTL);
+            logger.debug("Refreshed blocked IPs cache: {} entries", blockedIps.size());
+        } catch (Exception e) {
+            logger.error("Failed to refresh blocked IPs cache", e);
+            // Keep using the old cache on error
+            blockedIpsCacheExpiry = Instant.now().plus(Duration.ofSeconds(10));
+        }
+    }
+
+    /**
+     * Get rate limit status for all IPs (for admin dashboard).
+     */
+    public List<RateLimitStatus> getRateLimitStatus() {
+        List<RateLimitStatus> statuses = new ArrayList<>();
+
+        // Combine all bucket maps
+        addBucketStatuses(statuses, loginBuckets, "login", 10);
+        addBucketStatuses(statuses, registerBuckets, "register", 5);
+        addBucketStatuses(statuses, passwordResetBuckets, "password_reset", 3);
+        addBucketStatuses(statuses, petCreationBuckets, "pet_creation", 10);
+        addBucketStatuses(statuses, imageUploadBuckets, "image_upload", 50);
+
+        return statuses;
+    }
+
+    private void addBucketStatuses(List<RateLimitStatus> statuses, Map<String, Bucket> buckets,
+                                    String type, int maxTokens) {
+        buckets.forEach((ip, bucket) -> {
+            long available = bucket.getAvailableTokens();
+            if (available < maxTokens) { // Only show IPs that have consumed tokens
+                statuses.add(new RateLimitStatus(
+                        ip,
+                        type,
+                        (int) available,
+                        maxTokens,
+                        Instant.now().plusSeconds(60) // Approximate reset time
+                ));
+            }
+        });
+    }
+
+    public record RateLimitStatus(
+            String ip,
+            String type,
+            int remainingTokens,
+            int maxTokens,
+            Instant resetAt
+    ) {}
 }

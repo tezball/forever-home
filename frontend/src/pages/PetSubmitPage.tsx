@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Button } from '../components';
+import { Button, AdoptionJourney, HelpIcon } from '../components';
 import type { Pet, RescueOrganization } from '../types';
 import apiClient from '../api/client';
 
@@ -149,11 +149,69 @@ export function PetSubmitPage() {
           </div>
         </div>
 
+        {/* What Happens Next - Journey Overview */}
+        <div className="card p-6 mb-6">
+          <div className="flex items-center gap-2 mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">What happens next?</h2>
+            <HelpIcon title="The Adoption Journey">
+              <div className="space-y-3">
+                <p>Here's what to expect after you submit your pet for review:</p>
+                <ol className="list-decimal pl-4 space-y-2">
+                  <li>
+                    <strong>Rescue Review (1-3 days):</strong> The rescue organization reviews your pet's information and photos.
+                  </li>
+                  <li>
+                    <strong>Vet Verification:</strong> Once accepted, take your pet to an approved vet for a health check. The vet will verify vaccinations, neutering status, and overall health.
+                  </li>
+                  <li>
+                    <strong>Available for Adoption:</strong> After vet sign-off, your pet becomes visible to potential adopters.
+                  </li>
+                  <li>
+                    <strong>Adoption Applications:</strong> Adopters submit applications which the rescue reviews and approves.
+                  </li>
+                  <li>
+                    <strong>Forever Home:</strong> Coordinate with the rescue and approved adopter for the handoff.
+                  </li>
+                </ol>
+              </div>
+            </HelpIcon>
+          </div>
+          <AdoptionJourney currentStatus="DRAFT" variant="horizontal" />
+          <p className="text-sm text-gray-600 mt-4 text-center">
+            You're at step 1. Submitting to a rescue moves you to step 2.
+          </p>
+        </div>
+
         {/* Rescue Organization Selection */}
         {pet.status === 'DRAFT' && (
           <form onSubmit={handleSubmit}>
             <div className="card p-6 mb-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Select Rescue Organization</h2>
+              <div className="flex items-center gap-2 mb-4">
+                <h2 className="text-lg font-semibold text-gray-900">Select Rescue Organization</h2>
+                <HelpIcon title="How to Choose a Rescue Organization">
+                  <div className="space-y-3">
+                    <p>Rescue organizations are your partners in finding a forever home for your pet. Here's how to choose:</p>
+                    <h4 className="font-semibold text-gray-900">Consider:</h4>
+                    <ul className="list-disc pl-4 space-y-1">
+                      <li><strong>Location:</strong> Choose a rescue near you for easier coordination during the process.</li>
+                      <li><strong>Specialization:</strong> Some rescues focus on specific breeds or pet types.</li>
+                      <li><strong>Reputation:</strong> All rescues on Forever Home are verified, but you can research their adoption history.</li>
+                    </ul>
+                    <h4 className="font-semibold text-gray-900">What rescues do:</h4>
+                    <ul className="list-disc pl-4 space-y-1">
+                      <li>Review and approve pet listings</li>
+                      <li>Coordinate vet verification</li>
+                      <li>Screen potential adopters</li>
+                      <li>Facilitate the adoption handoff</li>
+                    </ul>
+                    <div className="bg-blue-50 p-3 rounded-lg mt-2">
+                      <p className="text-sm text-blue-800">
+                        <strong>Tip:</strong> You can change your rescue organization later if the one you choose doesn't respond within a few days.
+                      </p>
+                    </div>
+                  </div>
+                </HelpIcon>
+              </div>
               <p className="text-sm text-gray-600 mb-4">
                 Choose a rescue organization to review your pet. They will verify the pet's information and, once approved,
                 the pet will be sent for vet verification.

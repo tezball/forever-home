@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout(~{::title}, ~{::main})}">
+<head>
+    <title th:text="${pageTitle}">Database Health</title>
+</head>
+<body>
+<main th:fragment="content">
+    <div class="space-y-6">
+        <!-- Page Header -->
+        <div class="flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-gray-900">Database Health</h1>
+            <a th:href="@{/admin/database/refresh}" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 text-sm">
+                Refresh
+            </a>
+        </div>
+
+        <!-- Database Overview -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="text-sm text-gray-500">Database Size</div>
+                <div class="text-3xl font-bold text-primary" th:text="${dashboard.databaseSize.prettySize}">0 MB</div>
+                <div class="text-xs text-gray-400 mt-1" th:text="${dashboard.databaseSize.name}">Database</div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="text-sm text-gray-500">Active Connections</div>
+                <div class="text-3xl font-bold text-green-600" th:text="${dashboard.connectionStats.activeConnections}">0</div>
+                <div class="text-xs text-gray-400 mt-1" th:text="'of ' + ${dashboard.connectionStats.maxConnections} + ' max'">of 100 max</div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="text-sm text-gray-500">Connection Usage</div>
+                <div class="text-3xl font-bold" th:classappend="${dashboard.connectionStats.usagePercent > 80} ? 'text-red-600' : 'text-primary'"
+                     th:text="${#numbers.formatDecimal(dashboard.connectionStats.usagePercent, 0, 'COMMA', 1, 'POINT')} + '%'">0%</div>
+                <div class="w-full bg-gray-200 rounded-full h-2 mt-2">
+                    <div th:class="'rounded-full h-2 ' + (${dashboard.connectionStats.usagePercent > 80} ? 'bg-red-500' : 'bg-primary')"
+                         th:style="'width: ' + ${dashboard.connectionStats.usagePercent} + '%'"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table Statistics -->
+        <div class="bg-white rounded-lg shadow">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-900">Table Statistics</h2>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Table</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rows</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Dead Tuples</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Size</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Last Vacuum</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <tr th:each="table : ${dashboard.tableStats}">
+                            <td class="px-6 py-4 whitespace-nowrap font-mono text-sm" th:text="${table.tableName}">table_name</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm" th:text="${#numbers.formatInteger(table.rowCount, 0, 'COMMA')}">0</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm" th:classappend="${table.deadTuples > 1000} ? 'text-red-600' : ''"
+                                th:text="${#numbers.formatInteger(table.deadTuples, 0, 'COMMA')}">0</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" th:text="${table.totalSize}">0 KB</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" th:text="${table.lastVacuum != null ? table.lastVacuum : 'Never'}">Never</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Active Queries -->
+        <div class="bg-white rounded-lg shadow">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-900">Active Queries</h2>
+            </div>
+            <div th:if="${#lists.isEmpty(activeQueries)}" class="p-6 text-center text-gray-500">
+                No active queries
+            </div>
+            <div th:unless="${#lists.isEmpty(activeQueries)}" class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">PID</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Duration</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Query</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <tr th:each="query : ${activeQueries}">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm" th:text="${query.pid}">1234</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm" th:text="${query.username}">postgres</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm" th:classappend="${query.durationSeconds > 5} ? 'text-red-600 font-semibold' : ''"
+                                th:text="${#numbers.formatDecimal(query.durationSeconds, 0, 'COMMA', 2, 'POINT')} + 's'">0.00s</td>
+                            <td class="px-6 py-4 text-sm font-mono text-gray-500 max-w-md truncate" th:text="${query.query}">SELECT...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Slow Query Candidates -->
+        <div class="bg-white rounded-lg shadow">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-900">Slow Query Candidates</h2>
+                <p class="text-sm text-gray-500 mt-1">Tables with high sequential scan counts may benefit from indexes</p>
+            </div>
+            <div th:if="${#lists.isEmpty(slowQueryCandidates)}" class="p-6 text-center text-gray-500">
+                No slow query candidates detected
+            </div>
+            <div th:unless="${#lists.isEmpty(slowQueryCandidates)}" class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Table</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Seq Scans</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Seq Rows Read</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Index Scans</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Avg Rows/Scan</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <tr th:each="slow : ${slowQueryCandidates}">
+                            <td class="px-6 py-4 whitespace-nowrap font-mono text-sm" th:text="${slow.tableName}">table_name</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm" th:text="${#numbers.formatInteger(slow.seqScans, 0, 'COMMA')}">0</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm" th:text="${#numbers.formatInteger(slow.seqTuplesRead, 0, 'COMMA')}">0</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm" th:text="${#numbers.formatInteger(slow.indexScans, 0, 'COMMA')}">0</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm" th:classappend="${slow.avgSeqTuplesRead > 1000} ? 'text-red-600 font-semibold' : ''"
+                                th:text="${#numbers.formatInteger(slow.avgSeqTuplesRead, 0, 'COMMA')}">0</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</main>
+</body>
+</html>

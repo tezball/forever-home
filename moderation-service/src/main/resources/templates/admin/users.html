@@ -19,6 +19,12 @@
         <div th:if="${error}" class="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg">
             <span th:text="${error}"></span>
         </div>
+        <div th:if="${bulkErrors}" class="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-lg">
+            <div class="font-medium mb-2">Some operations failed:</div>
+            <ul class="list-disc list-inside text-sm">
+                <li th:each="err : ${bulkErrors}" th:text="${err}"></li>
+            </ul>
+        </div>
 
         <!-- Search and Filters -->
         <div class="bg-white rounded-lg shadow p-4">
@@ -48,12 +54,63 @@
             </form>
         </div>
 
+        <!-- Bulk Actions Bar (Hidden by default, shown when users selected) -->
+        <div id="bulk-actions-bar" class="hidden bg-primary/10 border border-primary/30 rounded-lg p-4">
+            <div class="flex flex-wrap items-center justify-between gap-4">
+                <div class="flex items-center gap-2">
+                    <span class="text-sm font-medium text-primary">
+                        <span id="selected-count">0</span> users selected
+                    </span>
+                    <button type="button" onclick="deselectAll()" class="text-sm text-primary/70 hover:text-primary underline">
+                        Deselect all
+                    </button>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <form th:action="@{/admin/users/bulk/suspend}" method="post" class="inline">
+                        <input type="hidden" name="userIds" id="bulk-suspend-ids">
+                        <button type="submit" onclick="return confirmBulk('suspend')"
+                                class="px-3 py-1.5 bg-yellow-600 text-white text-sm rounded hover:bg-yellow-700">
+                            Suspend Selected
+                        </button>
+                    </form>
+                    <form th:action="@{/admin/users/bulk/reactivate}" method="post" class="inline">
+                        <input type="hidden" name="userIds" id="bulk-reactivate-ids">
+                        <button type="submit" onclick="return confirmBulk('reactivate')"
+                                class="px-3 py-1.5 bg-green-600 text-white text-sm rounded hover:bg-green-700">
+                            Reactivate Selected
+                        </button>
+                    </form>
+                    <form th:action="@{/admin/users/bulk/change-role}" method="post" class="inline flex items-center gap-2">
+                        <input type="hidden" name="userIds" id="bulk-role-ids">
+                        <select name="newRole" class="px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-primary">
+                            <option th:each="r : ${roles}" th:value="${r}" th:text="${r}"></option>
+                        </select>
+                        <button type="submit" onclick="return confirmBulk('change role for')"
+                                class="px-3 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
+                            Change Role
+                        </button>
+                    </form>
+                    <form th:action="@{/admin/users/bulk/delete}" method="post" class="inline">
+                        <input type="hidden" name="userIds" id="bulk-delete-ids">
+                        <button type="submit" onclick="return confirmBulk('PERMANENTLY DELETE')"
+                                class="px-3 py-1.5 bg-red-600 text-white text-sm rounded hover:bg-red-700">
+                            Delete Selected
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
         <!-- Users Table (Desktop) -->
         <div class="hidden md:block bg-white rounded-lg shadow overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
                         <tr>
+                            <th class="px-4 py-3 text-left">
+                                <input type="checkbox" id="select-all" onclick="toggleSelectAll()"
+                                       class="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary">
+                            </th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
@@ -63,13 +120,19 @@
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
                         <tr th:each="user : ${users}" class="hover:bg-gray-50">
+                            <td class="px-4 py-4">
+                                <input type="checkbox" class="user-checkbox w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
+                                       th:value="${user.id}" th:data-role="${user.role}"
+                                       th:disabled="${user.role.name() == 'ADMIN' or user.role.name() == 'SUPER_ADMIN'}"
+                                       onclick="updateBulkSelection()">
+                            </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="font-medium text-gray-900" th:text="${user.displayName}">Name</div>
                                 <div class="text-sm text-gray-500" th:text="${user.email}">email@example.com</div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <span class="px-2 py-1 text-xs font-medium rounded-full"
-                                      th:classappend="${user.role.name() == 'ADMIN'} ? 'bg-purple-100 text-purple-800' :
+                                      th:classappend="${user.role.name() == 'ADMIN' or user.role.name() == 'SUPER_ADMIN'} ? 'bg-purple-100 text-purple-800' :
                                                       (${user.role.name() == 'RESCUE_ORG'} ? 'bg-blue-100 text-blue-800' :
                                                       (${user.role.name() == 'VET'} ? 'bg-green-100 text-green-800' :
                                                       (${user.role.name() == 'FOSTER'} ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800')))"
@@ -92,7 +155,7 @@
                             </td>
                         </tr>
                         <tr th:if="${#lists.isEmpty(users)}">
-                            <td colspan="5" class="px-6 py-8 text-center text-gray-500">No users found</td>
+                            <td colspan="6" class="px-6 py-8 text-center text-gray-500">No users found</td>
                         </tr>
                     </tbody>
                 </table>
@@ -102,30 +165,38 @@
         <!-- Users Cards (Mobile) -->
         <div class="md:hidden space-y-4">
             <div th:each="user : ${users}" class="bg-white rounded-lg shadow p-4">
-                <div class="flex justify-between items-start mb-3">
-                    <div>
-                        <div class="font-medium text-gray-900" th:text="${user.displayName}">Name</div>
-                        <div class="text-sm text-gray-500" th:text="${user.email}">email@example.com</div>
+                <div class="flex items-start gap-3">
+                    <input type="checkbox" class="user-checkbox-mobile w-4 h-4 mt-1 text-primary border-gray-300 rounded focus:ring-primary"
+                           th:value="${user.id}" th:data-role="${user.role}"
+                           th:disabled="${user.role.name() == 'ADMIN' or user.role.name() == 'SUPER_ADMIN'}"
+                           onclick="updateBulkSelection()">
+                    <div class="flex-1">
+                        <div class="flex justify-between items-start mb-3">
+                            <div>
+                                <div class="font-medium text-gray-900" th:text="${user.displayName}">Name</div>
+                                <div class="text-sm text-gray-500" th:text="${user.email}">email@example.com</div>
+                            </div>
+                            <span class="px-2 py-1 text-xs font-medium rounded-full"
+                                  th:classappend="${user.role.name() == 'ADMIN' or user.role.name() == 'SUPER_ADMIN'} ? 'bg-purple-100 text-purple-800' :
+                                                  (${user.role.name() == 'RESCUE_ORG'} ? 'bg-blue-100 text-blue-800' :
+                                                  (${user.role.name() == 'VET'} ? 'bg-green-100 text-green-800' :
+                                                  (${user.role.name() == 'FOSTER'} ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800')))"
+                                  th:text="${user.role}">ROLE</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <span class="px-2 py-1 text-xs font-medium rounded-full"
+                                      th:classappend="${user.status.name() == 'ACTIVE'} ? 'bg-green-100 text-green-800' :
+                                                      (${user.status.name() == 'PENDING'} ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800')"
+                                      th:text="${user.status}">STATUS</span>
+                                <span th:if="${user.profileComplete}" class="text-xs text-green-600">Profile</span>
+                                <span th:unless="${user.profileComplete}" class="text-xs text-gray-400">Incomplete</span>
+                            </div>
+                            <a th:href="@{/admin/users/{id}(id=${user.id})}" class="text-primary text-sm font-medium hover:underline">
+                                View
+                            </a>
+                        </div>
                     </div>
-                    <span class="px-2 py-1 text-xs font-medium rounded-full"
-                          th:classappend="${user.role.name() == 'ADMIN'} ? 'bg-purple-100 text-purple-800' :
-                                          (${user.role.name() == 'RESCUE_ORG'} ? 'bg-blue-100 text-blue-800' :
-                                          (${user.role.name() == 'VET'} ? 'bg-green-100 text-green-800' :
-                                          (${user.role.name() == 'FOSTER'} ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800')))"
-                          th:text="${user.role}">ROLE</span>
-                </div>
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-3">
-                        <span class="px-2 py-1 text-xs font-medium rounded-full"
-                              th:classappend="${user.status.name() == 'ACTIVE'} ? 'bg-green-100 text-green-800' :
-                                              (${user.status.name() == 'PENDING'} ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800')"
-                              th:text="${user.status}">STATUS</span>
-                        <span th:if="${user.profileComplete}" class="text-xs text-green-600">✓ Profile</span>
-                        <span th:unless="${user.profileComplete}" class="text-xs text-gray-400">○ Incomplete</span>
-                    </div>
-                    <a th:href="@{/admin/users/{id}(id=${user.id})}" class="text-primary text-sm font-medium hover:underline">
-                        View →
-                    </a>
                 </div>
             </div>
             <div th:if="${#lists.isEmpty(users)}" class="bg-white rounded-lg shadow p-8 text-center text-gray-500">
@@ -146,6 +217,62 @@
             </a>
         </div>
     </div>
+
+    <script>
+        function getSelectedIds() {
+            const checkboxes = document.querySelectorAll('.user-checkbox:checked, .user-checkbox-mobile:checked');
+            return Array.from(checkboxes).map(cb => cb.value);
+        }
+
+        function updateBulkSelection() {
+            const selectedIds = getSelectedIds();
+            const bulkBar = document.getElementById('bulk-actions-bar');
+            const selectedCount = document.getElementById('selected-count');
+
+            if (selectedIds.length > 0) {
+                bulkBar.classList.remove('hidden');
+                selectedCount.textContent = selectedIds.length;
+
+                // Update hidden form fields
+                const idString = selectedIds.join(',');
+                document.getElementById('bulk-suspend-ids').value = idString;
+                document.getElementById('bulk-reactivate-ids').value = idString;
+                document.getElementById('bulk-role-ids').value = idString;
+                document.getElementById('bulk-delete-ids').value = idString;
+            } else {
+                bulkBar.classList.add('hidden');
+            }
+
+            // Update select-all checkbox state
+            const allCheckboxes = document.querySelectorAll('.user-checkbox:not(:disabled)');
+            const selectAll = document.getElementById('select-all');
+            if (selectAll) {
+                selectAll.checked = allCheckboxes.length > 0 &&
+                    Array.from(allCheckboxes).every(cb => cb.checked);
+                selectAll.indeterminate = selectedIds.length > 0 &&
+                    !Array.from(allCheckboxes).every(cb => cb.checked);
+            }
+        }
+
+        function toggleSelectAll() {
+            const selectAll = document.getElementById('select-all');
+            const checkboxes = document.querySelectorAll('.user-checkbox:not(:disabled)');
+            checkboxes.forEach(cb => cb.checked = selectAll.checked);
+            updateBulkSelection();
+        }
+
+        function deselectAll() {
+            document.querySelectorAll('.user-checkbox, .user-checkbox-mobile').forEach(cb => cb.checked = false);
+            const selectAll = document.getElementById('select-all');
+            if (selectAll) selectAll.checked = false;
+            updateBulkSelection();
+        }
+
+        function confirmBulk(action) {
+            const count = getSelectedIds().length;
+            return confirm(`Are you sure you want to ${action} ${count} user(s)?`);
+        }
+    </script>
 </main>
 </body>
 </html>

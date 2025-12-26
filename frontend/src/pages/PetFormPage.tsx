@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Button, Input, Select, ImageUpload, Textarea, Breadcrumb, Combobox } from '../components';
+import { Button, Input, Select, ImageUpload, Textarea, Breadcrumb, Combobox, HelpIcon, PhotoTips } from '../components';
 import { useAuth } from '../contexts/AuthContext';
 import type { Pet, PetImage, Species, PetSize, PetSex, AgeUnit, CreatePetRequest, Breed } from '../types';
 import apiClient from '../api/client';
@@ -328,17 +328,49 @@ export function PetFormPage() {
                 required
               />
 
-              <Input
-                label="Microchip ID"
-                name="microchipId"
-                value={formData.microchipId}
-                onChange={handleChange}
-                error={errors.microchipId}
-                placeholder="Enter microchip ID"
-                disabled={isEditing}
-                hint="Required for vet verification"
-                required
-              />
+              <div className="relative">
+                <div className="flex items-center gap-1 mb-1">
+                  <label htmlFor="microchipId" className="block text-sm font-medium text-gray-700">
+                    Microchip ID<span className="text-error-500 ml-0.5">*</span>
+                  </label>
+                  <HelpIcon title="Why is a microchip required?">
+                    <div className="space-y-3">
+                      <p>
+                        A microchip is a small electronic chip implanted under your pet's skin that contains a unique identification number.
+                      </p>
+                      <h4 className="font-semibold text-gray-900">Why we require it:</h4>
+                      <ul className="list-disc pl-4 space-y-1">
+                        <li><strong>Vet verification:</strong> Vets use the microchip to look up your pet and confirm their identity during the health check.</li>
+                        <li><strong>Ownership tracking:</strong> Ensures the pet can be traced back to you as the registered owner.</li>
+                        <li><strong>Safety:</strong> If the pet ever gets lost, they can be identified and returned.</li>
+                      </ul>
+                      <div className="bg-blue-50 p-3 rounded-lg mt-2">
+                        <p className="text-sm text-blue-800">
+                          <strong>Don't have a microchip?</strong> Contact your vet to have one implanted. It's a quick, safe procedure similar to a vaccination.
+                        </p>
+                      </div>
+                    </div>
+                  </HelpIcon>
+                </div>
+                <input
+                  id="microchipId"
+                  name="microchipId"
+                  type="text"
+                  value={formData.microchipId}
+                  onChange={handleChange}
+                  placeholder="Enter microchip ID (e.g., 900123456789012)"
+                  disabled={isEditing}
+                  required
+                  className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                    errors.microchipId ? 'border-error-500' : 'border-gray-300'
+                  }`}
+                />
+                {errors.microchipId ? (
+                  <p className="mt-1 text-sm text-error-500">{errors.microchipId}</p>
+                ) : (
+                  <p className="mt-1 text-sm text-gray-500">Required for vet verification</p>
+                )}
+              </div>
             </div>
           </div>
 
@@ -374,6 +406,7 @@ export function PetFormPage() {
           {petId && (
             <div className="card p-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Photos</h2>
+              <PhotoTips variant="expandable" />
               <ImageUpload
                 petId={petId}
                 images={images}

@@ -8,6 +8,8 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 
 @Controller
@@ -105,5 +107,103 @@ public class AdminUsersController {
             redirectAttributes.addFlashAttribute("error", "Failed to delete user: " + e.getMessage());
             return "redirect:/admin/users/" + id;
         }
+    }
+
+    // ========== Role Management ==========
+
+    @PostMapping("/{id}/change-role")
+    public String changeRole(@PathVariable UUID id,
+                             @RequestParam UserRole newRole,
+                             RedirectAttributes redirectAttributes) {
+        try {
+            userService.changeUserRole(id, newRole);
+            redirectAttributes.addFlashAttribute("success", "Role changed to " + newRole + " successfully");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Failed to change role: " + e.getMessage());
+        }
+        return "redirect:/admin/users/" + id;
+    }
+
+    // ========== Bulk Operations ==========
+
+    @PostMapping("/bulk/suspend")
+    public String bulkSuspend(@RequestParam String userIds, RedirectAttributes redirectAttributes) {
+        List<UUID> ids = parseUserIds(userIds);
+        if (ids.isEmpty()) {
+            redirectAttributes.addFlashAttribute("error", "No users selected");
+            return "redirect:/admin/users";
+        }
+
+        var result = userService.bulkSuspend(ids);
+        redirectAttributes.addFlashAttribute("success",
+                "Bulk suspend: " + result.successCount() + " succeeded, " + result.failedCount() + " failed");
+        if (!result.errors().isEmpty()) {
+            redirectAttributes.addFlashAttribute("bulkErrors", result.errors());
+        }
+        return "redirect:/admin/users";
+    }
+
+    @PostMapping("/bulk/reactivate")
+    public String bulkReactivate(@RequestParam String userIds, RedirectAttributes redirectAttributes) {
+        List<UUID> ids = parseUserIds(userIds);
+        if (ids.isEmpty()) {
+            redirectAttributes.addFlashAttribute("error", "No users selected");
+            return "redirect:/admin/users";
+        }
+
+        var result = userService.bulkReactivate(ids);
+        redirectAttributes.addFlashAttribute("success",
+                "Bulk reactivate: " + result.successCount() + " succeeded, " + result.failedCount() + " failed");
+        if (!result.errors().isEmpty()) {
+            redirectAttributes.addFlashAttribute("bulkErrors", result.errors());
+        }
+        return "redirect:/admin/users";
+    }
+
+    @PostMapping("/bulk/delete")
+    public String bulkDelete(@RequestParam String userIds, RedirectAttributes redirectAttributes) {
+        List<UUID> ids = parseUserIds(userIds);
+        if (ids.isEmpty()) {
+            redirectAttributes.addFlashAttribute("error", "No users selected");
+            return "redirect:/admin/users";
+        }
+
+        var result = userService.bulkDelete(ids);
+        redirectAttributes.addFlashAttribute("success",
+                "Bulk delete: " + result.successCount() + " succeeded, " + result.failedCount() + " failed");
+        if (!result.errors().isEmpty()) {
+            redirectAttributes.addFlashAttribute("bulkErrors", result.errors());
+        }
+        return "redirect:/admin/users";
+    }
+
+    @PostMapping("/bulk/change-role")
+    public String bulkChangeRole(@RequestParam String userIds,
+                                 @RequestParam UserRole newRole,
+                                 RedirectAttributes redirectAttributes) {
+        List<UUID> ids = parseUserIds(userIds);
+        if (ids.isEmpty()) {
+            redirectAttributes.addFlashAttribute("error", "No users selected");
+            return "redirect:/admin/users";
+        }
+
+        var result = userService.bulkChangeRole(ids, newRole);
+        redirectAttributes.addFlashAttribute("success",
+                "Bulk role change to " + newRole + ": " + result.successCount() + " succeeded, " + result.failedCount() + " failed");
+        if (!result.errors().isEmpty()) {
+            redirectAttributes.addFlashAttribute("bulkErrors", result.errors());
+        }
+        return "redirect:/admin/users";
+    }
+
+    private List<UUID> parseUserIds(String userIds) {
+        if (userIds == null || userIds.isBlank()) {
+            return List.of();
+        }
+        return Arrays.stream(userIds.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .map(UUID::fromString)
+                .toList();
     }
 }

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { Button, PetCard, Modal } from '../../components';
+import { Button, PetCard, Modal, StatusBadge, HelpIcon } from '../../components';
 import type { Pet, RescueOrganization } from '../../types';
 import apiClient from '../../api/client';
 import { formatBreed } from '../../utils';
@@ -144,7 +144,40 @@ export function FosterDashboard() {
     <div className="container-app py-8">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Foster Dashboard</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-3xl font-bold text-gray-900">Foster Dashboard</h1>
+            <HelpIcon title="Understanding Pet Statuses" size="md">
+              <div className="space-y-4">
+                <p>Your pets move through several stages on their journey to finding a forever home:</p>
+                <div className="space-y-3">
+                  <div className="flex items-start gap-3">
+                    <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-gray-100 text-gray-800 flex-shrink-0">Draft</span>
+                    <p className="text-sm">Saved but not yet submitted. Add photos and details, then submit for review.</p>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800 flex-shrink-0">Pending Rescue</span>
+                    <p className="text-sm">Awaiting rescue organization review. They'll accept or request changes.</p>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 flex-shrink-0">Pending Vet</span>
+                    <p className="text-sm">Accepted by rescue. Take your pet to an approved vet for verification.</p>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-green-100 text-green-800 flex-shrink-0">Available</span>
+                    <p className="text-sm">Verified and listed! Adopters can now view and apply to adopt.</p>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-purple-100 text-purple-800 flex-shrink-0">In Progress</span>
+                    <p className="text-sm">An adopter has been approved. Coordinate the handoff with the rescue.</p>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-primary-100 text-primary-800 flex-shrink-0">Adopted</span>
+                    <p className="text-sm">Congratulations! Your pet found their forever home.</p>
+                  </div>
+                </div>
+              </div>
+            </HelpIcon>
+          </div>
           <p className="text-gray-600">Welcome back, {user?.name}</p>
         </div>
         <Link to="/foster/pets/new">
@@ -241,7 +274,7 @@ export function FosterDashboard() {
                       <div className="p-4">
                         <div className="flex justify-between items-start mb-2">
                           <h3 className="text-lg font-semibold text-gray-900">{pet.name}</h3>
-                          <span className="status-badge bg-gray-100 text-gray-800">Draft</span>
+                          <StatusBadge status="DRAFT" />
                         </div>
                         <p className="text-sm text-gray-500 mb-2">
                           {formatBreed(pet.breed) || pet.species} • {pet.age} {pet.ageUnit.toLowerCase()} • {pet.sex.toLowerCase()}
@@ -297,7 +330,7 @@ export function FosterDashboard() {
                       <div className="p-4">
                         <div className="flex justify-between items-start mb-2">
                           <h3 className="text-lg font-semibold text-gray-900">{pet.name}</h3>
-                          <span className="status-badge bg-yellow-100 text-yellow-800">Pending Rescue</span>
+                          <StatusBadge status="PENDING_RESCUE" />
                         </div>
                         <p className="text-sm text-gray-500 mb-2">
                           {formatBreed(pet.breed) || pet.species} • {pet.age} {pet.ageUnit.toLowerCase()} • {pet.sex.toLowerCase()}

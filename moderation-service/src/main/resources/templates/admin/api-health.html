@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout(~{::title}, ~{::main})}">
+<head>
+    <title th:text="${pageTitle}">API Health</title>
+</head>
+<body>
+<main th:fragment="content">
+    <div class="space-y-6">
+        <!-- Page Header -->
+        <div class="flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-gray-900">API Health Dashboard</h1>
+            <a th:href="@{/admin/api-health/refresh}" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 text-sm">
+                Refresh
+            </a>
+        </div>
+
+        <!-- Overall Status -->
+        <div th:class="'rounded-lg shadow p-6 ' + (${dashboard.overallStatus == 'UP'} ? 'bg-green-50 border-2 border-green-200' : (${dashboard.overallStatus == 'DEGRADED'} ? 'bg-yellow-50 border-2 border-yellow-200' : 'bg-red-50 border-2 border-red-200'))">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-lg font-semibold" th:classappend="${dashboard.overallStatus == 'UP'} ? 'text-green-800' : (${dashboard.overallStatus == 'DEGRADED'} ? 'text-yellow-800' : 'text-red-800')">
+                        System Status: <span th:text="${dashboard.overallStatus}">UP</span>
+                    </h2>
+                    <p class="text-sm mt-1" th:classappend="${dashboard.overallStatus == 'UP'} ? 'text-green-600' : (${dashboard.overallStatus == 'DEGRADED'} ? 'text-yellow-600' : 'text-red-600')">
+                        Last checked: <span th:text="${#temporals.format(dashboard.checkedAt, 'yyyy-MM-dd HH:mm:ss')}">...</span>
+                    </p>
+                </div>
+                <div class="text-right">
+                    <div class="text-3xl font-bold" th:classappend="${dashboard.overallStatus == 'UP'} ? 'text-green-600' : (${dashboard.overallStatus == 'DEGRADED'} ? 'text-yellow-600' : 'text-red-600')"
+                         th:text="${#numbers.formatDecimal(dashboard.uptimePercent, 0, 'COMMA', 1, 'POINT')} + '%'">100%</div>
+                    <div class="text-sm opacity-70">Uptime</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="text-sm text-gray-500">Healthy Services</div>
+                <div class="text-3xl font-bold text-green-600" th:text="${dashboard.healthyCount}">0</div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="text-sm text-gray-500">Unhealthy Services</div>
+                <div class="text-3xl font-bold" th:classappend="${dashboard.unhealthyCount > 0} ? 'text-red-600' : 'text-gray-400'"
+                     th:text="${dashboard.unhealthyCount}">0</div>
+            </div>
+        </div>
+
+        <!-- Health Checks Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div th:each="check : ${dashboard.checks}"
+                 th:class="'rounded-lg shadow p-6 ' + (${check.status == 'UP'} ? 'bg-white border-l-4 border-green-500' : 'bg-red-50 border-l-4 border-red-500')">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h3 class="font-semibold text-gray-900" th:text="${check.name}">Service Name</h3>
+                        <p class="text-sm text-gray-500 font-mono" th:text="${check.key}">service-key</p>
+                    </div>
+                    <span th:class="'px-3 py-1 rounded-full text-sm font-semibold ' + (${check.status == 'UP'} ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800')"
+                          th:text="${check.status}">UP</span>
+                </div>
+                <div class="mt-4 flex items-center justify-between">
+                    <div class="text-sm text-gray-500">
+                        Response Time: <span class="font-semibold" th:classappend="${check.responseTimeMs > 1000} ? 'text-red-600' : 'text-gray-700'"
+                                             th:text="${check.responseTimeMs} + 'ms'">0ms</span>
+                    </div>
+                    <div th:if="${check.healthy}" class="flex items-center text-green-600">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                        </svg>
+                    </div>
+                    <div th:unless="${check.healthy}" class="flex items-center text-red-600">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                        </svg>
+                    </div>
+                </div>
+                <div th:if="${check.error}" class="mt-3 p-2 bg-red-100 rounded text-sm text-red-700 font-mono">
+                    <span th:text="${check.error}">Error message</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Individual Health Checks</h3>
+            <div class="flex flex-wrap gap-2">
+                <a th:href="@{/admin/api-health/check/main-app}" target="_blank"
+                   class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm">
+                    Check Main App
+                </a>
+                <a th:href="@{/admin/api-health/check/database}" target="_blank"
+                   class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm">
+                    Check Database
+                </a>
+                <a th:href="@{/admin/api-health/check/s3}" target="_blank"
+                   class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm">
+                    Check S3
+                </a>
+                <a th:href="@{/admin/api-health/check/ollama}" target="_blank"
+                   class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm">
+                    Check Ollama
+                </a>
+                <a th:href="@{/admin/api-health/json}" target="_blank"
+                   class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 text-sm">
+                    View JSON
+                </a>
+            </div>
+        </div>
+    </div>
+</main>
+</body>
+</html>

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { Button, Input, Modal } from '../../components';
+import { Button, Input, Modal, HelpIcon } from '../../components';
 import type { Pet } from '../../types';
 import apiClient from '../../api/client';
 import { formatBreed, formatRelativeTime } from '../../utils';
@@ -358,14 +358,32 @@ export function VetDashboard() {
 
       {/* Microchip Lookup */}
       <div className="card p-6 mb-8">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Pet Lookup</h2>
+        <div className="flex items-center gap-2 mb-4">
+          <h2 className="text-xl font-semibold text-gray-900">Pet Lookup</h2>
+          <HelpIcon title="Microchip Lookup Help">
+            <div className="space-y-3">
+              <p>Use the microchip number to find pets awaiting your verification.</p>
+              <h4 className="font-semibold text-gray-900">Common Issues:</h4>
+              <ul className="list-disc pl-4 space-y-1">
+                <li><strong>"No pet found":</strong> Double-check the microchip number. Ensure you're reading the scanner correctly.</li>
+                <li><strong>"Not approved":</strong> You need approval from the pet's rescue organization. Request approval from the Approvals page.</li>
+                <li><strong>"Already verified":</strong> This pet has already been signed off by a vet.</li>
+              </ul>
+              <div className="bg-blue-50 p-3 rounded-lg mt-2">
+                <p className="text-sm text-blue-800">
+                  <strong>Tip:</strong> Most microchips are 15 digits. If your scanner shows fewer digits, check for leading zeros.
+                </p>
+              </div>
+            </div>
+          </HelpIcon>
+        </div>
         <p className="text-gray-600 mb-6">
           Enter a pet's microchip ID to look up their information and provide a health sign-off.
         </p>
         <form onSubmit={handleSearch} className="flex gap-4">
           <div className="flex-1">
             <Input
-              placeholder="Enter microchip ID (e.g., MC123456)"
+              placeholder="Enter microchip ID (e.g., 900123456789012)"
               value={microchipId}
               onChange={(e) => setMicrochipId(e.target.value)}
             />
@@ -467,35 +485,47 @@ export function VetDashboard() {
           </p>
 
           <div className="space-y-3">
-            <label className="flex items-center gap-3 cursor-pointer">
+            <div className="flex items-start gap-3">
               <input
                 type="checkbox"
+                id="neutered"
                 checked={isNeutered}
                 onChange={(e) => setIsNeutered(e.target.checked)}
-                className="w-5 h-5 rounded border-gray-300 text-primary-500 focus:ring-primary-500"
+                className="w-5 h-5 mt-0.5 rounded border-gray-300 text-primary-500 focus:ring-primary-500"
               />
-              <span className="text-gray-700">Neutered/Spayed</span>
-            </label>
+              <div>
+                <label htmlFor="neutered" className="text-gray-700 font-medium cursor-pointer">Neutered/Spayed</label>
+                <p className="text-xs text-gray-500">Confirm the pet has been surgically sterilized.</p>
+              </div>
+            </div>
 
-            <label className="flex items-center gap-3 cursor-pointer">
+            <div className="flex items-start gap-3">
               <input
                 type="checkbox"
+                id="vaccinated"
                 checked={isVaccinated}
                 onChange={(e) => setIsVaccinated(e.target.checked)}
-                className="w-5 h-5 rounded border-gray-300 text-primary-500 focus:ring-primary-500"
+                className="w-5 h-5 mt-0.5 rounded border-gray-300 text-primary-500 focus:ring-primary-500"
               />
-              <span className="text-gray-700">Up-to-date on vaccinations</span>
-            </label>
+              <div>
+                <label htmlFor="vaccinated" className="text-gray-700 font-medium cursor-pointer">Up-to-date on vaccinations</label>
+                <p className="text-xs text-gray-500">Core vaccines (rabies, distemper, parvovirus for dogs; FVRCP for cats).</p>
+              </div>
+            </div>
 
-            <label className="flex items-center gap-3 cursor-pointer">
+            <div className="flex items-start gap-3">
               <input
                 type="checkbox"
+                id="healthy"
                 checked={isHealthy}
                 onChange={(e) => setIsHealthy(e.target.checked)}
-                className="w-5 h-5 rounded border-gray-300 text-primary-500 focus:ring-primary-500"
+                className="w-5 h-5 mt-0.5 rounded border-gray-300 text-primary-500 focus:ring-primary-500"
               />
-              <span className="text-gray-700">No major health concerns</span>
-            </label>
+              <div>
+                <label htmlFor="healthy" className="text-gray-700 font-medium cursor-pointer">No major health concerns</label>
+                <p className="text-xs text-gray-500">No conditions that would prevent a safe adoption. Minor, manageable conditions are OK.</p>
+              </div>
+            </div>
           </div>
 
           <div>

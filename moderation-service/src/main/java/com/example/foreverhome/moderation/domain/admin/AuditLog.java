@@ -106,18 +106,46 @@ public class AuditLog implements Persistable<UUID> {
     }
 
     public enum AuditAction {
+        // User actions
         USER_CREATED,
         USER_ACTIVATED,
         USER_SUSPENDED,
         USER_REACTIVATED,
         USER_PASSWORD_RESET,
         USER_DELETED,
+        USER_ROLE_CHANGED,
+        USER_BULK_ACTION,
+
+        // Rescue org actions
         RESCUE_ORG_APPROVED,
         RESCUE_ORG_REJECTED,
+
+        // Content actions
         CONTENT_FLAG_APPROVED,
         CONTENT_FLAG_DISMISSED,
         PET_REMOVED,
         MODERATION_RESET,
-        SETTINGS_CHANGED
+
+        // Settings actions
+        SETTINGS_CHANGED,
+        PLATFORM_SETTING_UPDATED,
+
+        // Feature flag actions
+        FEATURE_FLAG_CREATED,
+        FEATURE_FLAG_TOGGLED,
+        FEATURE_FLAG_UPDATED,
+        FEATURE_FLAG_DELETED,
+
+        // IP blocking actions
+        IP_BLOCKED,
+        IP_UNBLOCKED,
+
+        // Session actions
+        SESSION_REVOKED,
+        ALL_SESSIONS_REVOKED,
+
+        // Impersonation actions
+        IMPERSONATION_STARTED,
+        IMPERSONATION_ENDED
     }
 }

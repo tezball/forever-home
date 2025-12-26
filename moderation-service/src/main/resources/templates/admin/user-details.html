@@ -16,6 +16,16 @@
                 </a>
                 <h1 class="text-2xl font-bold text-gray-900">User Details</h1>
             </div>
+            <!-- Impersonation Button (not for admins) -->
+            <a th:if="${user.role.name() != 'ADMIN' and user.role.name() != 'SUPER_ADMIN'}"
+               th:href="@{/admin/impersonation(targetUserId=${user.id})}"
+               class="inline-flex items-center px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                </svg>
+                View as User
+            </a>
         </div>
 
         <!-- Flash Messages -->
@@ -45,7 +55,7 @@
                         <label class="block text-sm font-medium text-gray-500">Role</label>
                         <div class="mt-1">
                             <span class="px-3 py-1 text-sm font-medium rounded-full"
-                                  th:classappend="${user.role.name() == 'ADMIN'} ? 'bg-purple-100 text-purple-800' :
+                                  th:classappend="${user.role.name() == 'ADMIN' or user.role.name() == 'SUPER_ADMIN'} ? 'bg-purple-100 text-purple-800' :
                                                   (${user.role.name() == 'RESCUE_ORG'} ? 'bg-blue-100 text-blue-800' :
                                                   (${user.role.name() == 'VET'} ? 'bg-green-100 text-green-800' :
                                                   (${user.role.name() == 'FOSTER'} ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800')))"
@@ -84,8 +94,37 @@
             </div>
         </div>
 
+        <!-- Role Management Card -->
+        <div class="bg-white rounded-lg shadow" th:if="${user.role.name() != 'ADMIN' and user.role.name() != 'SUPER_ADMIN'}">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-900">Role Management</h2>
+            </div>
+            <div class="p-6">
+                <form th:action="@{/admin/users/{id}/change-role(id=${user.id})}" method="post" class="flex flex-wrap items-end gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Change Role</label>
+                        <select name="newRole" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
+                            <option value="ADOPTER" th:selected="${user.role.name() == 'ADOPTER'}">ADOPTER</option>
+                            <option value="FOSTER" th:selected="${user.role.name() == 'FOSTER'}">FOSTER</option>
+                            <option value="VET" th:selected="${user.role.name() == 'VET'}">VET</option>
+                            <option value="RESCUE_ORG" th:selected="${user.role.name() == 'RESCUE_ORG'}">RESCUE_ORG</option>
+                            <option value="ADMIN" th:selected="${user.role.name() == 'ADMIN'}">ADMIN</option>
+                        </select>
+                    </div>
+                    <button type="submit" onclick="return confirm('Are you sure you want to change this user\\'s role? This may affect their access permissions.')"
+                            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                        Update Role
+                    </button>
+                </form>
+                <p class="mt-3 text-sm text-gray-500">
+                    Note: Changing a user's role may affect their access to certain features and data.
+                    Role changes are logged in the audit trail.
+                </p>
+            </div>
+        </div>
+
         <!-- Actions Card -->
-        <div class="bg-white rounded-lg shadow" th:if="${user.role.name() != 'ADMIN'}">
+        <div class="bg-white rounded-lg shadow" th:if="${user.role.name() != 'ADMIN' and user.role.name() != 'SUPER_ADMIN'}">
             <div class="px-6 py-4 border-b border-gray-200">
                 <h2 class="text-lg font-semibold text-gray-900">Actions</h2>
             </div>
@@ -112,6 +151,27 @@
                     </form>
                 </div>
 
+                <!-- Quick Links -->
+                <div class="pt-4 border-t border-gray-200">
+                    <h3 class="text-sm font-medium text-gray-700 mb-3">Quick Actions</h3>
+                    <div class="flex flex-wrap gap-3">
+                        <a th:href="@{/admin/sessions(userId=${user.id})}"
+                           class="inline-flex items-center px-3 py-1.5 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 text-sm">
+                            <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                            </svg>
+                            View Sessions
+                        </a>
+                        <a th:href="@{/admin/audit(entityId=${user.id})}"
+                           class="inline-flex items-center px-3 py-1.5 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 text-sm">
+                            <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                            Audit History
+                        </a>
+                    </div>
+                </div>
+
                 <!-- Danger Zone -->
                 <div class="pt-4 border-t border-gray-200">
                     <h3 class="text-sm font-medium text-red-600 mb-4">Danger Zone</h3>
@@ -126,8 +186,19 @@
         </div>
 
         <!-- Admin Notice -->
-        <div th:if="${user.role.name() == 'ADMIN'}" class="bg-purple-50 border border-purple-200 text-purple-800 px-4 py-3 rounded-lg">
-            Admin accounts cannot be modified or deleted through this interface.
+        <div th:if="${user.role.name() == 'ADMIN' or user.role.name() == 'SUPER_ADMIN'}" class="bg-purple-50 border border-purple-200 text-purple-800 px-4 py-3 rounded-lg">
+            <div class="flex items-start">
+                <svg class="w-5 h-5 text-purple-400 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                </svg>
+                <div class="ml-3">
+                    <h3 class="text-sm font-medium">Admin Account</h3>
+                    <p class="text-sm mt-1">
+                        Admin and Super Admin accounts cannot be modified, suspended, or deleted through this interface
+                        for security reasons.
+                    </p>
+                </div>
+            </div>
         </div>
     </div>
 </main>

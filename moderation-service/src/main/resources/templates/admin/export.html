@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout(~{::title}, ~{::main})}">
+<head>
+    <title th:text="${pageTitle}">Data Export</title>
+</head>
+<body>
+<main th:fragment="content">
+    <div class="space-y-6">
+        <!-- Page Header -->
+        <div class="flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-gray-900">Data Export</h1>
+        </div>
+
+        <!-- Export Options -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Users Export -->
+            <div class="bg-white rounded-lg shadow">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h2 class="text-lg font-semibold text-gray-900">Export Users</h2>
+                    <p class="text-sm text-gray-500 mt-1">Download all user data as CSV</p>
+                </div>
+                <div class="p-6">
+                    <p class="text-sm text-gray-600 mb-4">
+                        Includes: ID, Email, Name, Role, Status, Created At, Last Login
+                    </p>
+                    <a th:href="@{/admin/export/users}" download
+                       class="inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                        </svg>
+                        Download Users CSV
+                    </a>
+                </div>
+            </div>
+
+            <!-- Pets Export -->
+            <div class="bg-white rounded-lg shadow">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h2 class="text-lg font-semibold text-gray-900">Export Pets</h2>
+                    <p class="text-sm text-gray-500 mt-1">Download all pet listings as CSV</p>
+                </div>
+                <div class="p-6">
+                    <p class="text-sm text-gray-600 mb-4">
+                        Includes: ID, Name, Species, Breed, Age, Status, Rescue Org, Created At
+                    </p>
+                    <a th:href="@{/admin/export/pets}" download
+                       class="inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                        </svg>
+                        Download Pets CSV
+                    </a>
+                </div>
+            </div>
+
+            <!-- Adoptions Export -->
+            <div class="bg-white rounded-lg shadow">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h2 class="text-lg font-semibold text-gray-900">Export Adoptions</h2>
+                    <p class="text-sm text-gray-500 mt-1">Download all adoption applications as CSV</p>
+                </div>
+                <div class="p-6">
+                    <p class="text-sm text-gray-600 mb-4">
+                        Includes: ID, Pet Name, Adopter Email, Rescue Org, Status, Applied At, Completed At
+                    </p>
+                    <a th:href="@{/admin/export/adoptions}" download
+                       class="inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                        </svg>
+                        Download Adoptions CSV
+                    </a>
+                </div>
+            </div>
+
+            <!-- Audit Log Export -->
+            <div class="bg-white rounded-lg shadow">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h2 class="text-lg font-semibold text-gray-900">Export Audit Log</h2>
+                    <p class="text-sm text-gray-500 mt-1">Download admin activity log as CSV</p>
+                </div>
+                <div class="p-6">
+                    <p class="text-sm text-gray-600 mb-4">
+                        Includes: ID, Action, Entity Type, Entity ID, Actor ID, Details, Created At
+                    </p>
+                    <a th:href="@{/admin/export/audit}" download
+                       class="inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                        </svg>
+                        Download Audit Log CSV
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Note -->
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div class="flex items-start">
+                <svg class="w-5 h-5 text-blue-400 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                </svg>
+                <div class="ml-3">
+                    <h3 class="text-sm font-medium text-blue-800">About Data Exports</h3>
+                    <p class="text-sm text-blue-700 mt-1">
+                        All exports are generated in real-time and reflect the current state of the database.
+                        Large exports may take a few seconds to generate.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+</body>
+</html>

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout(~{::title}, ~{::main})}">
+<head>
+    <title th:text="${pageTitle}">System Health</title>
+</head>
+<body>
+<main th:fragment="content">
+    <div class="space-y-6">
+        <!-- Page Header -->
+        <div class="flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-gray-900">System Health</h1>
+            <a th:href="@{/admin/health/refresh}" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm">
+                Refresh
+            </a>
+        </div>
+
+        <!-- Overall Status -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-lg font-semibold text-gray-900">Overall Status</h2>
+                    <p class="text-sm text-gray-500" th:text="'Last checked: ' + ${#temporals.format(systemHealth.checkedAt, 'yyyy-MM-dd HH:mm:ss')}">...</p>
+                </div>
+                <div th:class="'px-4 py-2 rounded-full font-semibold ' + (${systemHealth.status == 'UP'} ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800')">
+                    <span th:text="${systemHealth.status}">UP</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Component Health Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div th:each="entry : ${systemHealth.components}" class="bg-white rounded-lg shadow p-6">
+                <div class="flex justify-between items-start">
+                    <div class="font-semibold text-gray-900" th:text="${entry.key}">Component</div>
+                    <span th:class="'px-2 py-1 text-xs rounded-full ' + (${entry.value.status == 'UP'} ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800')"
+                          th:text="${entry.value.status}">UP</span>
+                </div>
+                <div th:if="${not #maps.isEmpty(entry.value.details)}" class="mt-3 text-sm text-gray-500">
+                    <div th:each="detail : ${entry.value.details}">
+                        <span th:text="${detail.key}">Key</span>: <span th:text="${detail.value}">Value</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Metrics Summary -->
+        <div class="bg-white rounded-lg shadow">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-900">Metrics Summary</h2>
+            </div>
+            <div class="p-6">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div>
+                        <div class="text-sm text-gray-500">Memory Used</div>
+                        <div class="text-2xl font-bold text-primary" th:text="${#numbers.formatDecimal(metricsSummary.jvmMemoryUsed / 1024 / 1024, 0, 'COMMA', 0, 'POINT')} + ' MB'">0 MB</div>
+                    </div>
+                    <div>
+                        <div class="text-sm text-gray-500">Memory Max</div>
+                        <div class="text-2xl font-bold text-gray-700" th:text="${#numbers.formatDecimal(metricsSummary.jvmMemoryMax / 1024 / 1024, 0, 'COMMA', 0, 'POINT')} + ' MB'">0 MB</div>
+                    </div>
+                    <div>
+                        <div class="text-sm text-gray-500">CPU Usage</div>
+                        <div class="text-2xl font-bold text-primary" th:text="${#numbers.formatDecimal(metricsSummary.cpuUsage * 100, 0, 'COMMA', 1, 'POINT')} + '%'">0%</div>
+                    </div>
+                    <div>
+                        <div class="text-sm text-gray-500">HTTP Requests</div>
+                        <div class="text-2xl font-bold text-primary" th:text="${metricsSummary.httpRequestsTotal}">0</div>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <div class="flex justify-between text-sm mb-1">
+                        <span class="text-gray-500">Memory Usage</span>
+                        <span class="font-semibold" th:text="${#numbers.formatDecimal(metricsSummary.memoryUsagePercent, 0, 'COMMA', 1, 'POINT')} + '%'">0%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div class="bg-primary rounded-full h-2" th:style="'width: ' + ${metricsSummary.memoryUsagePercent} + '%'"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Errors -->
+        <div class="bg-white rounded-lg shadow">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-900">Recent Errors</h2>
+            </div>
+            <div th:if="${#lists.isEmpty(recentErrors)}" class="p-6 text-center text-gray-500">
+                No recent errors
+            </div>
+            <div th:unless="${#lists.isEmpty(recentErrors)}" class="divide-y divide-gray-200">
+                <div th:each="error : ${recentErrors}" class="px-6 py-4">
+                    <div class="flex justify-between items-start">
+                        <div class="font-mono text-sm text-red-600" th:text="${error.message}">Error message</div>
+                        <span class="text-xs text-gray-500" th:text="${#temporals.format(error.timestamp, 'HH:mm:ss')}">12:00:00</span>
+                    </div>
+                    <div class="text-xs text-gray-500 mt-1" th:text="${error.source}">Source</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+</body>
+</html>

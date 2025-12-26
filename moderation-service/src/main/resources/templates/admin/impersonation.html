@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout(~{::title}, ~{::main})}">
+<head>
+    <title th:text="${pageTitle}">User Impersonation</title>
+</head>
+<body>
+<main th:fragment="content">
+    <div class="space-y-6">
+        <!-- Page Header -->
+        <div class="flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-gray-900">User Impersonation</h1>
+            <a th:href="@{/admin/impersonation/history}" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 text-sm">
+                View History
+            </a>
+        </div>
+
+        <!-- Flash Messages -->
+        <div th:if="${success}" class="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg">
+            <span th:text="${success}"></span>
+        </div>
+        <div th:if="${error}" class="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg">
+            <span th:text="${error}"></span>
+        </div>
+
+        <!-- Warning -->
+        <div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
+            <div class="flex items-start">
+                <svg class="w-5 h-5 text-amber-400 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                </svg>
+                <div class="ml-3">
+                    <h3 class="text-sm font-medium text-amber-800">Important Notice</h3>
+                    <p class="text-sm text-amber-700 mt-1">
+                        User impersonation allows you to view the application as another user for debugging purposes.
+                        All impersonation sessions are logged and expire after 15 minutes.
+                        Use this feature responsibly and only when necessary.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="text-sm text-gray-500">Active Impersonation Sessions</div>
+            <div class="text-3xl font-bold" th:classappend="${dashboard.activeSessions > 0} ? 'text-amber-600' : 'text-gray-400'"
+                 th:text="${dashboard.activeSessions}">0</div>
+        </div>
+
+        <!-- Start Impersonation -->
+        <div class="bg-white rounded-lg shadow">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-900">Start Impersonation</h2>
+            </div>
+            <div class="p-6">
+                <form th:action="@{/admin/impersonation/start}" method="post" class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Target User ID</label>
+                            <input type="text" name="targetUserId" required placeholder="Enter user UUID"
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
+                            <p class="text-xs text-gray-500 mt-1">You can find the user ID on the user details page</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Reason</label>
+                            <input type="text" name="reason" required placeholder="Why are you impersonating this user?"
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
+                        </div>
+                    </div>
+                    <button type="submit" class="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700"
+                            onclick="return confirm('Are you sure you want to impersonate this user? This action will be logged.')">
+                        Start Impersonation
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Recent Sessions -->
+        <div class="bg-white rounded-lg shadow">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-900">Recent Impersonation Sessions</h2>
+            </div>
+            <div th:if="${#lists.isEmpty(dashboard.recentSessions)}" class="p-6 text-center text-gray-500">
+                No impersonation sessions recorded
+            </div>
+            <div th:unless="${#lists.isEmpty(dashboard.recentSessions)}" class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Admin</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Target</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Started</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Reason</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <tr th:each="session : ${dashboard.recentSessions}">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-mono" th:text="${#strings.abbreviate(session.adminUserId.toString(), 12)}">admin-id</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-mono" th:text="${#strings.abbreviate(session.targetUserId.toString(), 12)}">target-id</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" th:text="${#temporals.format(session.createdAt, 'MMM dd HH:mm')}">Jan 01 12:00</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span th:if="${session.active}" class="px-2 py-1 text-xs rounded-full bg-amber-100 text-amber-800">
+                                    Active (<span th:text="${session.remainingMinutes}">15</span> min)
+                                </span>
+                                <span th:if="${session.endedAt != null}" class="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-600">Ended</span>
+                                <span th:if="${session.expired and session.endedAt == null}" class="px-2 py-1 text-xs rounded-full bg-red-100 text-red-800">Expired</span>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-500 max-w-xs truncate" th:text="${session.reason}">Reason</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <form th:if="${session.active}" th:action="@{/admin/impersonation/{id}/end(id=${session.id})}" method="post">
+                                    <button type="submit" class="text-red-600 hover:text-red-800 text-sm">End Session</button>
+                                </form>
+                                <span th:unless="${session.active}" class="text-gray-400 text-sm">-</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</main>
+</body>
+</html>

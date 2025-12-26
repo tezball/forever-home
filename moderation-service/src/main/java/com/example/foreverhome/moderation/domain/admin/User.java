@@ -108,6 +108,13 @@ public class User {
         this.passwordHash = newPasswordHash;
     }
 
+    public void changeRole(UserRole newRole) {
+        if (newRole == null) {
+            throw new IllegalArgumentException("Role cannot be null");
+        }
+        this.role = newRole;
+    }
+
     public String getDisplayName() {
         return name != null ? name : email;
     }

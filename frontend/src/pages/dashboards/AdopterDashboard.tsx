@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { Button, Modal } from '../../components';
+import { Button, Modal, HelpIcon } from '../../components';
 import type { Pet, AdoptionApplication, PetStatus } from '../../types';
 import apiClient from '../../api/client';
 import { formatRelativeTime, formatBreed } from '../../utils';
@@ -197,7 +197,38 @@ export function AdopterDashboard() {
     <div className="container-app py-8">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Adopter Dashboard</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-3xl font-bold text-gray-900">Adopter Dashboard</h1>
+            <HelpIcon title="Adoption Application Tips" size="md">
+              <div className="space-y-4">
+                <p>Here's how to make your adoption applications stand out:</p>
+                <div className="space-y-3">
+                  <div>
+                    <h4 className="font-semibold text-gray-900">Write a compelling application</h4>
+                    <ul className="list-disc pl-4 text-sm mt-1 space-y-1">
+                      <li>Share your experience with pets</li>
+                      <li>Describe your living situation honestly</li>
+                      <li>Explain why this specific pet interests you</li>
+                      <li>Mention any other pets in your home</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-gray-900">Application limits</h4>
+                    <p className="text-sm mt-1">You can have up to 3 active applications at a time. This ensures you can give each application proper attention.</p>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-gray-900">Application statuses</h4>
+                    <ul className="text-sm mt-1 space-y-1">
+                      <li><strong>Submitted:</strong> Waiting for rescue review</li>
+                      <li><strong>Under Review:</strong> Rescue is evaluating your application</li>
+                      <li><strong>Approved:</strong> Contact rescue to schedule pickup!</li>
+                      <li><strong>Rejected:</strong> You can apply for other pets</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </HelpIcon>
+          </div>
           <p className="text-gray-600">Welcome back, {user?.name}</p>
         </div>
         <Link to="/pets">

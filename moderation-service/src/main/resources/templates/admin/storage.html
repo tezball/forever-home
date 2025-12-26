@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout(~{::title}, ~{::main})}">
+<head>
+    <title th:text="${pageTitle}">Storage & Email</title>
+</head>
+<body>
+<main th:fragment="content">
+    <div class="space-y-6">
+        <!-- Page Header -->
+        <div class="flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-gray-900">Storage & Email Usage</h1>
+            <a th:href="@{/admin/storage/refresh}" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 text-sm">
+                Refresh
+            </a>
+        </div>
+
+        <!-- Cost Estimate -->
+        <div class="bg-gradient-to-r from-primary to-accent text-white rounded-lg shadow p-6">
+            <div class="text-sm opacity-80">Estimated Monthly Cost</div>
+            <div class="text-4xl font-bold mt-1" th:text="'$' + ${#numbers.formatDecimal(dashboard.costEstimate.totalMonthlyCost, 0, 'COMMA', 2, 'POINT')}">$0.00</div>
+            <div class="mt-2 flex gap-4 text-sm opacity-80">
+                <span th:text="'S3: $' + ${#numbers.formatDecimal(dashboard.costEstimate.s3MonthlyCost, 0, 'COMMA', 2, 'POINT')}">S3: $0.00</span>
+                <span th:text="'Email: $' + ${#numbers.formatDecimal(dashboard.costEstimate.emailMonthlyCost, 0, 'COMMA', 2, 'POINT')}">Email: $0.00</span>
+            </div>
+        </div>
+
+        <!-- S3 Stats -->
+        <div class="bg-white rounded-lg shadow">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-900">S3 Storage</h2>
+                <p class="text-sm text-gray-500" th:text="'Bucket: ' + ${dashboard.s3Stats.bucketName}">Bucket: forever-home-images</p>
+            </div>
+            <div class="p-6">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                    <div>
+                        <div class="text-sm text-gray-500">Total Objects</div>
+                        <div class="text-2xl font-bold text-primary" th:text="${#numbers.formatInteger(dashboard.s3Stats.totalObjects, 0, 'COMMA')}">0</div>
+                    </div>
+                    <div>
+                        <div class="text-sm text-gray-500">Total Size</div>
+                        <div class="text-2xl font-bold text-primary" th:text="${dashboard.s3Stats.totalSizePretty}">0 B</div>
+                    </div>
+                </div>
+
+                <!-- Objects by Type -->
+                <h3 class="text-sm font-semibold text-gray-700 mb-3">Objects by Type</h3>
+                <div class="space-y-3">
+                    <div th:each="entry : ${dashboard.s3Stats.objectsByType}" class="flex justify-between items-center">
+                        <span class="text-gray-600" th:text="${entry.key}">Type</span>
+                        <span class="font-semibold" th:text="${entry.value}">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Email Stats -->
+        <div class="bg-white rounded-lg shadow">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-900">Email Usage (SES)</h2>
+            </div>
+            <div class="p-6">
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div>
+                        <div class="text-sm text-gray-500">Total Sent</div>
+                        <div class="text-2xl font-bold text-primary" th:text="${#numbers.formatInteger(dashboard.emailStats.totalSent, 0, 'COMMA')}">0</div>
+                    </div>
+                    <div>
+                        <div class="text-sm text-gray-500">Sent Today</div>
+                        <div class="text-2xl font-bold text-green-600" th:text="${#numbers.formatInteger(dashboard.emailStats.sentToday, 0, 'COMMA')}">0</div>
+                    </div>
+                </div>
+
+                <!-- Emails by Type -->
+                <h3 class="text-sm font-semibold text-gray-700 mb-3">Emails by Type</h3>
+                <div class="space-y-3">
+                    <div th:each="entry : ${dashboard.emailStats.emailsByType}" class="flex justify-between items-center">
+                        <span class="text-gray-600 capitalize" th:text="${#strings.replace(entry.key, '_', ' ')}">Type</span>
+                        <span class="font-semibold" th:text="${entry.value}">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Uploads -->
+        <div class="bg-white rounded-lg shadow">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-900">Recent Uploads</h2>
+            </div>
+            <div th:if="${#lists.isEmpty(recentUploads)}" class="p-6 text-center text-gray-500">
+                No recent uploads
+            </div>
+            <div th:unless="${#lists.isEmpty(recentUploads)}" class="divide-y divide-gray-200">
+                <div th:each="upload : ${recentUploads}" class="px-6 py-4 flex justify-between items-center">
+                    <div>
+                        <div class="font-mono text-sm text-gray-900 truncate max-w-md" th:text="${upload.key}">file.jpg</div>
+                        <div class="text-sm text-gray-500" th:text="${upload.sizePretty}">0 KB</div>
+                    </div>
+                    <div class="text-sm text-gray-400" th:text="${#temporals.format(upload.lastModified, 'MMM dd HH:mm')}">Jan 01 12:00</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+</body>
+</html>

@@ -17,3 +17,8 @@ export { LoadingSpinner } from './LoadingSpinner';
 export { Breadcrumb, BackToDashboard } from './Breadcrumb';
 export { SkeletonCard } from './SkeletonCard';
 export { GoogleLoginButton } from './GoogleLoginButton';
+export { Tooltip } from './Tooltip';
+export { HelpIcon } from './HelpIcon';
+export { StatusBadge } from './StatusBadge';
+export { AdoptionJourney } from './AdoptionJourney';
+export { PhotoTips } from './PhotoTips';
