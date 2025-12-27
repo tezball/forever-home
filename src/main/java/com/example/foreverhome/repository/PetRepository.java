@@ -80,11 +80,9 @@ public interface PetRepository extends CrudRepository<Pet, UUID> {
 
     /**
      * Projection for rescue org pet count results.
+     * Using a record instead of an interface for GraalVM native image compatibility.
      */
-    interface RescueOrgPetCount {
-        UUID getRescueOrgId();
-        long getPetCount();
-    }
+    record RescueOrgPetCount(UUID rescueOrgId, long petCount) {}
 
     @Query("SELECT * FROM pets WHERE status = 'AVAILABLE' ORDER BY created_at DESC LIMIT :limit")
     List<Pet> findFeaturedPets(@Param("limit") int limit);

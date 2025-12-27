@@ -64,8 +64,8 @@ public class PublicController {
             petRepository.countByStatusGroupedByRescueOrgId(PetStatus.AVAILABLE, orgIds)
                 .stream()
                 .collect(Collectors.toMap(
-                    RescueOrgPetCount::getRescueOrgId,
-                    RescueOrgPetCount::getPetCount
+                    RescueOrgPetCount::rescueOrgId,
+                    RescueOrgPetCount::petCount
                 ));
 
         List<RescueOrgPublicResponse> response = orgs.stream()
