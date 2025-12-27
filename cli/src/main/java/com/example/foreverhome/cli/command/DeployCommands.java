@@ -5,6 +5,7 @@ import com.example.foreverhome.cli.service.ProcessExecutor;
 import com.example.foreverhome.cli.ui.InteractiveMenu;
 import com.example.foreverhome.cli.ui.ProgressReporter;
 import com.example.foreverhome.cli.ui.TerminalOutput;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.shell.command.annotation.Command;
 import org.springframework.shell.command.annotation.Option;
 import org.springframework.stereotype.Component;
@@ -19,18 +20,22 @@ public class DeployCommands {
 
     private final ProcessExecutor executor;
     private final ConfigManager config;
-    private final InteractiveMenu menu;
+    private final ObjectProvider<InteractiveMenu> menuProvider;
     private final TerminalOutput output;
     private final ProgressReporter progress;
 
     public DeployCommands(ProcessExecutor executor, ConfigManager config,
-                          InteractiveMenu menu, TerminalOutput output,
+                          ObjectProvider<InteractiveMenu> menuProvider, TerminalOutput output,
                           ProgressReporter progress) {
         this.executor = executor;
         this.config = config;
-        this.menu = menu;
+        this.menuProvider = menuProvider;
         this.output = output;
         this.progress = progress;
+    }
+
+    private InteractiveMenu menu() {
+        return menuProvider.getObject();
     }
 
     @Command(command = "aws", description = "Full AWS deployment (Terraform + Docker + ECS)")
@@ -291,7 +296,7 @@ public class DeployCommands {
             return;
         }
 
-        if (!menu.confirm("Are you absolutely sure you want to destroy all infrastructure?")) {
+        if (!menu().confirm("Are you absolutely sure you want to destroy all infrastructure?")) {
             output.info("Aborted");
             return;
         }

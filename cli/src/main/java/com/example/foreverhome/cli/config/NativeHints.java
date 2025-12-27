@@ -98,18 +98,38 @@ public class NativeHints {
         }
 
         private void registerLuceneHints(RuntimeHints hints) {
-            // Lucene codec
-            try {
-                Class<?> codec = Class.forName("org.apache.lucene.codecs.lucene99.Lucene99Codec");
-                hints.reflection().registerType(codec,
-                    MemberCategory.INVOKE_DECLARED_CONSTRUCTORS);
-            } catch (Exception ignored) {}
+            // Lucene index classes
+            String[] luceneClasses = {
+                "org.apache.lucene.index.ConcurrentMergeScheduler",
+                "org.apache.lucene.index.SerialMergeScheduler",
+                "org.apache.lucene.index.TieredMergePolicy",
+                "org.apache.lucene.index.LogByteSizeMergePolicy",
+                "org.apache.lucene.index.LogDocMergePolicy",
+                "org.apache.lucene.index.NoMergePolicy",
+                "org.apache.lucene.index.NoMergeScheduler",
+                "org.apache.lucene.index.IndexWriter",
+                "org.apache.lucene.index.IndexWriterConfig",
+                "org.apache.lucene.index.LiveIndexWriterConfig",
+                "org.apache.lucene.index.DirectoryReader",
+                "org.apache.lucene.index.IndexReader",
+                "org.apache.lucene.store.FSDirectory",
+                "org.apache.lucene.store.MMapDirectory",
+                "org.apache.lucene.store.NIOFSDirectory",
+                "org.apache.lucene.store.ByteBuffersDirectory",
+                "org.apache.lucene.codecs.lucene99.Lucene99Codec",
+                "org.apache.lucene.codecs.lucene912.Lucene912Codec",
+                "org.apache.lucene.internal.tests.TestSecrets"
+            };
 
-            try {
-                Class<?> codec = Class.forName("org.apache.lucene.codecs.lucene912.Lucene912Codec");
-                hints.reflection().registerType(codec,
-                    MemberCategory.INVOKE_DECLARED_CONSTRUCTORS);
-            } catch (Exception ignored) {}
+            for (String className : luceneClasses) {
+                try {
+                    Class<?> clazz = Class.forName(className);
+                    hints.reflection().registerType(clazz,
+                        MemberCategory.INVOKE_DECLARED_CONSTRUCTORS,
+                        MemberCategory.INVOKE_DECLARED_METHODS,
+                        MemberCategory.DECLARED_FIELDS);
+                } catch (Exception ignored) {}
+            }
 
             // Standard analyzer
             hints.reflection().registerType(

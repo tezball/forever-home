@@ -17,8 +17,6 @@ import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.ByteBuffersDirectory;
 import org.springframework.stereotype.Service;
-
-import jakarta.annotation.PostConstruct;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -41,12 +39,16 @@ public class DocsSearchService {
         this.analyzer = new StandardAnalyzer();
     }
 
-    @PostConstruct
-    public void init() {
-        try {
-            buildIndex();
-        } catch (IOException e) {
-            System.err.println("Warning: Failed to build search index: " + e.getMessage());
+    /**
+     * Ensure the search index is built (lazy initialization).
+     */
+    private synchronized void ensureIndexBuilt() {
+        if (!indexBuilt) {
+            try {
+                buildIndex();
+            } catch (IOException e) {
+                System.err.println("Warning: Failed to build search index: " + e.getMessage());
+            }
         }
     }
 
@@ -88,7 +90,14 @@ public class DocsSearchService {
     public List<SearchResult> search(String queryText, int maxResults) {
         List<SearchResult> results = new ArrayList<>();
 
-        if (!indexBuilt || queryText == null || queryText.isBlank()) {
+        if (queryText == null || queryText.isBlank()) {
+            return results;
+        }
+
+        // Lazily build the index on first search
+        ensureIndexBuilt();
+
+        if (!indexBuilt) {
             return results;
         }
 

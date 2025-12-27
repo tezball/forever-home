@@ -94,9 +94,8 @@ export function RegisterPage() {
     <div className="min-h-screen flex items-center justify-center py-12 px-4">
       <div className="max-w-md w-full">
         <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center gap-2 mb-6">
-            <span className="text-3xl">🏠</span>
-            <span className="font-serif text-2xl font-semibold text-primary-500">Forever Home</span>
+          <Link to="/" className="inline-block mb-6">
+            <img src="/logo2.png" alt="Forever Home" className="h-16 mx-auto" />
           </Link>
           <h1 className="text-2xl font-bold text-gray-900">Create an account</h1>
           <p className="text-gray-600 mt-2">Join our community today</p>

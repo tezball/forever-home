@@ -22,12 +22,14 @@ public class InteractiveMenu {
 
     private final Terminal terminal;
     private final LineReader lineReader;
-    private final PrintWriter writer;
 
     public InteractiveMenu(Terminal terminal, LineReader lineReader) {
         this.terminal = terminal;
         this.lineReader = lineReader;
-        this.writer = terminal.writer();
+    }
+
+    private PrintWriter writer() {
+        return terminal.writer();
     }
 
     /**
@@ -38,17 +40,17 @@ public class InteractiveMenu {
      * @return the selected option, or null if cancelled
      */
     public String select(String prompt, List<String> options) {
-        writer.println();
-        writer.println(BOLD + prompt + RESET);
-        writer.println();
+        writer().println();
+        writer().println(BOLD + prompt + RESET);
+        writer().println();
 
         for (int i = 0; i < options.size(); i++) {
-            writer.printf("  %s%d.%s %s%n", CYAN, i + 1, RESET, options.get(i));
+            writer().printf("  %s%d.%s %s%n", CYAN, i + 1, RESET, options.get(i));
         }
 
-        writer.println();
-        writer.print("Enter choice (1-" + options.size() + ") or 'q' to cancel: ");
-        writer.flush();
+        writer().println();
+        writer().print("Enter choice (1-" + options.size() + ") or 'q' to cancel: ");
+        writer().flush();
 
         try {
             String input = lineReader.readLine().trim();
@@ -65,7 +67,7 @@ public class InteractiveMenu {
             // Invalid input
         }
 
-        writer.println(YELLOW + "Invalid choice" + RESET);
+        writer().println(YELLOW + "Invalid choice" + RESET);
         return null;
     }
 
@@ -73,21 +75,21 @@ public class InteractiveMenu {
      * Display a selection menu with descriptions.
      */
     public String selectWithDescription(String prompt, List<MenuOption> options) {
-        writer.println();
-        writer.println(BOLD + prompt + RESET);
-        writer.println();
+        writer().println();
+        writer().println(BOLD + prompt + RESET);
+        writer().println();
 
         for (int i = 0; i < options.size(); i++) {
             MenuOption opt = options.get(i);
-            writer.printf("  %s%d.%s %s%n", CYAN, i + 1, RESET, opt.label());
+            writer().printf("  %s%d.%s %s%n", CYAN, i + 1, RESET, opt.label());
             if (opt.description() != null) {
-                writer.printf("     %s%s%s%n", DIM, opt.description(), RESET);
+                writer().printf("     %s%s%s%n", DIM, opt.description(), RESET);
             }
         }
 
-        writer.println();
-        writer.print("Enter choice (1-" + options.size() + ") or 'q' to cancel: ");
-        writer.flush();
+        writer().println();
+        writer().print("Enter choice (1-" + options.size() + ") or 'q' to cancel: ");
+        writer().flush();
 
         try {
             String input = lineReader.readLine().trim();
@@ -104,7 +106,7 @@ public class InteractiveMenu {
             // Invalid input
         }
 
-        writer.println(YELLOW + "Invalid choice" + RESET);
+        writer().println(YELLOW + "Invalid choice" + RESET);
         return null;
     }
 
@@ -123,8 +125,8 @@ public class InteractiveMenu {
      */
     public boolean confirm(String prompt, boolean defaultValue) {
         String hint = defaultValue ? "[Y/n]" : "[y/N]";
-        writer.print(prompt + " " + hint + ": ");
-        writer.flush();
+        writer().print(prompt + " " + hint + ": ");
+        writer().flush();
 
         try {
             String input = lineReader.readLine().trim().toLowerCase();
@@ -151,8 +153,8 @@ public class InteractiveMenu {
      */
     public String prompt(String prompt, String defaultValue) {
         String hint = defaultValue != null ? " [" + defaultValue + "]" : "";
-        writer.print(prompt + hint + ": ");
-        writer.flush();
+        writer().print(prompt + hint + ": ");
+        writer().flush();
 
         try {
             String input = lineReader.readLine().trim();
@@ -171,8 +173,8 @@ public class InteractiveMenu {
      * Prompt for a password (hidden input).
      */
     public String promptPassword(String prompt) {
-        writer.print(prompt + ": ");
-        writer.flush();
+        writer().print(prompt + ": ");
+        writer().flush();
 
         try {
             return lineReader.readLine('*').trim();
@@ -192,19 +194,19 @@ public class InteractiveMenu {
         boolean[] selected = new boolean[options.size()];
 
         while (true) {
-            writer.println();
-            writer.println(BOLD + prompt + RESET);
-            writer.println(DIM + "(Enter number to toggle, 'done' when finished, 'q' to cancel)" + RESET);
-            writer.println();
+            writer().println();
+            writer().println(BOLD + prompt + RESET);
+            writer().println(DIM + "(Enter number to toggle, 'done' when finished, 'q' to cancel)" + RESET);
+            writer().println();
 
             for (int i = 0; i < options.size(); i++) {
                 String marker = selected[i] ? GREEN + "[x]" + RESET : "[ ]";
-                writer.printf("  %s %s%d.%s %s%n", marker, CYAN, i + 1, RESET, options.get(i));
+                writer().printf("  %s %s%d.%s %s%n", marker, CYAN, i + 1, RESET, options.get(i));
             }
 
-            writer.println();
-            writer.print("Toggle: ");
-            writer.flush();
+            writer().println();
+            writer().print("Toggle: ");
+            writer().flush();
 
             try {
                 String input = lineReader.readLine().trim().toLowerCase();
@@ -242,8 +244,8 @@ public class InteractiveMenu {
      * Wait for user to press Enter with custom message.
      */
     public void pressEnterToContinue(String message) {
-        writer.print(DIM + message + RESET);
-        writer.flush();
+        writer().print(DIM + message + RESET);
+        writer().flush();
         try {
             lineReader.readLine();
         } catch (Exception e) {

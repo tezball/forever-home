@@ -7,6 +7,7 @@ import com.example.foreverhome.cli.service.ProcessExecutor;
 import com.example.foreverhome.cli.ui.InteractiveMenu;
 import com.example.foreverhome.cli.ui.InteractiveMenu.MenuOption;
 import com.example.foreverhome.cli.ui.TerminalOutput;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.shell.command.annotation.Command;
 import org.springframework.shell.command.annotation.Option;
 import org.springframework.stereotype.Component;
@@ -26,17 +27,21 @@ public class DocsCommands {
     private final DocsBrowser browser;
     private final DocsSearchService searchService;
     private final ProcessExecutor executor;
-    private final InteractiveMenu menu;
+    private final ObjectProvider<InteractiveMenu> menuProvider;
     private final TerminalOutput output;
 
     public DocsCommands(DocsBrowser browser, DocsSearchService searchService,
-                        ProcessExecutor executor, InteractiveMenu menu,
+                        ProcessExecutor executor, ObjectProvider<InteractiveMenu> menuProvider,
                         TerminalOutput output) {
         this.browser = browser;
         this.searchService = searchService;
         this.executor = executor;
-        this.menu = menu;
+        this.menuProvider = menuProvider;
         this.output = output;
+    }
+
+    private InteractiveMenu menu() {
+        return menuProvider.getObject();
     }
 
     @Command(command = "", description = "Browse documentation interactively")
@@ -65,7 +70,7 @@ public class DocsCommands {
             ));
         }
 
-        String selected = menu.selectWithDescription("Select a category:", options);
+        String selected = menu().selectWithDescription("Select a category:", options);
         if (selected == null) {
             return;
         }
@@ -97,7 +102,7 @@ public class DocsCommands {
             options.add(new MenuOption(title, topic, summary));
         }
 
-        String selected = menu.selectWithDescription("Select a document:", options);
+        String selected = menu().selectWithDescription("Select a document:", options);
         if (selected != null) {
             show(selected);
         }
