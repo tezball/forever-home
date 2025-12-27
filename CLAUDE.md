@@ -66,7 +66,7 @@ Use `./dev.sh` for quick development tasks. Run `./dev.sh --help` for full optio
 The `fh` CLI provides an interactive shell with additional features. Build and run with:
 
 ```bash
-cd cli && ../mvnw package -DskipTests && java -jar target/forever-home-cli-*.jar
+cd cli && ../mvnw package -DskipTests && ./fh
 ```
 
 #### Dev Commands
@@ -152,7 +152,7 @@ The moderation-service has its own CLI for AI-powered content moderation. Requir
 
 ```bash
 # Build and run
-cd moderation-service && ../mvnw spring-boot:run
+cd moderation-service && ../mvnw package -DskipTests && ./moderate
 ```
 
 #### Moderate Commands

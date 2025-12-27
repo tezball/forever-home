@@ -1,7 +1,8 @@
 package com.example.foreverhome.cli;
 
-import org.springframework.boot.SpringApplication;
+import org.springframework.boot.Banner;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.shell.command.annotation.CommandScan;
 
@@ -18,6 +19,9 @@ import org.springframework.shell.command.annotation.CommandScan;
 public class ForeverHomeCliApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(ForeverHomeCliApplication.class, args);
+        new SpringApplicationBuilder(ForeverHomeCliApplication.class)
+                .bannerMode(Banner.Mode.OFF)
+                .logStartupInfo(false)
+                .run(args);
     }
 }

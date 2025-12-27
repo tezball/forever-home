@@ -1,6 +1,10 @@
 spring:
   main:
     banner-mode: off
+    log-startup-info: false
+  output:
+    ansi:
+      enabled: always
   shell:
     interactive:
       enabled: true
@@ -29,5 +33,8 @@ fh:
 
 logging:
   level:
-    root: WARN
-    com.example.foreverhome.cli: INFO
+    root: OFF
+    org.springframework: OFF
+    org.springframework.boot: OFF
+    org.springframework.shell: OFF
+    com.example.foreverhome.cli: WARN

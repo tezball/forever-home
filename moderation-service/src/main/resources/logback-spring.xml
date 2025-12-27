@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- Suppress all startup logging for CLI tool -->
+    <statusListener class="ch.qos.logback.core.status.NopStatusListener" />
+
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Suppress Spring framework logging -->
+    <logger name="org.springframework" level="OFF" />
+    <logger name="org.springframework.boot" level="OFF" />
+    <logger name="org.springframework.shell" level="OFF" />
+
+    <!-- Suppress Hibernate/JPA -->
+    <logger name="org.hibernate" level="OFF" />
+    <logger name="com.zaxxer.hikari" level="OFF" />
+
+    <!-- Suppress other noisy loggers -->
+    <logger name="io.netty" level="OFF" />
+    <logger name="reactor" level="OFF" />
+    <logger name="org.jline" level="OFF" />
+
+    <!-- Allow moderation service logs to show -->
+    <logger name="com.example.foreverhome.moderation" level="INFO" />
+    <logger name="org.springframework.ai" level="WARN" />
+
+    <root level="OFF">
+        <appender-ref ref="CONSOLE" />
+    </root>
+</configuration>
