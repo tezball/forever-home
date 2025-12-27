@@ -2,8 +2,8 @@
 
 resource "aws_ecr_repository" "app" {
   name                 = "${local.name_prefix}-app"
-  # IMMUTABLE prevents overwriting existing tags - use unique tags per deploy
-  image_tag_mutability = var.environment == "prod" ? "IMMUTABLE" : "MUTABLE"
+  # MUTABLE allows overwriting tags like 'latest' for easier deployments
+  image_tag_mutability = "MUTABLE"
   # Protect production ECR from accidental deletion
   force_delete         = var.environment != "prod"
 
