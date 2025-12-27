@@ -78,11 +78,10 @@ export function Header() {
   return (
     <header className="bg-secondary-50 border-b border-secondary-200 sticky top-0 z-50">
       <div className="container-app">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-between h-20">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2">
-            <span className="text-2xl">🏠</span>
-            <span className="font-serif text-xl font-semibold text-primary-500">Forever Home</span>
+          <Link to="/" className="flex items-center">
+            <img src="/logo2.png" alt="Forever Home" className="h-18" />
           </Link>
 
           {/* Desktop Navigation */}

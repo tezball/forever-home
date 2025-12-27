@@ -22,28 +22,30 @@
 
 ## Color Palette
 
-### Primary Colors
+Colors derived from the Forever Home logo featuring a house with heart and paw print.
+
+### Primary Colors (Slate Blue - Logo roof/text)
 
 | Name | Hex | Usage |
 |------|-----|-------|
-| **Forest** | `#2D5A47` | Primary actions, headers, trust indicators |
-| **Forest Light** | `#3D7A5F` | Hover states, secondary emphasis |
-| **Forest Dark** | `#1D3A2F` | Active states, text on light backgrounds |
+| **Sky Blue** | `#7ABED0` | Primary actions, headers, links |
+| **Sky Blue Light** | `#A5CFE1` | Hover states, secondary emphasis |
+| **Sky Blue Dark** | `#5A9DB0` | Active states, text on light backgrounds |
 
-### Secondary Colors
-
-| Name | Hex | Usage |
-|------|-----|-------|
-| **Warm Sand** | `#F5F0E8` | Page backgrounds, cards |
-| **Cream** | `#FFFDF8` | Card backgrounds, modals |
-| **Stone** | `#E8E4DC` | Borders, dividers |
-
-### Accent Colors
+### Secondary Colors (Sage Green - Logo house left)
 
 | Name | Hex | Usage |
 |------|-----|-------|
-| **Terracotta** | `#C4705A` | Notifications, highlights, favorites |
-| **Soft Gold** | `#D4A853` | Verified badges, success states |
+| **Sage Light** | `#EBF5EB` | Page backgrounds, cards |
+| **Sage** | `#9EC69B` | Secondary actions, success indicators |
+| **Sage Dark** | `#7DA87A` | Borders, dividers |
+
+### Accent Colors (Warm Orange - Logo house right)
+
+| Name | Hex | Usage |
+|------|-----|-------|
+| **Peach** | `#E8A668` | Notifications, highlights, favorites |
+| **Gold** | `#E8B868` | Verified badges, success states |
 
 ### Semantic Colors
 
@@ -67,21 +69,21 @@
 
 ```css
 :root {
-  --color-primary: #2D5A47;
-  --color-primary-light: #3D7A5F;
-  --color-primary-dark: #1D3A2F;
+  --color-primary: #7ABED0;
+  --color-primary-light: #A5CFE1;
+  --color-primary-dark: #5A9DB0;
 
-  --color-bg: #F5F0E8;
-  --color-surface: #FFFDF8;
-  --color-border: #E8E4DC;
+  --color-bg: #EBF5EB;
+  --color-surface: #F5FAF5;
+  --color-border: #D7EBD6;
 
-  --color-accent: #C4705A;
-  --color-gold: #D4A853;
+  --color-accent: #E8A668;
+  --color-gold: #E8B868;
 
-  --color-success: #3A8A5C;
-  --color-warning: #D4A853;
+  --color-success: #9EC69B;
+  --color-warning: #E8B868;
   --color-error: #C45A5A;
-  --color-info: #5A8AC4;
+  --color-info: #7ABED0;
 
   --color-text: #1A1A1A;
   --color-text-secondary: #5C5C5C;
@@ -360,10 +362,10 @@ Font: Caption, uppercase, 600 weight
 
 | Status | Background | Text |
 |--------|------------|------|
-| Available | `#E8F5EC` | `#2D5A47` |
-| Pending | `#FFF5E6` | `#996B00` |
-| Adopted | `#F0E8F5` | `#5A4570` |
-| On Hold | `#E8E4DC` | `#5C5C5C` |
+| Available | `#EBF5EB` | `#5D8A5A` |
+| Pending | `#FEF7F0` | `#A86E38` |
+| Adopted | `#F0F7FA` | `#3D7A8A` |
+| On Hold | `#D7EBD6` | `#5C5C5C` |
 | Withdrawn | `#F5E8E8` | `#8C5C5C` |
 
 ---
