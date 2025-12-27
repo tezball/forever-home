@@ -1,5 +1,13 @@
 package com.example.foreverhome.cli.config;
 
+import com.example.foreverhome.cli.ui.InteractiveMenu;
+import com.example.foreverhome.cli.ui.ProgressReporter;
+import com.example.foreverhome.cli.ui.TerminalOutput;
+import com.example.foreverhome.cli.service.ProcessExecutor;
+import com.example.foreverhome.cli.service.ConfigManager;
+import com.example.foreverhome.cli.service.DocsBrowser;
+import com.example.foreverhome.cli.service.DocsSearchService;
+import com.example.foreverhome.cli.service.PortChecker;
 import org.springframework.aot.hint.MemberCategory;
 import org.springframework.aot.hint.RuntimeHints;
 import org.springframework.aot.hint.RuntimeHintsRegistrar;
@@ -29,6 +37,40 @@ public class NativeHints {
 
             // SnakeYAML for config
             registerYamlHints(hints);
+
+            // Register CLI components for CGLIB proxies (used with @Lazy)
+            registerCliComponentHints(hints);
+        }
+
+        private void registerCliComponentHints(RuntimeHints hints) {
+            // Register all UI and service components that may be lazily initialized
+            Class<?>[] lazyComponents = {
+                InteractiveMenu.class,
+                InteractiveMenu.MenuOption.class,
+                ProgressReporter.class,
+                TerminalOutput.class,
+                ProcessExecutor.class,
+                ConfigManager.class,
+                DocsBrowser.class,
+                DocsSearchService.class,
+                PortChecker.class
+            };
+
+            for (Class<?> clazz : lazyComponents) {
+                hints.reflection().registerType(clazz,
+                    MemberCategory.INVOKE_DECLARED_CONSTRUCTORS,
+                    MemberCategory.INVOKE_DECLARED_METHODS,
+                    MemberCategory.INVOKE_PUBLIC_METHODS,
+                    MemberCategory.DECLARED_FIELDS,
+                    MemberCategory.PUBLIC_FIELDS);
+            }
+
+            // Register proxy hints for Spring CGLIB proxies
+            hints.proxies().registerJdkProxy(
+                org.springframework.aop.SpringProxy.class,
+                org.springframework.aop.framework.Advised.class,
+                org.springframework.core.DecoratingProxy.class
+            );
         }
 
         private void registerJLineHints(RuntimeHints hints) {

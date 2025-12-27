@@ -7,7 +7,6 @@ import com.example.foreverhome.cli.service.ProcessExecutor;
 import com.example.foreverhome.cli.ui.InteractiveMenu;
 import com.example.foreverhome.cli.ui.InteractiveMenu.MenuOption;
 import com.example.foreverhome.cli.ui.TerminalOutput;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.shell.command.annotation.Command;
 import org.springframework.shell.command.annotation.Option;
 import org.springframework.stereotype.Component;
@@ -31,7 +30,7 @@ public class DocsCommands {
     private final TerminalOutput output;
 
     public DocsCommands(DocsBrowser browser, DocsSearchService searchService,
-                        ProcessExecutor executor, @Lazy InteractiveMenu menu,
+                        ProcessExecutor executor, InteractiveMenu menu,
                         TerminalOutput output) {
         this.browser = browser;
         this.searchService = searchService;

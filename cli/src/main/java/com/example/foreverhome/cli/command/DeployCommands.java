@@ -5,7 +5,6 @@ import com.example.foreverhome.cli.service.ProcessExecutor;
 import com.example.foreverhome.cli.ui.InteractiveMenu;
 import com.example.foreverhome.cli.ui.ProgressReporter;
 import com.example.foreverhome.cli.ui.TerminalOutput;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.shell.command.annotation.Command;
 import org.springframework.shell.command.annotation.Option;
 import org.springframework.stereotype.Component;
@@ -25,7 +24,7 @@ public class DeployCommands {
     private final ProgressReporter progress;
 
     public DeployCommands(ProcessExecutor executor, ConfigManager config,
-                          @Lazy InteractiveMenu menu, TerminalOutput output,
+                          InteractiveMenu menu, TerminalOutput output,
                           ProgressReporter progress) {
         this.executor = executor;
         this.config = config;

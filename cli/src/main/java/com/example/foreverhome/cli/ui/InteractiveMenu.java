@@ -2,7 +2,6 @@ package com.example.foreverhome.cli.ui;
 
 import org.jline.reader.LineReader;
 import org.jline.terminal.Terminal;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import java.io.PrintWriter;
@@ -12,7 +11,6 @@ import java.util.List;
  * Service for interactive menu navigation and user prompts.
  */
 @Component
-@Lazy
 public class InteractiveMenu {
 
     private static final String RESET = "\033[0m";
@@ -26,7 +24,7 @@ public class InteractiveMenu {
     private final LineReader lineReader;
     private final PrintWriter writer;
 
-    public InteractiveMenu(@Lazy Terminal terminal, @Lazy LineReader lineReader) {
+    public InteractiveMenu(Terminal terminal, LineReader lineReader) {
         this.terminal = terminal;
         this.lineReader = lineReader;
         this.writer = terminal.writer();
