@@ -8,9 +8,9 @@
 
 - [[Home]] - Vault home page
 - [[Roadmap]] - Implementation roadmap and priorities
-- [[domain-model]] - Entity definitions and relationships
-- [[pet-status]] - Status lifecycle and transitions
-- [[ui-style-guide]] - Component specifications
+- [[architecture/domain-model|Domain Model]] - Entity definitions and relationships
+- [[architecture/pet-status|Pet Status]] - Status lifecycle and transitions
+- [[design/ui-style-guide|UI Style Guide]] - Component specifications
 
 ---
 

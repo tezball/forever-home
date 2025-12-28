@@ -5,7 +5,7 @@
 > This document defines the core types in the Forever Home domain and the rationale for their existence.
 
 **Related Documentation:**
-- [[Roadmap]] - Implementation phases and status
+- [[../Roadmap|Roadmap]] - Implementation phases and status
 - [[pet-status]] - Pet lifecycle state machine
 - [[user-stories/index]] - User stories by role
 

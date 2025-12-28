@@ -6,28 +6,81 @@ Forever Home is a pet adoption platform connecting pet owners (Fosters) with ado
 
 ---
 
+## Folder Structure
+
+```
+docs/
+├── Home.md                          # This file - main index
+├── Roadmap.md                       # Project phases and status
+│
+├── architecture/                    # System design
+│   ├── domain-model.md             # Entities, relationships, auth
+│   ├── pet-status.md               # Pet lifecycle state machine
+│   └── user-flow-diagrams.md       # Sequence diagrams
+│
+├── user-stories/                    # Requirements by role
+│   ├── index.md                    # Stories overview
+│   ├── visitor.md                  # Public browsing
+│   ├── foster.md                   # Pet registration
+│   ├── adopter.md                  # Adoption applications
+│   ├── rescue-organization.md      # Pet management
+│   ├── vet.md                      # Health verification
+│   ├── admin.md                    # Platform management
+│   └── notifications.md            # Notification system
+│
+├── guides/                          # How-to documentation
+│   ├── deployment-guide.md         # AWS deployment
+│   ├── testing-strategy.md         # Test approach
+│   ├── manual-qa-guide.md          # QA test cases
+│   └── ses-setup.md                # Email configuration
+│
+├── design/                          # UI/UX documentation
+│   ├── ui-style-guide.md           # Design system
+│   ├── style-guide.html            # Component library
+│   └── ux-improvement-plan.md      # UX roadmap
+│
+├── services/                        # Service documentation
+│   ├── moderation-service.md       # AI content moderation
+│   └── notifications-map.md        # Notification triggers
+│
+└── reviews/                         # Audits and feedback
+    ├── comprehensive-platform-review.md
+    ├── security-review.md
+    └── rescue-org-review-feedback.md
+```
+
+---
+
 ## Quick Navigation
 
 ### Core Documentation
 | Document | Description |
 |----------|-------------|
 | [[Roadmap]] | Project roadmap and implementation status |
-| [[domain-model]] | Entity definitions, relationships, and authentication |
-| [[pet-status]] | Pet lifecycle state machine and transitions |
-| [[ui-style-guide]] | Design system, colors, typography, components |
-| [[deployment-guide]] | Production deployment instructions |
-| [[testing-strategy]] | Testing approach and coverage |
+| [[architecture/domain-model\|Domain Model]] | Entity definitions, relationships, and authentication |
+| [[architecture/pet-status\|Pet Status]] | Pet lifecycle state machine and transitions |
+| [[design/ui-style-guide\|UI Style Guide]] | Design system, colors, typography, components |
+| [[guides/deployment-guide\|Deployment Guide]] | Production deployment instructions |
+| [[guides/testing-strategy\|Testing Strategy]] | Testing approach and coverage |
 
 ### User Stories by Role
 | Role | Stories | Status |
 |------|---------|--------|
 | [[user-stories/visitor\|Visitor]] | Public browsing and discovery | Complete |
 | [[user-stories/foster\|Foster]] | Pet registration and rehoming | Complete |
-| [[user-stories/adopter\|Adopter]] | Browsing, favorites, applications | Complete |
+| [[user-stories/adopter\|Adopter]] | Browsing, favorites, applications, swipe mode | Complete |
 | [[user-stories/rescue-organization\|Rescue Org]] | Pet intake, vet approval, adoptions | Complete |
 | [[user-stories/vet\|Vet]] | Health verification and sign-off | Complete |
 | [[user-stories/admin\|Admin]] | Approvals, moderation, analytics | Complete |
 | [[user-stories/notifications\|Notifications]] | Email and in-app notifications | Complete |
+
+### Additional Documentation
+| Category | Documents |
+|----------|-----------|
+| **Services** | [[services/moderation-service\|Moderation Service]], [[services/notifications-map\|Notifications Map]] |
+| **Guides** | [[guides/manual-qa-guide\|QA Guide]], [[guides/ses-setup\|SES Setup]] |
+| **Reviews** | [[reviews/security-review\|Security]], [[reviews/comprehensive-platform-review\|Platform Review]] |
+| **Design** | [[design/ux-improvement-plan\|UX Plan]], [[architecture/user-flow-diagrams\|Flow Diagrams]] |
 
 ---
 
@@ -132,7 +185,7 @@ Foster                    Rescue Org                 Vet                      Ad
 | **AI Content Moderation** | Pets must pass AI moderation before becoming publicly visible |
 | **Dual Pet Workflows** | Foster-initiated (standard) or Rescue-direct (skips foster submission) |
 
-See [[domain-model]] for full entity definitions.
+See [[architecture/domain-model|Domain Model]] for full entity definitions.
 
 ---
 
@@ -140,9 +193,9 @@ See [[domain-model]] for full entity definitions.
 
 | Controller | Base Path | Key Endpoints |
 |------------|-----------|---------------|
-| Auth | `/api/auth` | register, login, refresh, verify-email, forgot-password |
+| Auth | `/api/auth` | register, login, refresh, verify-email, forgot-password, google |
 | Profile | `/api/profile` | status, foster, adopter, vet, rescue-org |
-| Pet | `/api/pets` | CRUD, submit, accept, decline, lookup |
+| Pet | `/api/pets` | CRUD, submit, accept, decline, lookup, hold |
 | Vet | `/api/vet` | pending queue, sign-off, decline, approvals |
 | Rescue | `/api/rescue-org` | vet management, approval requests |
 | Adoption | `/api/applications` | submit, review, approve, reject, finalize |

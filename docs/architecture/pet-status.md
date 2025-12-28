@@ -5,7 +5,7 @@
 > This document defines the lifecycle statuses a pet goes through from registration to adoption.
 
 **Related Documentation:**
-- [[Roadmap]] - Implementation phases and status
+- [[../Roadmap|Roadmap]] - Implementation phases and status
 - [[domain-model]] - Entity definitions (Pet, PetStatus enum)
 - [[user-stories/foster]] - Foster workflow
 - [[user-stories/rescue-organization]] - Rescue workflow

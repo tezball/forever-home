@@ -291,11 +291,11 @@ Forever Home is a pet adoption platform with a trust-based model:
 
 ## Document References
 
-- [[domain-model]] - Complete entity definitions
-- [[pet-status]] - Status lifecycle transitions
+- [[architecture/domain-model|Domain Model]] - Complete entity definitions
+- [[architecture/pet-status|Pet Status]] - Status lifecycle transitions
 - [[user-stories/index]] - All user stories by epic
-- [[deployment-guide]] - Production deployment instructions
-- [[testing-strategy]] - Testing approach and coverage
+- [[guides/deployment-guide|Deployment Guide]] - Production deployment instructions
+- [[guides/testing-strategy|Testing Strategy]] - Testing approach and coverage
 
 ---
 
