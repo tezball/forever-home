@@ -267,6 +267,85 @@ public class PetModerationOrchestrator {
     }
 
     /**
+     * Re-run moderation for a single content item (text field or image).
+     * Deletes the old result and creates a new one.
+     *
+     * @param resultId The ID of the existing ModerationResult to re-run
+     * @return The new ModerationResult, or empty if the original wasn't found or pet data unavailable
+     */
+    public Optional<ModerationResult> rerunModeration(UUID resultId) {
+        log.info("[ORCHESTRATOR] Re-running moderation for result={}", resultId);
+
+        // Get the existing result
+        Optional<ModerationResult> existingOpt = resultRepository.findById(resultId);
+        if (existingOpt.isEmpty()) {
+            log.warn("[ORCHESTRATOR] Result {} not found - cannot re-run", resultId);
+            return Optional.empty();
+        }
+
+        ModerationResult existing = existingOpt.get();
+        UUID petId = existing.getPetId();
+        ContentType contentType = existing.getContentType();
+        String contentIdentifier = existing.getContentIdentifier();
+
+        log.info("[ORCHESTRATOR] Re-running {} moderation for pet={} identifier={}",
+                contentType, petId, contentIdentifier);
+
+        // Get pet data (needed for text content)
+        Optional<PetProfileDto> petOpt = apiClient.getPet(petId);
+        if (petOpt.isEmpty()) {
+            log.warn("[ORCHESTRATOR] Pet {} not found - cannot re-run moderation", petId);
+            return Optional.empty();
+        }
+        PetProfileDto pet = petOpt.get();
+
+        // Delete old result and flags
+        List<FlaggedContent> oldFlags = flagRepository.findByModerationResultId(resultId);
+        flagRepository.deleteByModerationResultId(resultId);
+        resultRepository.deleteById(resultId);
+        log.info("[ORCHESTRATOR] Deleted old result {} with {} flags", resultId, oldFlags.size());
+
+        // Re-run moderation based on content type
+        ModerationResult newResult;
+        if (contentType == ContentType.TEXT) {
+            // Get the text content for this specific field
+            String content = switch (contentIdentifier) {
+                case "name" -> pet.name();
+                case "description" -> pet.description();
+                case "healthNotes" -> pet.healthNotes();
+                default -> {
+                    log.warn("[ORCHESTRATOR] Unknown text field identifier: {}", contentIdentifier);
+                    yield null;
+                }
+            };
+
+            if (content == null || content.isBlank()) {
+                log.warn("[ORCHESTRATOR] No content found for field {} on pet {}", contentIdentifier, petId);
+                return Optional.empty();
+            }
+
+            newResult = textModerationService.moderateText(petId, null, contentIdentifier, content);
+        } else {
+            // For images, the contentIdentifier IS the image URL
+            newResult = imageModerationService.moderateImage(petId, null, contentIdentifier);
+        }
+
+        // Save the new result
+        List<ModerationResult> savedResults = saveResults(List.of(newResult));
+        if (savedResults.isEmpty()) {
+            log.error("[ORCHESTRATOR] Failed to save new moderation result for pet={}", petId);
+            return Optional.empty();
+        }
+
+        ModerationResult savedResult = savedResults.get(0);
+        log.info("[ORCHESTRATOR] Re-run complete: new result {} with status {} and {} flags",
+                savedResult.getId(), savedResult.getStatus(),
+                savedResult.getFlags() != null ? savedResult.getFlags().size() : 0);
+
+        return Optional.of(savedResult);
+    }
+
+    /**
      * Check if Forever Home API is available.
      */
     public boolean isApiAvailable() {

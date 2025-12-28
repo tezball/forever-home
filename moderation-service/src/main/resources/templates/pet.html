@@ -184,7 +184,29 @@
                 <p class="text-sm">Run moderation to analyze this pet's content.</p>
             </div>
 
-            <div th:unless="${#lists.isEmpty(results)}" class="overflow-x-auto">
+            <div th:unless="${#lists.isEmpty(results)}">
+                <!-- Summary Cards -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                    <div class="bg-gray-50 rounded-lg p-4 text-center">
+                        <div class="text-2xl font-bold text-gray-900" th:text="${#lists.size(results)}">0</div>
+                        <div class="text-sm text-gray-500">Total</div>
+                    </div>
+                    <div class="bg-green-50 rounded-lg p-4 text-center border-2 border-green-200">
+                        <div class="text-2xl font-bold text-green-700" th:text="${#lists.size(results.?[status.name() == 'APPROVED'])}">0</div>
+                        <div class="text-sm text-green-600">Approved</div>
+                    </div>
+                    <div class="bg-amber-50 rounded-lg p-4 text-center border-2 border-amber-200">
+                        <div class="text-2xl font-bold text-amber-700" th:text="${#lists.size(results.?[status.name() == 'FLAGGED'])}">0</div>
+                        <div class="text-sm text-amber-600">Flagged</div>
+                    </div>
+                    <div class="bg-red-50 rounded-lg p-4 text-center border-2 border-red-200">
+                        <div class="text-2xl font-bold text-red-700" th:text="${#lists.size(results.?[status.name() == 'REJECTED'])}">0</div>
+                        <div class="text-sm text-red-600">Rejected</div>
+                    </div>
+                </div>
+
+                <!-- Results Table -->
+                <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
                         <tr>
@@ -228,6 +250,7 @@
                         </tr>
                     </tbody>
                 </table>
+                </div>
             </div>
         </div>
     </main>

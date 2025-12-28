@@ -35,6 +35,7 @@ export function Combobox({
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  const justSelectedRef = useRef(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -87,6 +88,11 @@ export function Combobox({
 
   const handleInputFocus = () => {
     if (!disabled) {
+      // Don't reopen if we just selected an option
+      if (justSelectedRef.current) {
+        justSelectedRef.current = false;
+        return;
+      }
       setIsOpen(true);
       setInputValue(''); // Clear to show all options
     }
@@ -96,6 +102,7 @@ export function Combobox({
     onChange(option.value);
     setInputValue(option.label);
     setIsOpen(false);
+    justSelectedRef.current = true;
     inputRef.current?.focus();
   };
 

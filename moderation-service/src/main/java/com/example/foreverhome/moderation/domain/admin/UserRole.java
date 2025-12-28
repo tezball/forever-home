@@ -1,6 +1,7 @@
 package com.example.foreverhome.moderation.domain.admin;
 
 public enum UserRole {
+    SUPER_ADMIN,
     ADMIN,
     FOSTER,
     ADOPTER,
@@ -8,7 +9,7 @@ public enum UserRole {
     RESCUE_ORG;
 
     public boolean isAdministrative() {
-        return this == ADMIN;
+        return this == ADMIN || this == SUPER_ADMIN;
     }
 
     public boolean requiresVerification() {

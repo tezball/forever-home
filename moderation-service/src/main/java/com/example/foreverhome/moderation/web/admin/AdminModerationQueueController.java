@@ -5,6 +5,7 @@ import com.example.foreverhome.moderation.client.dto.PetProfileDto;
 import com.example.foreverhome.moderation.domain.ContentType;
 import com.example.foreverhome.moderation.domain.ModerationCategory;
 import com.example.foreverhome.moderation.domain.ModerationResult;
+import com.example.foreverhome.moderation.domain.ModerationStatus;
 import com.example.foreverhome.moderation.service.ModerationResultService;
 import com.example.foreverhome.moderation.service.PetModerationOrchestrator;
 import org.springframework.stereotype.Controller;
@@ -158,6 +159,42 @@ public class AdminModerationQueueController {
         }
 
         return "redirect:/admin/moderation-queue";
+    }
+
+    @PostMapping("/rerun/{resultId}")
+    public String rerunModeration(
+            @PathVariable UUID resultId,
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) String contentType,
+            RedirectAttributes redirectAttributes) {
+
+        try {
+            var newResult = orchestrator.rerunModeration(resultId);
+
+            if (newResult.isEmpty()) {
+                redirectAttributes.addFlashAttribute("error",
+                        "Failed to re-run moderation: Result not found or pet data unavailable");
+            } else {
+                ModerationResult result = newResult.get();
+                String statusMsg = result.getStatus() == ModerationStatus.FLAGGED
+                        ? "flagged with " + result.getFlags().size() + " issue(s)"
+                        : result.getStatus().name().toLowerCase();
+                redirectAttributes.addFlashAttribute("success",
+                        "Moderation re-run complete: Content is now " + statusMsg);
+            }
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error",
+                    "Failed to re-run moderation: " + e.getMessage());
+        }
+
+        // Preserve filter state
+        String redirect = "redirect:/admin/moderation-queue";
+        if (category != null || contentType != null) {
+            redirect += "?";
+            if (category != null) redirect += "category=" + category + "&";
+            if (contentType != null) redirect += "contentType=" + contentType;
+        }
+        return redirect;
     }
 
     /**
