@@ -1,5 +1,0 @@
- ✔ Container forever-home-grafana-1            Created                                                                                                                                                                                                       0.1s
-Error response from daemon: could not select device driver "nvidia" with capabilities: [[gpu]]
-Failed: Docker Compose failed
-Failed to start Docker services
-Details of the error have been omitted. You can use the stacktrace command to print the full stacktrace.

@@ -95,7 +95,7 @@ export function RegisterPage() {
       <div className="max-w-md w-full">
         <div className="text-center mb-8">
           <Link to="/" className="inline-block mb-6">
-            <img src="/logo2.png" alt="Forever Home" className="h-16 mx-auto" />
+            <img src="/logo2.png" alt="Forever Home" className="h-18 mx-auto" />
           </Link>
           <h1 className="text-2xl font-bold text-gray-900">Create an account</h1>
           <p className="text-gray-600 mt-2">Join our community today</p>
