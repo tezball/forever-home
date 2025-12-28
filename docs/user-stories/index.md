@@ -155,7 +155,9 @@ All authenticated users share a common authentication system:
 - **JWT-based**: Stateless authentication with short-lived tokens
 - **Access token**: 15 minute expiry, stored in memory
 - **Refresh token**: 7 day expiry (30 days with "Remember me"), stored in httpOnly cookie
+- **Token rotation**: Refresh tokens rotated on each use - old tokens immediately revoked
 - **Email verification**: Magic link with 24-hour expiry
+- **Google OAuth**: Alternative login with automatic email verification, role selection for new users
 
 ### Account States
 
@@ -181,6 +183,7 @@ Some roles require admin approval before becoming fully active:
 - US-1.2: User Login (all roles)
 - US-1.3: Password Recovery (all roles)
 - US-1.4: Complete Profile (all roles)
+- US-1.5: Google OAuth Login (all roles)
 
 ### Epic 2: Foster - Pet Registration
 - US-2.0: Browse Rescue Organizations
@@ -195,6 +198,9 @@ Some roles require admin approval before becoming fully active:
 - US-3.3: Accept Pet Registrations
 - US-3.5: View Organization's Pets
 - US-3.6: Facilitate Adoption
+- US-3.7: Approve Vets
+- US-3.8: Create Rescue-Owned Pets
+- US-3.9: Put Pet on Hold
 
 ### Epic 4: Veterinary Verification
 - US-4.1: Create Vet Profile
@@ -210,6 +216,7 @@ Some roles require admin approval before becoming fully active:
 - US-5.4: Apply to Adopt
 - US-5.5: Track Application Status
 - US-5.6: Favorite Pets
+- US-5.7: Swipe Mode Discovery
 
 ### Epic 6: Admin Management
 - US-6.1: Approve User Registrations

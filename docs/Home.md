@@ -59,30 +59,33 @@ Foster                    Rescue Org                 Vet                      Ad
 ### Backend (Spring Boot)
 | Feature | Status | Details |
 |---------|--------|---------|
-| Authentication | Complete | JWT access (15min) + refresh tokens (7 days), email verification, password reset |
+| Authentication | Complete | JWT access (15min) + refresh tokens (7 days), token rotation, email verification, password reset, Google OAuth |
 | User Management | Complete | Multi-role registration, profile completion, account lockout (5 failed attempts) |
 | Pet Lifecycle | Complete | Full state machine: Draft → Pending Rescue → Pending Vet → Available → In Progress → Adopted |
-| Adoption Flow | Complete | Applications, review, approval, finalization with notifications |
+| Dual Pet Workflows | Complete | Foster-initiated (standard) and Rescue-direct (skips foster submission) |
+| Adoption Flow | Complete | Applications (max 3 active), review, approval, finalization with notifications |
 | Vet Verification | Complete | Microchip lookup, bilateral approval system, sign-off with health checks |
 | Notifications | Complete | In-app + email notifications, user preferences, 6 notification types |
 | Image Storage | Complete | S3 integration (LocalStack dev / AWS prod), up to 5 images per pet |
 | Email Service | Complete | AWS SES, SMTP, and console backends with branded HTML templates |
-| Admin Tools | Complete | User management, rescue org verification, content moderation, audit logs |
+| Admin Tools | Complete | User management, rescue org verification, audit logs |
+| Content Moderation | Complete | AI-powered via separate moderation service (Ollama LLMs for text + images) |
 | Analytics | Complete | MetricsService tracking registrations, adoptions, sign-offs |
 
 ### Frontend (React + TypeScript)
 | Feature | Status | Details |
 |---------|--------|---------|
-| Authentication | Complete | Login, register, email verification, password reset |
+| Authentication | Complete | Login, register, email verification, password reset, Google OAuth |
 | Pet Browsing | Complete | Filters (species, size, sex), pagination, featured pets |
+| Swipe Mode | Complete | Tinder-style pet discovery with swipe gestures, keyboard support, lazy loading |
 | Pet Detail | Complete | Image carousel, status timeline, favorites, adoption form |
 | Foster Dashboard | Complete | Pet management by status, submit to rescue, withdraw |
-| Adopter Dashboard | Complete | Favorites, application tracking with status |
-| Rescue Dashboard | Complete | Accept/decline pets, manage applications, vet approvals |
+| Adopter Dashboard | Complete | Favorites, application tracking with status, liked pets |
+| Rescue Dashboard | Complete | Accept/decline pets, manage applications, vet approvals, pet hold |
 | Vet Dashboard | Complete | Microchip lookup, pending queue, sign-off/decline forms |
 | Admin Dashboard | Complete | Analytics, user management, rescue approvals |
 | Notifications | Complete | Preferences, notification bell with count |
-| Image Upload | Complete | Multi-image upload with preview and reordering |
+| Image Upload | Complete | Multi-image upload with drag-drop, preview and reordering |
 
 ---
 
@@ -120,10 +123,14 @@ Foster                    Rescue Org                 Vet                      Ad
 | **Microchip Required** | All pets must have a microchip for vet lookup and ownership tracking |
 | **Bilateral Vet Approval** | Vets request approval from rescues OR rescues proactively approve vets |
 | **Microchip-Based Vet Lookup** | Vets find pets by microchip number - no push assignment needed |
-| **JWT Authentication** | 15-min access tokens + 7-day refresh tokens for security |
+| **JWT Authentication** | 15-min access tokens + 7-day refresh tokens with rotation for security |
+| **Google OAuth** | Alternative login method with automatic email verification |
+| **Token Rotation** | Refresh tokens rotated on each use - old tokens immediately revoked |
 | **Auto Profile Creation** | Profiles created at registration, marked complete immediately |
 | **Environment-Agnostic Storage** | S3 keys stored in DB, URLs generated dynamically |
 | **Comprehensive Notifications** | Every state change triggers notifications based on user preferences |
+| **AI Content Moderation** | Pets must pass AI moderation before becoming publicly visible |
+| **Dual Pet Workflows** | Foster-initiated (standard) or Rescue-direct (skips foster submission) |
 
 See [[domain-model]] for full entity definitions.
 

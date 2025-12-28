@@ -115,6 +115,8 @@ Forever Home is a pet adoption platform with a trust-based model:
 | US-3.5 | View Organization's Pets | Done |
 | US-3.6 | Facilitate Adoption | Done |
 | US-3.7 | Approve Vets | Done |
+| US-3.8 | Create Rescue-Owned Pets | Done |
+| US-3.9 | Put Pet on Hold | Done |
 
 ### Phase 2 Deliverables
 
@@ -126,6 +128,8 @@ Forever Home is a pet adoption platform with a trust-based model:
 - [x] Rescue orgs can review and approve applications
 - [x] Rescue orgs can finalize adoptions
 - [x] Rescue orgs can approve/revoke vet access
+- [x] Rescue orgs can create pets directly (rescue-owned)
+- [x] Rescue orgs can put pets on hold
 
 ---
 
@@ -154,6 +158,7 @@ Forever Home is a pet adoption platform with a trust-based model:
 |-------|-------------|--------|
 | US-5.5 | Track Application Status | Done |
 | US-5.6 | Favorite Pets | Done |
+| US-5.7 | Swipe Mode Discovery | Done |
 
 ### 3.5 Admin Features
 | Story | Description | Status |
@@ -174,9 +179,11 @@ Forever Home is a pet adoption platform with a trust-based model:
 - [x] Vets can view their sign-off history (with CSV export)
 - [x] Adopters can track application status
 - [x] Adopters can favorite pets
+- [x] Swipe mode for pet discovery (Tinder-style interface)
 - [x] Admins can manage all users
 - [x] Email notifications (AWS SES)
 - [x] In-app notification center
+- [x] Google OAuth authentication
 
 ---
 
@@ -231,21 +238,25 @@ Forever Home is a pet adoption platform with a trust-based model:
 
 ### Backend Features (Spring Boot)
 - **13 Controllers** with full REST API coverage
-- **JWT Authentication** with access (15min) + refresh (7 days) tokens
+- **JWT Authentication** with access (15min) + refresh (7 days) tokens with rotation
+- **Google OAuth** integration with automatic email verification
 - **Email verification** and password reset flows
 - **Account lockout** after 5 failed login attempts
 - **Pet state machine** with full lifecycle management
+- **Dual pet workflows** (foster-initiated and rescue-direct)
+- **Pet hold** functionality for rescues
 - **Bilateral vet approval** system
 - **Microchip-based** pet lookup for vets
 - **Notification service** with 6 notification types
 - **Email templates** with branded HTML
 - **S3 storage** for images (LocalStack dev, AWS prod)
-- **Content moderation** with flagging and audit logs
+- **AI content moderation** via separate moderation service (Ollama LLMs)
 - **Metrics service** for analytics
 
 ### Frontend Features (React + TypeScript)
 - **Role-based dashboards** for all 5 user types
 - **Pet browsing** with filters and pagination
+- **Swipe mode** for Tinder-style pet discovery
 - **Image upload** with multi-image support and reordering
 - **Pet detail page** with status timeline and favorites
 - **Adoption application** workflow with status tracking
@@ -253,6 +264,7 @@ Forever Home is a pet adoption platform with a trust-based model:
 - **Admin tools** for user management and analytics
 - **Notification center** with preferences
 - **CSV export** for analytics and vet history
+- **Google OAuth** login with role selection for new users
 
 ### Infrastructure (Terraform)
 - **AWS ECS Fargate** for container hosting

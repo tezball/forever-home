@@ -36,13 +36,14 @@ Forever Home operates on a trust-based adoption model where pets must pass throu
 |-------|------|-------------|
 | id | UUID | Unique identifier |
 | email | String | Login credential, unique |
-| passwordHash | String | Encrypted password |
+| passwordHash | String | Encrypted password (null for Google-only users) |
+| googleId | String | Google account ID (for OAuth users) |
 | role | UserRole | Discriminator for user type |
 | createdAt | Timestamp | Account creation date |
 | lastLoginAt | Timestamp | Most recent login |
 | status | AccountStatus | Active, Suspended, Pending |
 | profileComplete | Boolean | Has completed role-specific profile |
-| emailVerified | Boolean | Email has been verified |
+| emailVerified | Boolean | Email has been verified (auto-true for Google users) |
 | emailVerificationToken | String | Token for email verification |
 | emailVerificationExpiry | Timestamp | When verification token expires |
 | passwordResetToken | String | Token for password reset |
@@ -54,9 +55,10 @@ Forever Home operates on a trust-based adoption model where pets must pass throu
 **Why it exists:** Provides authentication and authorization foundation. All specific user types extend from this base, enabling a unified login system while supporting role-specific functionality.
 
 **Security Features:**
-- Account locks after 5 failed login attempts
+- Account locks after 5 failed login attempts (15-minute lockout)
 - Email verification required before full access
-- Password reset with 1-hour expiry tokens
+- Password reset with 24-hour expiry tokens
+- Google OAuth with automatic email verification
 
 ---
 
@@ -226,11 +228,18 @@ Forever Home operates on a trust-based adoption model where pets must pass throu
 | Access Token | Memory (client) | 15 minutes | API authorization |
 | Refresh Token | httpOnly cookie | 7 days (30 with "Remember me") | Obtain new access tokens |
 
+**Security Features:**
+- **Token Rotation:** Refresh tokens are rotated on each use - old tokens are immediately revoked
+- **Account Lockout:** 5 failed login attempts triggers 15-minute lockout
+- **Email Verification:** Required before full access
+
 **Endpoints:**
 - `POST /auth/register` - Create account, returns tokens
 - `POST /auth/login` - Authenticate, returns tokens
-- `POST /auth/refresh` - Exchange refresh cookie for new access token
+- `POST /auth/refresh` - Exchange refresh cookie for new access token (rotates refresh token)
 - `POST /auth/logout` - Invalidate refresh token
+- `POST /auth/google` - Google OAuth authentication
+- `POST /auth/google/complete-registration` - Complete Google registration with role selection
 
 **Token Payload:**
 ```json
@@ -243,7 +252,20 @@ Forever Home operates on a trust-based adoption model where pets must pass throu
 }
 ```
 
-**Why JWT:** Stateless authentication scales horizontally. Short-lived access tokens limit exposure if compromised. Refresh tokens in httpOnly cookies prevent XSS theft.
+**Why JWT:** Stateless authentication scales horizontally. Short-lived access tokens limit exposure if compromised. Refresh tokens in httpOnly cookies prevent XSS theft. Token rotation prevents replay attacks.
+
+### Google OAuth
+
+| Field | Type | Description |
+|-------|------|-------------|
+| googleId | String | Google account ID (linked to User) |
+
+**Flow:**
+1. User clicks "Sign in with Google"
+2. Google returns ID token
+3. If new user: redirect to role selection page
+4. If existing user: authenticate and return tokens
+5. Google users have automatic email verification
 
 ---
 
@@ -265,7 +287,8 @@ Forever Home operates on a trust-based adoption model where pets must pass throu
 | description | Text | Personality, history, needs (max 500 chars) |
 | microchipId | String | Microchip number (required, immutable) |
 | status | PetStatus | Current lifecycle stage |
-| fosterId | UUID | Who registered this pet |
+| moderationStatus | ModerationStatus | AI moderation status (PENDING, APPROVED, FLAGGED, REJECTED) |
+| fosterId | UUID | Who registered this pet (null for rescue-owned) |
 | rescueOrgId | UUID | Managing organization |
 | createdAt | Timestamp | Registration date |
 | updatedAt | Timestamp | Last modification |
@@ -278,9 +301,11 @@ Forever Home operates on a trust-based adoption model where pets must pass throu
 - **Status is denormalized:** Avoids complex joins for the most common query (listing available pets)
 - **Age as integer + unit:** Handles puppies/kittens (months) and adults (years) cleanly
 - **No vet assignment:** Any verified vet can sign off on any `PendingVet` pet via microchip lookup
+- **Dual ownership models:** Pets can be foster-owned (fosterId set) or rescue-owned (fosterId null, rescueOrgId set)
+- **AI moderation:** Pets must pass moderation before becoming publicly visible
 
 **Relationships:**
-- Belongs to one Foster (registrant)
+- Belongs to one Foster (registrant) OR is rescue-owned (fosterId null)
 - Belongs to one Rescue Organization
 - Has many Pet Images
 - Has one Vet Sign-off (when verified)
@@ -598,6 +623,12 @@ PET | PROFILE | APPLICATION
 ```
 PENDING | APPROVED | DISMISSED
 ```
+
+### ModerationStatus (AI content moderation)
+```
+PENDING | APPROVED | FLAGGED | REJECTED
+```
+*Pets must be APPROVED to be publicly visible. See moderation-service documentation.*
 
 ---
 

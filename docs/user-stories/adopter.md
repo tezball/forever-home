@@ -81,11 +81,14 @@ All pets on Forever Home have been verified by licensed veterinarians, giving ad
 **Authentication:**
 - JWT-based authentication
 - Access token: 15 minute expiry, stored in memory
-- Refresh token: 7 day expiry, stored in httpOnly cookie
+- Refresh token: 7 day expiry (30 days with "Remember me"), stored in httpOnly cookie
+- Token rotation: Old refresh token revoked when new one issued
 - Email verification sends magic link with 24-hour expiry
+- Google OAuth: Alternative login with automatic email verification
 
 **UI Components:**
 - Role selection: Radio buttons with descriptions ("I want to adopt a pet")
+- Google Sign-In button with branded styling
 - Form inputs: 48px height, 16px font (prevents iOS zoom)
 - Primary button: "Create Account" (Forest green `#2D5A47`)
 - Error states: Red border with inline error message
@@ -370,6 +373,44 @@ Any (except Approved) ──[Adopter withdraws]──► Withdrawn
   - Rejected: Red
   - Withdrawn: Gray (strikethrough)
 - Withdraw: Tertiary destructive link
+
+**Priority:** P2 - Enhanced
+
+---
+
+### US-5.7: Swipe Mode Discovery
+
+**As an** adopter
+**I want to** discover pets using a swipe interface
+**So that** I can quickly browse through available pets in an engaging way
+
+**Access:** Public (can start as visitor) or Authenticated (saves likes)
+
+**Acceptance Criteria:**
+- Full-screen, immersive card-based interface
+- Swipe left to pass, swipe right to like (add to favorites)
+- Tap card or swipe up for detailed pet information
+- Filter pets by species, size, and sex before swiping
+- Keyboard shortcuts: Arrow keys to swipe, Escape to exit
+- Lazy loading: Fetches next batch as user approaches end of current set
+- Empty states for "no results" and "all swiped"
+- Liked pets saved to favorites list (if authenticated)
+
+**Domain Notes:**
+- Reuses existing pet browsing endpoints with pagination
+- Likes create/update entries in Favorites table
+- Session state tracks already-seen pets to prevent duplicates
+
+**UI Components:**
+- SwipeContainer: Full-screen wrapper with filters header
+- SwipeCard: Individual pet card with gesture support
+  - Pet photo (full-card background)
+  - Name overlay at bottom
+  - Quick stats (breed, age, sex)
+- SwipeActions: Pass/Like/Info buttons below card
+- SwipeFilters: Species/Size/Sex dropdown filters
+- SwipeEmptyState: Illustrations for empty/completed states
+- Gesture support via react-spring and @use-gesture/react
 
 **Priority:** P2 - Enhanced
 

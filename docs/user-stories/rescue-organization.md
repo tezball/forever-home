@@ -353,6 +353,79 @@ InProgress ──[Adoption cancelled]──► Available
 
 ---
 
+### US-3.8: Create Rescue-Owned Pets
+
+**As a** rescue organization
+**I want to** register pets directly without a foster
+**So that** I can list pets that come directly to my rescue
+
+**Access:** Requires `verified = true`
+
+**Acceptance Criteria:**
+- Create pet profile with all standard fields (name, age, breed, species, size, sex, microchip, description)
+- Upload images (max 5) with primary image designation
+- Pet is created in `PendingVet` status (skips `Draft` and `PendingRescue`)
+- Pet is automatically assigned to the creating rescue organization
+- Pet follows standard vet verification workflow from there
+- No foster is associated with these pets
+
+**Domain Notes:**
+- Creates `Pet` entity with `rescueOrgId` set and `fosterId` null
+- Status starts at `PendingVet` (vet verification required)
+- Pet appears in rescue's pet list immediately
+- Same moderation checks apply as foster-submitted pets
+
+**Status Transition:**
+```
+[Create] ──► PendingVet ──[Vet signs off]──► Available
+```
+
+**UI Components:**
+- "Add Pet" button on rescue dashboard
+- Same multi-step form as foster pet creation
+- Form indicates "Creating as rescue-owned pet"
+
+**Priority:** P2 - Enhanced
+
+---
+
+### US-3.9: Put Pet on Hold
+
+**As a** rescue organization
+**I want to** temporarily put a pet on hold
+**So that** I can pause applications while handling logistics
+
+**Access:** Requires `verified = true`
+
+**Acceptance Criteria:**
+- Can put any pet in `Available` status on hold
+- Pet moves to `OnHold` status
+- Pet remains visible to public but marked as "On Hold"
+- No new applications accepted while on hold
+- Can remove hold at any time (returns to `Available`)
+- Must provide reason for hold (internal note)
+
+**Domain Notes:**
+- Sets `Pet.status` = `OnHold`
+- Preserves pet visibility for transparency
+- Existing applications remain active
+
+**Status Transitions:**
+```
+Available ──[Rescue puts on hold]──► OnHold
+OnHold ──[Rescue removes hold]──► Available
+```
+
+**UI Components:**
+- "Put on Hold" action button on pet card
+- Modal with reason textarea (required)
+- Hold badge displayed on pet card
+- "Remove Hold" button when pet is on hold
+
+**Priority:** P2 - Enhanced
+
+---
+
 ## Removed Feature
 
 ### ~~US-3.4: Assign Vet for Sign-off~~ (REMOVED)
