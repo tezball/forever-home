@@ -86,18 +86,39 @@ public class TestDataSeeder implements CommandLineRunner {
         List<TestAccount> testAccounts = List.of(
             new TestAccount("superadmin@test.com", "Super Admin", UserRole.SUPER_ADMIN, null, null),
             new TestAccount("admin@test.com", "Test Admin", UserRole.ADMIN, null, null),
-            // 4 Fosters (1 per rescue)
+            // 10 Fosters (1 per rescue)
             new TestAccount("foster-r1@test.com", "Alex", UserRole.FOSTER, "Alex", "Johnson"),
             new TestAccount("foster-r2@test.com", "Jordan", UserRole.FOSTER, "Jordan", "Smith"),
             new TestAccount("foster-r3@test.com", "Taylor", UserRole.FOSTER, "Taylor", "Brown"),
             new TestAccount("foster-r4@test.com", "Morgan", UserRole.FOSTER, "Morgan", "Davis"),
-            new TestAccount("adopter@test.com", "Test Adopter", UserRole.ADOPTER, null, null),
+            new TestAccount("foster-r5@test.com", "Casey", UserRole.FOSTER, "Casey", "Wilson"),
+            new TestAccount("foster-r6@test.com", "Riley", UserRole.FOSTER, "Riley", "Murphy"),
+            new TestAccount("foster-r7@test.com", "Quinn", UserRole.FOSTER, "Quinn", "O'Brien"),
+            new TestAccount("foster-r8@test.com", "Avery", UserRole.FOSTER, "Avery", "Kelly"),
+            new TestAccount("foster-r9@test.com", "Jamie", UserRole.FOSTER, "Jamie", "Ryan"),
+            new TestAccount("foster-r10@test.com", "Drew", UserRole.FOSTER, "Drew", "Walsh"),
+            // 6 Adopters
+            new TestAccount("adopter@test.com", "Test Adopter", UserRole.ADOPTER, "Test", "Adopter"),
+            new TestAccount("adopter2@test.com", "Sarah Collins", UserRole.ADOPTER, "Sarah", "Collins"),
+            new TestAccount("adopter3@test.com", "Michael Byrne", UserRole.ADOPTER, "Michael", "Byrne"),
+            new TestAccount("adopter4@test.com", "Emma Fitzgerald", UserRole.ADOPTER, "Emma", "Fitzgerald"),
+            new TestAccount("adopter5@test.com", "Liam O'Connor", UserRole.ADOPTER, "Liam", "O'Connor"),
+            new TestAccount("adopter6@test.com", "Aoife Doyle", UserRole.ADOPTER, "Aoife", "Doyle"),
+            // 3 Vets
             new TestAccount("vet@test.com", "Test Vet", UserRole.VET, null, null),
-            // 4 Rescue Organizations
+            new TestAccount("vet2@test.com", "Dublin Pet Hospital", UserRole.VET, null, null),
+            new TestAccount("vet3@test.com", "Cork Animal Clinic", UserRole.VET, null, null),
+            // 10 Rescue Organizations
             new TestAccount("rescue1@test.com", "Happy Tails Rescue", UserRole.RESCUE_ORG, null, null),
             new TestAccount("rescue2@test.com", "Second Chance Animal Shelter", UserRole.RESCUE_ORG, null, null),
             new TestAccount("rescue3@test.com", "Paws & Claws Rescue", UserRole.RESCUE_ORG, null, null),
-            new TestAccount("rescue4@test.com", "Forever Friends Animal Rescue", UserRole.RESCUE_ORG, null, null)
+            new TestAccount("rescue4@test.com", "Forever Friends Animal Rescue", UserRole.RESCUE_ORG, null, null),
+            new TestAccount("rescue5@test.com", "Whiskers & Wagging Tails", UserRole.RESCUE_ORG, null, null),
+            new TestAccount("rescue6@test.com", "Ireland Animal Haven", UserRole.RESCUE_ORG, null, null),
+            new TestAccount("rescue7@test.com", "Celtic Paws Rescue", UserRole.RESCUE_ORG, null, null),
+            new TestAccount("rescue8@test.com", "Green Isle Animal Sanctuary", UserRole.RESCUE_ORG, null, null),
+            new TestAccount("rescue9@test.com", "Emerald Pet Rescue", UserRole.RESCUE_ORG, null, null),
+            new TestAccount("rescue10@test.com", "Atlantic Animal Welfare", UserRole.RESCUE_ORG, null, null)
         );
 
         String encodedPassword = passwordEncoder.encode(TEST_PASSWORD);
@@ -161,24 +182,27 @@ public class TestDataSeeder implements CommandLineRunner {
             return;
         }
 
-        // Get all 4 rescue org IDs
-        UUID rescue1Id = getRescueOrgId("rescue1@test.com");
-        UUID rescue2Id = getRescueOrgId("rescue2@test.com");
-        UUID rescue3Id = getRescueOrgId("rescue3@test.com");
-        UUID rescue4Id = getRescueOrgId("rescue4@test.com");
-
-        if (rescue1Id == null || rescue2Id == null || rescue3Id == null || rescue4Id == null) {
-            logger.warn("Cannot seed pets: one or more rescue orgs not found");
-            return;
+        // Get all 10 rescue org IDs
+        UUID[] rescueIds = new UUID[10];
+        for (int i = 1; i <= 10; i++) {
+            rescueIds[i - 1] = getRescueOrgId("rescue" + i + "@test.com");
         }
 
-        // Get all 4 foster IDs (1 per rescue)
-        UUID foster1Id = getFosterId("foster-r1@test.com");
-        UUID foster2Id = getFosterId("foster-r2@test.com");
-        UUID foster3Id = getFosterId("foster-r3@test.com");
-        UUID foster4Id = getFosterId("foster-r4@test.com");
+        // Check all rescues exist
+        for (int i = 0; i < 10; i++) {
+            if (rescueIds[i] == null) {
+                logger.warn("Cannot seed pets: rescue{} not found", i + 1);
+                return;
+            }
+        }
 
-        logger.info("Seeding 40 sample pets across 4 rescue organizations...");
+        // Get all 10 foster IDs (1 per rescue)
+        UUID[] fosterIds = new UUID[10];
+        for (int i = 1; i <= 10; i++) {
+            fosterIds[i - 1] = getFosterId("foster-r" + i + "@test.com");
+        }
+
+        logger.info("Seeding 100 sample pets across 10 rescue organizations...");
 
         // Store pet IDs for image association and vet sign-offs
         List<PetSeed> petSeeds = new ArrayList<>();
@@ -188,13 +212,13 @@ public class TestDataSeeder implements CommandLineRunner {
         List<UUID> adoptedPetFosterIds = new ArrayList<>();
         List<UUID> adoptedPetRescueIds = new ArrayList<>();
 
-        // Seed pets for each rescue (10 pets each: 5 dogs, 5 cats; 1 foster-owned, 9 rescue-owned)
-        seedPetsForRescue(1, rescue1Id, foster1Id, petSeeds, petsNeedingVetSignOff, inProgressPetIds, adoptedPetIds, adoptedPetFosterIds, adoptedPetRescueIds);
-        seedPetsForRescue(2, rescue2Id, foster2Id, petSeeds, petsNeedingVetSignOff, inProgressPetIds, adoptedPetIds, adoptedPetFosterIds, adoptedPetRescueIds);
-        seedPetsForRescue(3, rescue3Id, foster3Id, petSeeds, petsNeedingVetSignOff, inProgressPetIds, adoptedPetIds, adoptedPetFosterIds, adoptedPetRescueIds);
-        seedPetsForRescue(4, rescue4Id, foster4Id, petSeeds, petsNeedingVetSignOff, inProgressPetIds, adoptedPetIds, adoptedPetFosterIds, adoptedPetRescueIds);
+        // Seed pets for each rescue (10 pets each: 5 dogs, 5 cats; various statuses)
+        for (int i = 0; i < 10; i++) {
+            seedPetsForRescue(i + 1, rescueIds[i], fosterIds[i], petSeeds, petsNeedingVetSignOff,
+                inProgressPetIds, adoptedPetIds, adoptedPetFosterIds, adoptedPetRescueIds);
+        }
 
-        logger.info("Created 40 sample pets across 4 rescues (10 per rescue: 5 dogs, 5 cats)");
+        logger.info("Created 100 sample pets across 10 rescues (10 per rescue: 5 dogs, 5 cats)");
 
         // Get vet and adopter IDs for sign-offs and applications
         UUID vetId = getVetId("vet@test.com");
@@ -239,70 +263,82 @@ public class TestDataSeeder implements CommandLineRunner {
 
     /**
      * Seeds 10 pets for a single rescue organization.
-     * Distribution: 5 dogs + 5 cats, 1 foster-owned + 9 rescue-owned
-     * Statuses: 1 AVAILABLE (foster), 2 PENDING_VET, 5 AVAILABLE, 1 IN_PROGRESS, 1 ADOPTED
+     * Distribution: 5 dogs + 5 cats with all status types represented
+     * Statuses: DRAFT, PENDING_RESCUE, PENDING_VET, AVAILABLE (x3), IN_PROGRESS, ADOPTED, ON_HOLD, WITHDRAWN
      */
     private void seedPetsForRescue(int rescueNumber, UUID rescueOrgId, UUID fosterId,
                                     List<PetSeed> petSeeds, List<UUID> petsNeedingVetSignOff,
                                     List<UUID> inProgressPetIds, List<UUID> adoptedPetIds,
                                     List<UUID> adoptedPetFosterIds, List<UUID> adoptedPetRescueIds) {
 
-        int nameOffset = (rescueNumber - 1) * 5; // Each rescue uses different names
+        // Use breed variety - cycle through all breeds based on rescue number
+        int dogBreedOffset = (rescueNumber - 1) * 5;
+        int catBreedOffset = (rescueNumber - 1) * 5;
+        int nameOffset = (rescueNumber - 1) % 4 * 5; // Cycle through names
         Random random = new Random(rescueNumber); // Deterministic randomness per rescue
 
-        // Pet 1: Dog, Foster-owned, ADOPTED (foster-owned so we can create adoption record with foster_id)
-        UUID pet1Id = createPet(rescueNumber, 1, "DOG", DOG_NAMES[nameOffset], DOG_BREEDS[nameOffset % DOG_BREEDS.length],
+        // Pet 1: Dog, Foster-owned, ADOPTED (full workflow - needs adoption record)
+        UUID pet1Id = createPet(rescueNumber, 1, "DOG", DOG_NAMES[nameOffset % DOG_NAMES.length],
+            DOG_BREEDS[dogBreedOffset % DOG_BREEDS.length],
             "ADOPTED", fosterId, rescueOrgId, petSeeds, random);
         petsNeedingVetSignOff.add(pet1Id);
         adoptedPetIds.add(pet1Id);
-        adoptedPetFosterIds.add(fosterId); // Foster-owned, has foster
+        adoptedPetFosterIds.add(fosterId);
         adoptedPetRescueIds.add(rescueOrgId);
 
-        // Pet 2: Dog, Rescue-owned, PENDING_VET
-        createPet(rescueNumber, 2, "DOG", DOG_NAMES[nameOffset + 1], DOG_BREEDS[(nameOffset + 1) % DOG_BREEDS.length],
+        // Pet 2: Dog, Foster-owned, DRAFT (just created, not submitted)
+        createPet(rescueNumber, 2, "DOG", DOG_NAMES[(nameOffset + 1) % DOG_NAMES.length],
+            DOG_BREEDS[(dogBreedOffset + 1) % DOG_BREEDS.length],
+            "DRAFT", fosterId, rescueOrgId, petSeeds, random);
+
+        // Pet 3: Dog, Rescue-owned, PENDING_VET (awaiting vet approval)
+        createPet(rescueNumber, 3, "DOG", DOG_NAMES[(nameOffset + 2) % DOG_NAMES.length],
+            DOG_BREEDS[(dogBreedOffset + 2) % DOG_BREEDS.length],
             "PENDING_VET", null, rescueOrgId, petSeeds, random);
 
-        // Pet 3: Dog, Rescue-owned, AVAILABLE
-        UUID pet3Id = createPet(rescueNumber, 3, "DOG", DOG_NAMES[nameOffset + 2], DOG_BREEDS[(nameOffset + 2) % DOG_BREEDS.length],
-            "AVAILABLE", null, rescueOrgId, petSeeds, random);
-        petsNeedingVetSignOff.add(pet3Id);
-
         // Pet 4: Dog, Rescue-owned, AVAILABLE
-        UUID pet4Id = createPet(rescueNumber, 4, "DOG", DOG_NAMES[nameOffset + 3], DOG_BREEDS[(nameOffset + 3) % DOG_BREEDS.length],
+        UUID pet4Id = createPet(rescueNumber, 4, "DOG", DOG_NAMES[(nameOffset + 3) % DOG_NAMES.length],
+            DOG_BREEDS[(dogBreedOffset + 3) % DOG_BREEDS.length],
             "AVAILABLE", null, rescueOrgId, petSeeds, random);
         petsNeedingVetSignOff.add(pet4Id);
 
-        // Pet 5: Dog, Rescue-owned, IN_PROGRESS
-        UUID pet5Id = createPet(rescueNumber, 5, "DOG", DOG_NAMES[nameOffset + 4], DOG_BREEDS[(nameOffset + 4) % DOG_BREEDS.length],
+        // Pet 5: Dog, Rescue-owned, IN_PROGRESS (has active adoption application)
+        UUID pet5Id = createPet(rescueNumber, 5, "DOG", DOG_NAMES[(nameOffset + 4) % DOG_NAMES.length],
+            DOG_BREEDS[(dogBreedOffset + 4) % DOG_BREEDS.length],
             "IN_PROGRESS", null, rescueOrgId, petSeeds, random);
         petsNeedingVetSignOff.add(pet5Id);
         inProgressPetIds.add(pet5Id);
 
-        // Pet 6: Cat, Rescue-owned, PENDING_VET
-        createPet(rescueNumber, 6, "CAT", CAT_NAMES[nameOffset], CAT_BREEDS[nameOffset % CAT_BREEDS.length],
-            "PENDING_VET", null, rescueOrgId, petSeeds, random);
+        // Pet 6: Cat, Foster-owned, PENDING_RESCUE (submitted, awaiting rescue approval)
+        createPet(rescueNumber, 6, "CAT", CAT_NAMES[nameOffset % CAT_NAMES.length],
+            CAT_BREEDS[catBreedOffset % CAT_BREEDS.length],
+            "PENDING_RESCUE", fosterId, rescueOrgId, petSeeds, random);
 
-        // Pet 7: Cat, Rescue-owned, AVAILABLE
-        UUID pet7Id = createPet(rescueNumber, 7, "CAT", CAT_NAMES[nameOffset + 1], CAT_BREEDS[(nameOffset + 1) % CAT_BREEDS.length],
-            "AVAILABLE", null, rescueOrgId, petSeeds, random);
+        // Pet 7: Cat, Rescue-owned, ON_HOLD (temporarily unavailable)
+        UUID pet7Id = createPet(rescueNumber, 7, "CAT", CAT_NAMES[(nameOffset + 1) % CAT_NAMES.length],
+            CAT_BREEDS[(catBreedOffset + 1) % CAT_BREEDS.length],
+            "ON_HOLD", null, rescueOrgId, petSeeds, random);
         petsNeedingVetSignOff.add(pet7Id);
 
         // Pet 8: Cat, Rescue-owned, AVAILABLE
-        UUID pet8Id = createPet(rescueNumber, 8, "CAT", CAT_NAMES[nameOffset + 2], CAT_BREEDS[(nameOffset + 2) % CAT_BREEDS.length],
+        UUID pet8Id = createPet(rescueNumber, 8, "CAT", CAT_NAMES[(nameOffset + 2) % CAT_NAMES.length],
+            CAT_BREEDS[(catBreedOffset + 2) % CAT_BREEDS.length],
             "AVAILABLE", null, rescueOrgId, petSeeds, random);
         petsNeedingVetSignOff.add(pet8Id);
 
-        // Pet 9: Cat, Rescue-owned, AVAILABLE
-        UUID pet9Id = createPet(rescueNumber, 9, "CAT", CAT_NAMES[nameOffset + 3], CAT_BREEDS[(nameOffset + 3) % CAT_BREEDS.length],
-            "AVAILABLE", null, rescueOrgId, petSeeds, random);
+        // Pet 9: Cat, Rescue-owned, WITHDRAWN (was listed, now withdrawn)
+        UUID pet9Id = createPet(rescueNumber, 9, "CAT", CAT_NAMES[(nameOffset + 3) % CAT_NAMES.length],
+            CAT_BREEDS[(catBreedOffset + 3) % CAT_BREEDS.length],
+            "WITHDRAWN", null, rescueOrgId, petSeeds, random);
         petsNeedingVetSignOff.add(pet9Id);
 
-        // Pet 10: Cat, Rescue-owned, AVAILABLE (changed from ADOPTED since adoptions table requires foster_id)
-        UUID pet10Id = createPet(rescueNumber, 10, "CAT", CAT_NAMES[nameOffset + 4], CAT_BREEDS[(nameOffset + 4) % CAT_BREEDS.length],
+        // Pet 10: Cat, Rescue-owned, AVAILABLE
+        UUID pet10Id = createPet(rescueNumber, 10, "CAT", CAT_NAMES[(nameOffset + 4) % CAT_NAMES.length],
+            CAT_BREEDS[(catBreedOffset + 4) % CAT_BREEDS.length],
             "AVAILABLE", null, rescueOrgId, petSeeds, random);
         petsNeedingVetSignOff.add(pet10Id);
 
-        logger.debug("Seeded 10 pets for rescue {} (5 dogs, 5 cats)", rescueNumber);
+        logger.debug("Seeded 10 pets for rescue {} (5 dogs, 5 cats, all statuses)", rescueNumber);
     }
 
     /**
@@ -531,6 +567,14 @@ public class TestDataSeeder implements CommandLineRunner {
                         insertStatusHistory(petId, "AVAILABLE", "IN_PROGRESS", rescueUserId, "Adoption application approved");
                         insertStatusHistory(petId, "IN_PROGRESS", "ADOPTED", rescueUserId, "Adoption finalized");
                         break;
+                    case "ON_HOLD":
+                        insertStatusHistory(petId, "PENDING_VET", "AVAILABLE", vetUserId, "Signed off by veterinarian");
+                        insertStatusHistory(petId, "AVAILABLE", "ON_HOLD", rescueUserId, "Temporarily placed on hold");
+                        break;
+                    case "WITHDRAWN":
+                        insertStatusHistory(petId, "PENDING_VET", "AVAILABLE", vetUserId, "Signed off by veterinarian");
+                        insertStatusHistory(petId, "AVAILABLE", "WITHDRAWN", rescueUserId, "Listing withdrawn by rescue");
+                        break;
                 }
             } else {
                 // Foster-owned pets go through full workflow
@@ -564,6 +608,18 @@ public class TestDataSeeder implements CommandLineRunner {
                         insertStatusHistory(petId, "PENDING_VET", "AVAILABLE", vetUserId, "Signed off by veterinarian");
                         insertStatusHistory(petId, "AVAILABLE", "IN_PROGRESS", rescueUserId, "Adoption application approved");
                         insertStatusHistory(petId, "IN_PROGRESS", "ADOPTED", rescueUserId, "Adoption finalized");
+                        break;
+                    case "ON_HOLD":
+                        insertStatusHistory(petId, "DRAFT", "PENDING_RESCUE", fosterUserId, "Submitted for rescue review");
+                        insertStatusHistory(petId, "PENDING_RESCUE", "PENDING_VET", rescueUserId, "Accepted by rescue organization");
+                        insertStatusHistory(petId, "PENDING_VET", "AVAILABLE", vetUserId, "Signed off by veterinarian");
+                        insertStatusHistory(petId, "AVAILABLE", "ON_HOLD", rescueUserId, "Temporarily placed on hold");
+                        break;
+                    case "WITHDRAWN":
+                        insertStatusHistory(petId, "DRAFT", "PENDING_RESCUE", fosterUserId, "Submitted for rescue review");
+                        insertStatusHistory(petId, "PENDING_RESCUE", "PENDING_VET", rescueUserId, "Accepted by rescue organization");
+                        insertStatusHistory(petId, "PENDING_VET", "AVAILABLE", vetUserId, "Signed off by veterinarian");
+                        insertStatusHistory(petId, "AVAILABLE", "WITHDRAWN", rescueUserId, "Listing withdrawn");
                         break;
                 }
             }
@@ -749,24 +805,49 @@ public class TestDataSeeder implements CommandLineRunner {
             }
             case ADOPTER -> {
                 UUID id = UUID.randomUUID();
+                String firstName = account.firstName() != null ? account.firstName() : "Test";
+                String lastName = account.lastName() != null ? account.lastName() : "Adopter";
+                // Use different Irish addresses for each adopter
+                String[] streets = {"45 Merrion Square", "12 Eyre Square", "78 Grand Parade", "34 O'Connell Street", "56 Henry Street", "23 Patrick Street"};
+                String[] cities = {"Dublin", "Galway", "Cork", "Limerick", "Dublin", "Waterford"};
+                String[] counties = {"Dublin", "Galway", "Cork", "Limerick", "Dublin", "Waterford"};
+                String[] eircodes = {"D02 PY28", "H91 XY12", "T12 AB34", "V94 CD56", "D01 EF78", "X91 GH90"};
+                int adopterIndex = account.email().contains("adopter@") ? 0 : (account.email().charAt(7) - '1');
                 jdbcTemplate.update("""
                     INSERT INTO adopters (id, user_id, first_name, last_name, phone, living_situation, pet_experience,
                         address_street, address_city, address_state, address_postal_code, address_country)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
-                    id, user.getId(), "Test", "Adopter", "555-0102", "HOUSE", "Experienced pet owner",
-                    "123 Test Street", "Test City", "TS", "12345", "USA");
+                    id, user.getId(), firstName, lastName, "+353 1 555-01" + String.format("%02d", 10 + adopterIndex),
+                    "HOUSE", "Experienced pet owner",
+                    streets[adopterIndex % streets.length], cities[adopterIndex % cities.length],
+                    counties[adopterIndex % counties.length], eircodes[adopterIndex % eircodes.length], "Ireland");
             }
             case VET -> {
                 UUID id = UUID.randomUUID();
+                // Different clinics for each vet
+                String[] clinicNames = {"Test Veterinary Clinic", "Dublin Pet Hospital", "Cork Animal Clinic"};
+                String[] licenseNumbers = {"VET-12345", "VET-67890", "VET-11223"};
+                String[] websites = {"https://testvet.com", "https://dublinpethospital.ie", "https://corkanimalclinic.ie"};
+                String[] descriptions = {
+                    "Test veterinary clinic for development",
+                    "Full-service pet hospital in the heart of Dublin",
+                    "Caring for Cork's pets since 1995"
+                };
+                String[] streets = {"123 Veterinary Lane", "45 Baggot Street", "78 Washington Street"};
+                String[] cities = {"Dublin", "Dublin", "Cork"};
+                String[] counties = {"Dublin", "Dublin", "Cork"};
+                String[] eircodes = {"D04 VT12", "D04 BG45", "T12 WS78"};
+                int vetIndex = account.email().equals("vet@test.com") ? 0 : (account.email().charAt(3) - '1');
                 jdbcTemplate.update("""
                     INSERT INTO vets (id, user_id, clinic_name, license_number, phone, website, description, verified,
                         address_street, address_city, address_state, address_postal_code, address_country)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
-                    id, user.getId(), "Test Veterinary Clinic", "VET-12345", "555-0103",
-                    "https://testvet.com", "Test veterinary clinic for development", true,
-                    "123 Test Street", "Test City", "TS", "12345", "USA");
+                    id, user.getId(), clinicNames[vetIndex], licenseNumbers[vetIndex],
+                    "+353 1 555-02" + String.format("%02d", vetIndex),
+                    websites[vetIndex], descriptions[vetIndex], true,
+                    streets[vetIndex], cities[vetIndex], counties[vetIndex], eircodes[vetIndex], "Ireland");
             }
             case RESCUE_ORG -> {
                 UUID id = UUID.randomUUID();
@@ -774,18 +855,36 @@ public class TestDataSeeder implements CommandLineRunner {
                 String slug = rescueName.toLowerCase().replaceAll("[^a-z0-9]+", "-");
                 String website = "https://" + slug + ".org";
                 String description = rescueName + " is a dedicated animal rescue organization committed to finding forever homes for pets in need.";
-                // Use different Irish locations for each rescue
-                String[] streets = {"12 Grafton Street", "45 Shop Street", "78 Patrick Street", "23 Main Street"};
-                String[] cities = {"Dublin", "Galway", "Cork", "Limerick"};
-                String[] counties = {"Dublin", "Galway", "Cork", "Limerick"};
-                String[] eircodes = {"D02 VK60", "H91 E2K3", "T12 W8HK", "V94 T9PX"};
-                int rescueIndex = account.email().charAt(6) - '1'; // Extract 1-4 from rescue1@, rescue2@, etc.
+                // Use different Irish locations for each rescue (10 rescues)
+                String[] streets = {
+                    "12 Grafton Street", "45 Shop Street", "78 Patrick Street", "23 Main Street",
+                    "56 The Quay", "89 High Street", "34 Main Street", "67 Church Street",
+                    "12 West Street", "45 Main Road"
+                };
+                String[] cities = {
+                    "Dublin", "Galway", "Cork", "Limerick",
+                    "Waterford", "Kilkenny", "Wexford", "Sligo",
+                    "Drogheda", "Donegal"
+                };
+                String[] counties = {
+                    "Dublin", "Galway", "Cork", "Limerick",
+                    "Waterford", "Kilkenny", "Wexford", "Sligo",
+                    "Louth", "Donegal"
+                };
+                String[] eircodes = {
+                    "D02 VK60", "H91 E2K3", "T12 W8HK", "V94 T9PX",
+                    "X91 WK45", "R95 FH78", "Y35 AB12", "F91 CD34",
+                    "A92 EF56", "F94 GH78"
+                };
+                // Extract rescue number: rescue1@ -> 0, rescue10@ -> 9
+                String emailPrefix = account.email().substring(6); // "1@test.com" or "10@test.com"
+                int rescueIndex = Integer.parseInt(emailPrefix.substring(0, emailPrefix.indexOf('@'))) - 1;
                 jdbcTemplate.update("""
                     INSERT INTO rescue_organizations (id, user_id, name, phone, website, description,
                         contact_name, contact_email, verified, address_street, address_city, address_state, address_postal_code, address_country)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
-                    id, user.getId(), rescueName, "+353 1 " + (555_0100 + rescueIndex),
+                    id, user.getId(), rescueName, "+353 1 555-01" + String.format("%02d", rescueIndex),
                     website, description,
                     "Contact Person", account.email(), true,
                     streets[rescueIndex], cities[rescueIndex], counties[rescueIndex], eircodes[rescueIndex], "Ireland");
@@ -848,18 +947,36 @@ public class TestDataSeeder implements CommandLineRunner {
                     String slug = rescueName.toLowerCase().replaceAll("[^a-z0-9]+", "-");
                     String website = "https://" + slug + ".org";
                     String description = rescueName + " is a dedicated animal rescue organization committed to finding forever homes for pets in need.";
-                    // Use different Irish locations for each rescue
-                    String[] streets = {"12 Grafton Street", "45 Shop Street", "78 Patrick Street", "23 Main Street"};
-                    String[] cities = {"Dublin", "Galway", "Cork", "Limerick"};
-                    String[] counties = {"Dublin", "Galway", "Cork", "Limerick"};
-                    String[] eircodes = {"D02 VK60", "H91 E2K3", "T12 W8HK", "V94 T9PX"};
-                    int rescueIndex = account.email().charAt(6) - '1';
+                    // Use different Irish locations for each rescue (10 rescues)
+                    String[] streets = {
+                        "12 Grafton Street", "45 Shop Street", "78 Patrick Street", "23 Main Street",
+                        "56 The Quay", "89 High Street", "34 Main Street", "67 Church Street",
+                        "12 West Street", "45 Main Road"
+                    };
+                    String[] cities = {
+                        "Dublin", "Galway", "Cork", "Limerick",
+                        "Waterford", "Kilkenny", "Wexford", "Sligo",
+                        "Drogheda", "Donegal"
+                    };
+                    String[] counties = {
+                        "Dublin", "Galway", "Cork", "Limerick",
+                        "Waterford", "Kilkenny", "Wexford", "Sligo",
+                        "Louth", "Donegal"
+                    };
+                    String[] eircodes = {
+                        "D02 VK60", "H91 E2K3", "T12 W8HK", "V94 T9PX",
+                        "X91 WK45", "R95 FH78", "Y35 AB12", "F91 CD34",
+                        "A92 EF56", "F94 GH78"
+                    };
+                    // Extract rescue number: rescue1@ -> 0, rescue10@ -> 9
+                    String emailPrefix = account.email().substring(6);
+                    int rescueIndex = Integer.parseInt(emailPrefix.substring(0, emailPrefix.indexOf('@'))) - 1;
                     jdbcTemplate.update("""
                         INSERT INTO rescue_organizations (id, user_id, name, phone, website, description,
                             contact_name, contact_email, verified, address_street, address_city, address_state, address_postal_code, address_country)
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                         """,
-                        id, user.getId(), rescueName, "+353 1 " + (555_0100 + rescueIndex),
+                        id, user.getId(), rescueName, "+353 1 555-01" + String.format("%02d", rescueIndex),
                         website, description,
                         "Contact Person", account.email(), true,
                         streets[rescueIndex], cities[rescueIndex], counties[rescueIndex], eircodes[rescueIndex], "Ireland");
