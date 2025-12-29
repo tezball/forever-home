@@ -28,7 +28,18 @@ public class DashboardController {
         this.apiClient = apiClient;
     }
 
+    /**
+     * Redirect root to the Review Queue (new primary view).
+     */
     @GetMapping("/")
+    public String root() {
+        return "redirect:/queue";
+    }
+
+    /**
+     * Dashboard stats view (still accessible directly).
+     */
+    @GetMapping("/dashboard")
     public String dashboard(Model model) {
         ModerationStats stats = resultService.getStatistics();
         List<ModerationJob> recentJobs = resultService.getRecentJobs(5);

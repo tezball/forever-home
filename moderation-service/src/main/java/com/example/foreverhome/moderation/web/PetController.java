@@ -87,4 +87,43 @@ public class PetController {
 
         return "redirect:/pet?id=" + petId;
     }
+
+    /**
+     * Manually approve a flagged moderation result.
+     */
+    @PostMapping("/result/{resultId}/approve")
+    public String approveResult(
+            @PathVariable UUID resultId,
+            @RequestParam String petId,
+            RedirectAttributes redirectAttributes) {
+
+        try {
+            resultService.review(resultId, "approve", "Manual approval via Pet Lookup");
+            redirectAttributes.addFlashAttribute("success", "Item approved successfully");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Failed to approve: " + e.getMessage());
+        }
+
+        return "redirect:/pet?id=" + petId;
+    }
+
+    /**
+     * Manually reject a flagged moderation result.
+     */
+    @PostMapping("/result/{resultId}/reject")
+    public String rejectResult(
+            @PathVariable UUID resultId,
+            @RequestParam String petId,
+            @RequestParam(required = false) String notes,
+            RedirectAttributes redirectAttributes) {
+
+        try {
+            resultService.review(resultId, "reject", notes != null ? notes : "Manual rejection via Pet Lookup");
+            redirectAttributes.addFlashAttribute("success", "Item rejected successfully");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Failed to reject: " + e.getMessage());
+        }
+
+        return "redirect:/pet?id=" + petId;
+    }
 }

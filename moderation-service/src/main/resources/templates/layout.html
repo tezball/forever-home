@@ -37,13 +37,16 @@
                     <a href="/" class="font-serif text-xl font-bold">Moderation Service</a>
                     <!-- Desktop Navigation -->
                     <div class="hidden md:flex space-x-4">
-                        <a href="/" th:classappend="${currentPage == 'dashboard'} ? 'bg-primary/80 text-white' : 'text-gray-200 hover:text-white hover:bg-primary/50'"
+                        <a href="/queue" th:classappend="${currentPage == 'queue'} ? 'bg-primary/80 text-white' : 'text-gray-200 hover:text-white hover:bg-primary/50'"
+                           class="px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center">
+                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                            </svg>
+                            Review Queue
+                        </a>
+                        <a href="/dashboard" th:classappend="${currentPage == 'dashboard'} ? 'bg-primary/80 text-white' : 'text-gray-200 hover:text-white hover:bg-primary/50'"
                            class="px-3 py-2 rounded-md text-sm font-medium transition-colors">
                             Dashboard
-                        </a>
-                        <a href="/flagged" th:classappend="${currentPage == 'flagged'} ? 'bg-primary/80 text-white' : 'text-gray-200 hover:text-white hover:bg-primary/50'"
-                           class="px-3 py-2 rounded-md text-sm font-medium transition-colors">
-                            Flagged Content
                         </a>
                         <a href="/batch" th:classappend="${currentPage == 'batch'} ? 'bg-primary/80 text-white' : 'text-gray-200 hover:text-white hover:bg-primary/50'"
                            class="px-3 py-2 rounded-md text-sm font-medium transition-colors">
@@ -138,13 +141,16 @@
         <!-- Mobile Navigation Menu -->
         <div id="mobile-menu" class="hidden md:hidden border-t border-primary/50">
             <div class="px-4 py-3 space-y-2">
-                <a href="/" th:classappend="${currentPage == 'dashboard'} ? 'bg-primary/80' : 'hover:bg-primary/50'"
+                <a href="/queue" th:classappend="${currentPage == 'queue'} ? 'bg-primary/80' : 'hover:bg-primary/50'"
+                   class="block px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                    </svg>
+                    Review Queue
+                </a>
+                <a href="/dashboard" th:classappend="${currentPage == 'dashboard'} ? 'bg-primary/80' : 'hover:bg-primary/50'"
                    class="block px-3 py-2 rounded-md text-sm font-medium transition-colors">
                     Dashboard
-                </a>
-                <a href="/flagged" th:classappend="${currentPage == 'flagged'} ? 'bg-primary/80' : 'hover:bg-primary/50'"
-                   class="block px-3 py-2 rounded-md text-sm font-medium transition-colors">
-                    Flagged Content
                 </a>
                 <a href="/batch" th:classappend="${currentPage == 'batch'} ? 'bg-primary/80' : 'hover:bg-primary/50'"
                    class="block px-3 py-2 rounded-md text-sm font-medium transition-colors">

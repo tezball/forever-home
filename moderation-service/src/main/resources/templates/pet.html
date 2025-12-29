@@ -216,6 +216,7 @@
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Confidence</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Flags</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Created</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
@@ -247,6 +248,37 @@
                                 <span th:unless="${result.flags != null and !result.flags.isEmpty()}" class="text-gray-400 text-xs">None</span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" th:text="${#temporals.format(result.createdAt, 'MMM d, HH:mm')}">-</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <!-- Actions for FLAGGED items -->
+                                <div th:if="${result.status.name() == 'FLAGGED'}" class="flex space-x-2">
+                                    <form th:action="|/pet/result/${result.id}/approve|" method="post" class="inline">
+                                        <input type="hidden" name="petId" th:value="${pet.id()}">
+                                        <button type="submit" class="px-3 py-1 text-xs font-medium rounded bg-green-600 text-white hover:bg-green-700 transition-colors">
+                                            Approve
+                                        </button>
+                                    </form>
+                                    <form th:action="|/pet/result/${result.id}/reject|" method="post" class="inline">
+                                        <input type="hidden" name="petId" th:value="${pet.id()}">
+                                        <button type="submit" class="px-3 py-1 text-xs font-medium rounded bg-red-600 text-white hover:bg-red-700 transition-colors">
+                                            Reject
+                                        </button>
+                                    </form>
+                                </div>
+                                <!-- Show reviewed info for non-flagged items -->
+                                <span th:if="${result.status.name() == 'APPROVED'}" class="text-xs text-green-600">
+                                    <svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                    </svg>
+                                    Reviewed
+                                </span>
+                                <span th:if="${result.status.name() == 'REJECTED'}" class="text-xs text-red-600">
+                                    <svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                    </svg>
+                                    Reviewed
+                                </span>
+                                <span th:if="${result.status.name() == 'PENDING'}" class="text-xs text-gray-400">-</span>
+                            </td>
                         </tr>
                     </tbody>
                 </table>

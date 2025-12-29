@@ -116,8 +116,8 @@ services:
       - SPRING_DATASOURCE_PASSWORD=postgres
       # Ollama - use host machine's Ollama via host.docker.internal
       - SPRING_AI_OLLAMA_BASE_URL=http://host.docker.internal:11434
-      # Forever Home API - use Docker container name when running app in Docker
-      - FOREVERHOME_API_BASE_URL=http://forever-home-app:8080
+      # Forever Home API - use host.docker.internal to reach app running on host
+      - FOREVERHOME_API_BASE_URL=http://host.docker.internal:8080
       - FOREVERHOME_API_TOKEN=${FOREVERHOME_API_TOKEN:-}
       # Image URL rewrite: translate localhost S3 URLs to Docker service name
       # This fixes the Docker networking issue where localhost:4566 is unreachable from containers
