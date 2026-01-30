@@ -39,7 +39,7 @@ awslocal s3api put-bucket-cors --bucket forever-home-images --cors-configuration
     {
       "AllowedHeaders": ["*"],
       "AllowedMethods": ["GET", "PUT", "POST", "DELETE", "HEAD"],
-      "AllowedOrigins": ["http://localhost:5173", "http://localhost:3000"],
+      "AllowedOrigins": ["http://localhost:5173", "http://localhost:3000", "http://localhost:8080"],
       "ExposeHeaders": ["ETag"],
       "MaxAgeSeconds": 3600
     }

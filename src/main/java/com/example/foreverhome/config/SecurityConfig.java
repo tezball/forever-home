@@ -53,7 +53,7 @@ public class SecurityConfig {
                         "script-src 'self' 'unsafe-inline' https://accounts.google.com; " +
                         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
                         "font-src 'self' https://fonts.gstatic.com; " +
-                        "img-src 'self' data: https: blob:; " +
+                        "img-src 'self' data: https: http://localhost:* blob:; " +
                         "connect-src 'self' https://accounts.google.com; " +
                         "frame-src https://accounts.google.com; " +
                         "frame-ancestors 'none'; " +
