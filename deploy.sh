@@ -79,8 +79,8 @@ if ! command -v terraform &> /dev/null; then
     exit 1
 fi
 
-if [ "$BLANK_MODE" = "true" ] && ! command -v jq &> /dev/null; then
-    echo -e "${RED}ERROR: jq is not installed (required for --blank mode)${NC}"
+if ! command -v jq &> /dev/null; then
+    echo -e "${RED}ERROR: jq is not installed${NC}"
     echo "Install with: sudo apt-get install jq"
     exit 1
 fi
@@ -294,11 +294,36 @@ if [ "$BLANK_MODE" = "true" ]; then
         --region "$AWS_REGION" \
         --output text > /dev/null
 else
-    # Force new ECS deployment with existing task definition
-    echo -e "${YELLOW}Forcing ECS deployment...${NC}"
+    # Register a new task definition to pick up the new image
+    # ECS caches image digests at task definition creation, not deployment time
+    echo -e "${YELLOW}Registering new task definition...${NC}"
+
+    TASK_DEF_JSON=$(aws ecs describe-task-definition \
+        --task-definition "$LATEST_TASK_DEF" \
+        --region "$AWS_REGION" \
+        --query 'taskDefinition' \
+        --output json)
+
+    # Remove non-writable fields and register as new revision
+    TEMP_TASK_DEF=$(mktemp)
+    echo "$TASK_DEF_JSON" | jq '
+        del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy, .deregisteredAt)
+    ' > "$TEMP_TASK_DEF"
+
+    NEW_TASK_DEF=$(aws ecs register-task-definition \
+        --cli-input-json "file://$TEMP_TASK_DEF" \
+        --region "$AWS_REGION" \
+        --query 'taskDefinition.taskDefinitionArn' \
+        --output text)
+    rm -f "$TEMP_TASK_DEF"
+
+    echo -e "${GREEN}New task definition: $NEW_TASK_DEF${NC}"
+
+    echo -e "${YELLOW}Updating ECS service...${NC}"
     aws ecs update-service \
         --cluster "$ECS_CLUSTER" \
         --service "$ECS_SERVICE" \
+        --task-definition "$NEW_TASK_DEF" \
         --force-new-deployment \
         --region "$AWS_REGION" \
         --output text > /dev/null
