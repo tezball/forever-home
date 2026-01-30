@@ -3,16 +3,39 @@ package com.example.foreverhome.domain.profile;
 import java.util.StringJoiner;
 
 /**
- * Value object representing a physical address.
+ * Value object representing a physical address with optional geolocation.
  * Street is optional for privacy reasons.
+ * Latitude and longitude are populated via geocoding service.
  */
 public record Address(
         String street,
         String city,
         String state,
         String postalCode,
-        String country
+        String country,
+        Double latitude,
+        Double longitude
 ) {
+    /**
+     * Creates an Address without coordinates (for backward compatibility).
+     */
+    public Address(String street, String city, String state, String postalCode, String country) {
+        this(street, city, state, postalCode, country, null, null);
+    }
+
+    /**
+     * Returns a new Address with the given coordinates.
+     */
+    public Address withCoordinates(Double latitude, Double longitude) {
+        return new Address(street, city, state, postalCode, country, latitude, longitude);
+    }
+
+    /**
+     * Checks if this address has valid coordinates.
+     */
+    public boolean hasCoordinates() {
+        return latitude != null && longitude != null;
+    }
     /**
      * Formats the address as a single line string.
      * Omits null components.

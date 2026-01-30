@@ -169,6 +169,28 @@ export interface RescueOrganization {
   phone: string | null;
   logoUrl: string | null;
   petCount: number;
+  distanceKm?: number;
+}
+
+export interface RescueWithDistance {
+  id: string;
+  name: string;
+  description: string | null;
+  logoUrl: string | null;
+  city: string | null;
+  state: string | null;
+  verified: boolean;
+  distanceKm: number;
+}
+
+export interface RescueSearchResponse {
+  results: RescueWithDistance[];
+  searchCenter: {
+    latitude: number;
+    longitude: number;
+  };
+  radiusKm: number;
+  totalResults: number;
 }
 
 export interface VetSignOffHistory {

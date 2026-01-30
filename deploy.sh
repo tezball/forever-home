@@ -96,6 +96,23 @@ fi
 echo -e "${GREEN}Prerequisites OK${NC}"
 echo ""
 
+# Check for clean git working directory
+echo -e "${YELLOW}Checking git status...${NC}"
+if [ -n "$(git status --porcelain)" ]; then
+    echo -e "${RED}ERROR: Working directory has uncommitted changes${NC}"
+    echo ""
+    echo "Production builds must be from a clean git state to ensure"
+    echo "the /actuator/info endpoint accurately reflects the deployed commit."
+    echo ""
+    echo "Please commit or stash your changes before deploying:"
+    echo "  git status        # See what's changed"
+    echo "  git stash         # Temporarily stash changes"
+    echo "  git add . && git commit -m 'message'  # Or commit them"
+    exit 1
+fi
+echo -e "${GREEN}Git working directory is clean${NC}"
+echo ""
+
 # Get terraform outputs
 echo -e "${YELLOW}Reading Terraform outputs...${NC}"
 cd "$TERRAFORM_DIR"

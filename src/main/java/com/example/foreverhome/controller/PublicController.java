@@ -4,6 +4,7 @@ import com.example.foreverhome.domain.pet.Pet;
 import com.example.foreverhome.domain.pet.PetStatus;
 import com.example.foreverhome.domain.profile.RescueOrganization;
 import com.example.foreverhome.domain.profile.Vet;
+import com.example.foreverhome.dto.RescueSearchResponse;
 import com.example.foreverhome.repository.AdoptionRepository;
 import com.example.foreverhome.repository.PetImageRepository;
 import com.example.foreverhome.repository.PetRepository;
@@ -11,6 +12,7 @@ import com.example.foreverhome.repository.PetRepository.RescueOrgPetCount;
 import com.example.foreverhome.repository.RescueOrganizationRepository;
 import com.example.foreverhome.repository.VetRepository;
 import com.example.foreverhome.repository.VetSignOffRepository;
+import com.example.foreverhome.service.RescueSearchService;
 import com.example.foreverhome.service.S3StorageService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -34,6 +36,7 @@ public class PublicController {
     private final VetRepository vetRepository;
     private final VetSignOffRepository vetSignOffRepository;
     private final S3StorageService storageService;
+    private final RescueSearchService rescueSearchService;
 
     public PublicController(RescueOrganizationRepository rescueOrganizationRepository,
                            PetRepository petRepository,
@@ -41,7 +44,8 @@ public class PublicController {
                            AdoptionRepository adoptionRepository,
                            VetRepository vetRepository,
                            VetSignOffRepository vetSignOffRepository,
-                           S3StorageService storageService) {
+                           S3StorageService storageService,
+                           RescueSearchService rescueSearchService) {
         this.rescueOrganizationRepository = rescueOrganizationRepository;
         this.petRepository = petRepository;
         this.petImageRepository = petImageRepository;
@@ -49,6 +53,7 @@ public class PublicController {
         this.vetRepository = vetRepository;
         this.vetSignOffRepository = vetSignOffRepository;
         this.storageService = storageService;
+        this.rescueSearchService = rescueSearchService;
     }
 
     /**
@@ -92,6 +97,31 @@ public class PublicController {
                     return ResponseEntity.ok(RescueOrgPublicResponse.from(org, petCount, logoUrl));
                 })
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    /**
+     * Search for rescue organizations near a location (public).
+     * Supports search by coordinates (lat/lon) or postal code.
+     *
+     * @param lat      latitude of search center
+     * @param lon      longitude of search center
+     * @param zip      postal/zip code (alternative to lat/lon)
+     * @param country  country code for postal code lookup (e.g., "IE", "US")
+     * @param radius   search radius in kilometers (default 50, max 200)
+     * @param limit    maximum results (default 20, max 100)
+     */
+    @GetMapping("/rescues/search")
+    public ResponseEntity<RescueSearchResponse> searchRescues(
+            @RequestParam(required = false) Double lat,
+            @RequestParam(required = false) Double lon,
+            @RequestParam(required = false) String zip,
+            @RequestParam(required = false) String country,
+            @RequestParam(required = false) Double radius,
+            @RequestParam(required = false) Integer limit) {
+
+        return rescueSearchService.search(lat, lon, zip, country, radius, limit)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.badRequest().build());
     }
 
     /**
